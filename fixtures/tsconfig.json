@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
+    "strict": true, "esModuleInterop": true, "skipLibCheck": true,
+    "types": ["node"], "typeRoots": ["./node_modules/@types"],
+    "baseUrl": "..",
+    "paths": {
+      "@shared/contracts": ["shared/contracts.ts"],
+      "@anthropic-ai/sdk": ["fixtures/node_modules/@anthropic-ai/sdk"],
+      "zod": ["fixtures/node_modules/zod"]
+    }
+  },
+  "include": ["tests/**/*.ts", "../app/src/main/services/llm.ts", "../app/src/main/services/store.ts", "../shared/contracts.ts"]
+}

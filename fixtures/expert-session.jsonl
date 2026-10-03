@@ -1,0 +1,27 @@
+{"type":"context","t":1791018000,"app":"msedge.exe","key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","blocked":false,"hwnd":100,"monitor":1,"window_rect":[0,0,1280,1000],"dpi_awareness":"per_monitor","window_dpi":96,"monitor_scale":1,"capture":"uia"}
+{"type":"text","t":1791018001,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Invoice INV-4471","Supplier: Nordwerk Equipment","Amount: EUR 6400.00","Description: Production equipment: milling unit","Cost center: 6100"]}
+{"type":"click","t":1791018004,"x":600,"y":400,"button":"left","target":{"name":"INV-4471","control_type":"ButtonControl","automation_id":"inv-4471","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"click","t":1791018008,"x":600,"y":400,"button":"left","target":{"name":"Cost center","control_type":"EditControl","automation_id":"cost-center","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"activity","t":1791018009,"kind":"typing"}
+{"type":"commit","t":1791018011,"field":"Cost center","old":"6100","new":"0400","rect":[500,380,800,420],"masked":false,"source":"uia"}
+{"type":"key","t":1791018012,"key":"tab"}
+{"type":"click","t":1791018017,"x":600,"y":400,"button":"left","target":{"name":"Asset number","control_type":"EditControl","automation_id":"asset-number","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"activity","t":1791018018,"kind":"typing"}
+{"type":"commit","t":1791018020,"field":"Asset number","old":"","new":"AST-6400","rect":[500,380,800,420],"masked":false,"source":"uia"}
+{"type":"commit","t":1791018022,"field":"Notes","old":"","new":"Test payment: IBAN [IBAN ••••3000]; card [CARD ••••4242].","rect":[500,380,800,420],"masked":true,"source":"uia"}
+{"type":"shot","t":1791018024,"key":"browser:127.0.0.1","path":"fixtures/shots/expert-capex.jpg","meta":{"origin_px":[0,0],"size_px":[1264,1103],"scale":1,"monitor":1},"reason":"heartbeat","ephemeral":false}
+{"type":"click","t":1791018035,"x":600,"y":400,"button":"left","target":{"name":"Post invoice","control_type":"ButtonControl","automation_id":"post-invoice","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"click","t":1791018045,"x":600,"y":400,"button":"left","target":{"name":"Confirm posting","control_type":"ButtonControl","automation_id":"confirm-posting","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"click","t":1791018062,"x":600,"y":400,"button":"left","target":{"name":"INV-4472","control_type":"ButtonControl","automation_id":"inv-4472","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"text","t":1791018063,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Invoice INV-4472","Supplier: Müller GmbH","Amount: EUR 1850.00","Invoice date: 2026-12-15","Description: December maintenance service"]}
+{"type":"click","t":1791018073,"x":600,"y":400,"button":"left","target":{"name":"Notes","control_type":"EditControl","automation_id":"notes","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"activity","t":1791018074,"kind":"typing"}
+{"type":"commit","t":1791018078,"field":"Notes","old":"December service period.","new":"Possible duplicate December charge. Check supplier reference.","rect":[500,380,800,420],"masked":false,"source":"uia"}
+{"type":"click","t":1791018085,"x":600,"y":400,"button":"left","target":{"name":"Hold invoice","control_type":"ButtonControl","automation_id":"hold-invoice","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"shot","t":1791018087,"key":"browser:127.0.0.1","path":"fixtures/shots/expert-hold.jpg","meta":{"origin_px":[0,0],"size_px":[1264,1103],"scale":1,"monitor":1},"reason":"heartbeat","ephemeral":false}
+{"type":"click","t":1791018116,"x":600,"y":400,"button":"left","target":{"name":"INV-4473","control_type":"ButtonControl","automation_id":"inv-4473","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"text","t":1791018117,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Invoice INV-4473","Supplier: Morava Components","Amount: EUR 2300.00","Subsidiary: Czech Republic"]}
+{"type":"activity","t":1791018125,"kind":"scroll"}
+{"type":"click","t":1791018134,"x":600,"y":400,"button":"left","target":{"name":"Send for approval","control_type":"ButtonControl","automation_id":"send-for-approval","rect":[500,380,800,420],"rect_trusted":true},"shot":null,"shot_meta":null}
+{"type":"shot","t":1791018136,"key":"browser:127.0.0.1","path":"fixtures/shots/expert-approval.jpg","meta":{"origin_px":[0,0],"size_px":[1264,1103],"scale":1,"monitor":1},"reason":"heartbeat","ephemeral":false}
+{"type":"key","t":1791018177,"key":"esc"}
