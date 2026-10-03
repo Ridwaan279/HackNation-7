@@ -1,0 +1,49 @@
+{
+  "browsers": [
+    "msedge.exe", "chrome.exe", "firefox.exe", "brave.exe", "opera.exe", "vivaldi.exe",
+    "arc.exe", "chromium.exe", "iexplore.exe", "waterfox.exe", "librewolf.exe"
+  ],
+  "password_manager_processes": [
+    "1password.exe", "bitwarden.exe", "keepass.exe", "keepassxc.exe", "lastpass.exe",
+    "dashlane.exe", "keeperpasswordmanager.exe", "keeper.exe", "nordpass.exe",
+    "proton pass.exe", "protonpass.exe", "enpass.exe", "roboform.exe", "pwsafe.exe"
+  ],
+  "password_manager_title_markers": [
+    "1Password", "Bitwarden", "KeePass", "LastPass", "Dashlane", "Keeper Security",
+    "NordPass", "Proton Pass", "Enpass", "RoboForm"
+  ],
+  "banking_domains": [
+    "paypal.com", "wise.com", "revolut.com", "n26.com", "monzo.com", "venmo.com", "zellepay.com",
+    "chase.com", "wellsfargo.com", "citi.com", "capitalone.com", "schwab.com", "fidelity.com",
+    "vanguard.com", "americanexpress.com", "discover.com", "barclays.co.uk", "hsbc.com", "hsbc.co.uk",
+    "natwest.com", "santander.com", "santander.co.uk", "ing.com", "ing.de", "dkb.de", "comdirect.de",
+    "sparkasse.de", "consorsbank.de", "ubs.com", "credit-suisse.com", "bnpparibas.com",
+    "societegenerale.com", "credit-agricole.fr", "intesasanpaolo.com", "unicredit.it", "abnamro.nl",
+    "nordea.com", "seb.se", "fnb.co.za", "absa.co.za", "investec.com", "tymebank.co.za"
+  ],
+  "banking_domain_keywords": [
+    "bank", "banking", "creditunion", "credit-union", "sparkasse", "volksbank", "raiffeisen"
+  ],
+  "banking_title_markers": [
+    "online banking", "internet banking", "netbank", "e-banking", "onlinebanking"
+  ],
+  "private_window_markers": [
+    "InPrivate", "Incognito", "Inkognito", "Private Browsing", "Private window",
+    "Privates Fenster", "Privater Modus", "Navigation privée", "Navegación privada"
+  ],
+  "system_processes": [
+    "consent.exe", "credentialuibroker.exe", "lockapp.exe", "logonui.exe", "winlogon.exe",
+    "sechealthui.exe", "securityhealthhost.exe", "credwiz.exe"
+  ],
+  "browser_internal_schemes": [
+    "chrome", "edge", "brave", "opera", "vivaldi", "about", "chrome-extension", "extension",
+    "moz-extension", "view-source"
+  ],
+  "browser_internal_allowed_hosts": [
+    "newtab", "new-tab-page", "blank", "welcome", "startpage", "home"
+  ],
+  "remote_session_processes": [
+    "wfica32.exe", "cdviewer.exe", "mstsc.exe", "msrdc.exe", "vmware-view.exe",
+    "vmconnect.exe", "vncviewer.exe", "tvnviewer.exe"
+  ]
+}

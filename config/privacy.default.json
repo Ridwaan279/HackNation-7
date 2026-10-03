@@ -1,0 +1,10 @@
+{
+  "mask": { "passwords": true, "secrets": true, "cards": true, "ssn": true, "iban": true, "email": false, "phone": false },
+  "skip": { "banking": true, "password_managers": true, "private_windows": true },
+  "blocked_apps": [],
+  "blocked_domains": [],
+  "allow_only": null,
+  "raw_retention_days": 7,
+  "local_only_apps": [],
+  "ambient_screenshots": true
+}
