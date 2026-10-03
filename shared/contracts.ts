@@ -230,6 +230,10 @@ export interface Quote {
 }
 
 export interface GuideStep {
+  /** Optional capture provenance and mapping for image editing. */
+  app_key?: string
+  shot_meta?: ShotMeta
+  screenshot_hidden?: boolean
   id: string
   n: number
   t: number
@@ -247,6 +251,10 @@ export interface GuideStep {
 }
 
 export interface Guide {
+  /** Monotonic edit version; legacy guides start at zero. */
+  revision?: number
+  recording?: boolean
+  app_keys?: string[]
   id: string
   title: string
   app: string
@@ -420,3 +428,28 @@ export interface AppContext {
 }
 
 export type ServiceInit = (ctx: AppContext) => void | Promise<void>
+
+// Agent C's guide editor IPC. Existing channels and payloads remain unchanged.
+export type GuideEdit =
+  | { kind: 'rename'; title: string }
+  | { kind: 'edit'; step_id: string; title: string; note: string }
+  | { kind: 'delete' | 'merge' | 'hide'; step_id: string }
+  | { kind: 'move'; step_id: string; direction: 'up' | 'down' }
+  | { kind: 'note'; after_id?: string; note: string }
+
+export interface GuideSaveRequest { id: string; revision: number; edit: GuideEdit }
+export interface GuideImageRequest { id: string; step_id: string }
+export interface GuideBlurRequest extends GuideImageRequest {
+  revision: number
+  /** Canvas-flattened PNG; coordinates below are image pixels. */
+  data_url: string
+  regions: Rect[]
+}
+export interface GuideIpc {
+  'guides:list': { req: Record<string, never>; res: Guide[] }
+  'guide:get': { req: { id: string }; res: Guide | null }
+  'guide:save': { req: GuideSaveRequest; res: Guide }
+  'guide:image': { req: GuideImageRequest; res: { data_url: string } | null }
+  'guide:blur': { req: GuideBlurRequest; res: Guide }
+  'guide:exportPdf': { req: { id: string }; res: { canceled: boolean; path?: string } }
+}
