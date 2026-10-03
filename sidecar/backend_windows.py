@@ -19,6 +19,12 @@ from model import ElementInfo, FocusInfo, HookEvent, MonitorInfo, Rect, WalkResu
 CHROMIUM_CLASS = "Chrome_WidgetWin_1"
 
 
+def new_mss():
+    """mss >= 10.2 deprecates the mss.mss() factory in favour of the mss.MSS class."""
+    factory = getattr(mss, "MSS", None)
+    return factory() if factory is not None else mss.mss()
+
+
 class WindowsBackend:
     name = "windows"
 
@@ -79,8 +85,15 @@ class WindowsBackend:
     def focused(self, tracked_types: frozenset) -> Optional[FocusInfo]:
         return uia.focused(tracked_types)
 
-    def walk_text(self, win: WindowInfo, max_depth: int, max_elements: int, budget_s: float) -> Optional[WalkResult]:
-        return uia.walk_text(win.hwnd, win.class_name == CHROMIUM_CLASS, max_depth, max_elements, budget_s)
+    @staticmethod
+    def _read_mode(win: WindowInfo, content_only: bool) -> str:
+        if content_only:
+            return "browser"
+        return "web" if win.class_name == CHROMIUM_CLASS else "native"
+
+    def walk_text(self, win: WindowInfo, max_depth: int, max_elements: int, budget_s: float,
+                  content_only: bool = False) -> Optional[WalkResult]:
+        return uia.walk_text(win.hwnd, self._read_mode(win, content_only), max_depth, max_elements, budget_s)
 
     def rect_of(self, handle) -> Optional[Rect]:
         return uia.rect_of(handle)
@@ -88,8 +101,8 @@ class WindowsBackend:
     def web_document_empty(self, win: WindowInfo) -> Optional[bool]:
         return uia.web_document_empty(win.hwnd)
 
-    def tree(self, win: WindowInfo, max_count: int, budget_s: float) -> List[ElementInfo]:
-        return uia.tree(win.hwnd, win.class_name == CHROMIUM_CLASS, max_count, budget_s)
+    def tree(self, win: WindowInfo, max_count: int, budget_s: float, content_only: bool = False) -> List[ElementInfo]:
+        return uia.tree(win.hwnd, self._read_mode(win, content_only), max_count, budget_s)
 
     # -- screen capture ------------------------------------------------------------------
 
@@ -99,7 +112,7 @@ class WindowsBackend:
             return None
         sct = getattr(self._tls, "mss", None)
         if sct is None:  # one mss instance per thread
-            sct = self._tls.mss = mss.mss()
+            sct = self._tls.mss = new_mss()
         try:
             raw = sct.grab({"left": left, "top": top, "width": right - left, "height": bottom - top})
             return Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")

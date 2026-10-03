@@ -51,6 +51,7 @@ class FakeBackend:
         self.restarts = 0
         self.calls: Counter = Counter()
         self.on_walk: Optional[Callable[[], None]] = None  # side effect hook for tests
+        self.last_content_only: Optional[bool] = None
 
     # -- scene helpers -------------------------------------------------------
 
@@ -114,8 +115,10 @@ class FakeBackend:
         self.calls["focused"] += 1
         return self.focus
 
-    def walk_text(self, win: WindowInfo, max_depth: int, max_elements: int, budget_s: float) -> Optional[WalkResult]:
+    def walk_text(self, win: WindowInfo, max_depth: int, max_elements: int, budget_s: float,
+                  content_only: bool = False) -> Optional[WalkResult]:
         self.calls["walk_text"] += 1
+        self.last_content_only = content_only
         if self.on_walk:
             self.on_walk()
         return self.walks.get(win.hwnd)
@@ -127,8 +130,9 @@ class FakeBackend:
         self.calls["web_document_empty"] += 1
         return self.web_empty.get(win.hwnd)
 
-    def tree(self, win: WindowInfo, max_count: int, budget_s: float) -> List[ElementInfo]:
+    def tree(self, win: WindowInfo, max_count: int, budget_s: float, content_only: bool = False) -> List[ElementInfo]:
         self.calls["tree"] += 1
+        self.last_content_only = content_only
         return list(self.elements.get(win.hwnd, []))[:max_count]
 
     def capture(self, rect: Rect):

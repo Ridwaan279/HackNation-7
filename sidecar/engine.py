@@ -25,7 +25,7 @@ from commit import TRACKED_TYPES, Commit, CommitTracker
 from config import ConfigStore, iso_now, parse_iso
 from health import HealthTracker
 from model import Backend, ElementInfo, HookEvent, MonitorInfo, Rect, WindowInfo
-from privacy import Decision, PrivacyGate
+from privacy import Decision, PrivacyGate, parse_url
 from protocol import reply_error, reply_ok
 from redact import MaskOptions, Redactor, looks_like_password_field
 from scaling import ScalingTracker, rect_contains, rect_ok
@@ -125,6 +125,7 @@ class Engine:
         self._text_state: Dict[tuple, Tuple[float, str]] = {}
         self._web_next: Dict[tuple, float] = {}
         self._health_next = 0.0
+        self._last_url: Dict[int, str] = {}  # hwnd -> last address-bar value that was a URL
         self._last_slow_warning = -1e9  # time.monotonic()
 
     # ------------------------------------------------------------------ output
@@ -166,6 +167,12 @@ class Engine:
         private = False
         if self.gate.is_browser(win) and win.pid not in self.gate.own_pids:
             url = self.backend.browser_url(win)
+            if url is not None:
+                if parse_url(url)[1] is not None:
+                    self._last_url[win.hwnd] = url
+                elif win.hwnd in self._last_url:
+                    # The user is typing a search in the address bar: the page is still the last URL.
+                    url = self._last_url[win.hwnd]
             if self.config.privacy.get("skip", {}).get("private_windows", True):
                 private = self.backend.private_window(win, self.gate.private_markers())
         return self.gate.decide(win, url, private, self.mode)
@@ -322,7 +329,10 @@ class Engine:
                     if res.event:
                         self._on_scaling_event(res.event, now)
                 self.health.note_click(key, self._resolved(el, win))
-                target = {"name": self.redactor.redact(el.name), "control_type": el.control_type,
+                name = el.name
+                if el.control_type == "TabItem" and self.gate.is_browser(win):
+                    name = "browser tab"  # its title could be a site the privacy rules skip
+                target = {"name": self.redactor.redact(name), "control_type": el.control_type,
                           "automation_id": el.automation_id, "rect": list(rect) if rect else [0, 0, 0, 0],
                           "rect_trusted": bool(trusted and rect_ok(rect))}
                 box = rect if rect_ok(rect) else None
@@ -480,7 +490,8 @@ class Engine:
             return
         self._text_state[wk] = (now, win.title)
         try:
-            res = self.backend.walk_text(win, self.WALK_MAX_DEPTH, self.WALK_MAX_ELEMENTS, self.WALK_BUDGET_S)
+            res = self.backend.walk_text(win, self.WALK_MAX_DEPTH, self.WALK_MAX_ELEMENTS, self.WALK_BUDGET_S,
+                                         content_only=self.gate.is_browser(win))
         except Exception:
             res = None
         if res is None:
@@ -579,7 +590,8 @@ class Engine:
             return
         self._sensitive_t[wk] = now
         try:
-            res = self.backend.walk_text(ctx.win, self.WALK_MAX_DEPTH, self.QUICK_SCAN_ELEMENTS, self.QUICK_SCAN_BUDGET_S)
+            res = self.backend.walk_text(ctx.win, self.WALK_MAX_DEPTH, self.QUICK_SCAN_ELEMENTS, self.QUICK_SCAN_BUDGET_S,
+                                         content_only=self.gate.is_browser(ctx.win))
         except Exception:
             res = None
         if res is None:
@@ -717,7 +729,7 @@ class Engine:
             return reply_error(cid, "blocked")
         if ctx.capture == "vision":
             return reply_ok(cid, controls=[])
-        els = self.backend.tree(ctx.win, max_count, self.TREE_BUDGET_S)
+        els = self.backend.tree(ctx.win, max_count, self.TREE_BUDGET_S, content_only=self.gate.is_browser(ctx.win))
         controls = []
         for el in els:
             rect = self.scaling.correct(ctx.decision.key, el.rect, ctx.win.monitor_rect[:2])

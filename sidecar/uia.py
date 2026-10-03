@@ -287,24 +287,51 @@ def private_window(hwnd: int, markers: List[str]) -> bool:
     return result
 
 
+def _documents(hwnd: int, budget_s: float = 0.4) -> List[Tuple[object, int, Rect, str]]:
+    """Visible web Documents in a Chromium/Electron window: (control, area, rect, name).
+
+    The search doesn't descend into documents, so it only walks the browser's own UI.
+    """
+    root = _root(hwnd)
+    out: List[Tuple[object, int, Rect, str]] = []
+    if root is None:
+        return out
+    deadline = time.monotonic() + budget_s
+    for c, _, ct in _walk(root, 18, 800, deadline, prune=lambda c, ct: ct == "Document"):
+        if ct != "Document":
+            continue
+        r = _rect(c)
+        if r is None or _safe(lambda: c.IsOffscreen, False):
+            continue
+        out.append((c, (r[2] - r[0]) * (r[3] - r[1]), r, _safe(lambda: c.Name, "") or ""))
+    return out
+
+
 def _find_document(hwnd: int):
-    """The web-content Document element of a Chromium/Electron window (cached briefly)."""
+    """The page the user is looking at: the largest visible Document (cached briefly).
+
+    Edge can expose several Documents (side panels, split screen, built-in pages);
+    the active page fills most of the window.
+    """
     cache = _cache("document")
     now = time.monotonic()
     hit = cache.get(hwnd)
     if hit is not None and now - hit[1] < 5.0 and hit[0] is not None:
         if _safe(lambda: hit[0].Name, None) is not None:  # raises if the element is gone
             return hit[0]
-    root = _root(hwnd)
-    doc = None
-    if root is not None:
-        deadline = time.monotonic() + 0.3
-        for c, _, ct in _walk(root, 16, 400, deadline):
-            if ct == "Document" and _rect(c):
-                doc = c
-                break
+    docs = _documents(hwnd)
+    doc = max(docs, key=lambda d: d[1])[0] if docs else None
     cache[hwnd] = (doc, now)
     return doc
+
+
+def document_diagnostics(hwnd: int) -> List[str]:
+    """One line per visible Document (for spike.py): name, rect, and up to 20 direct children."""
+    lines = []
+    for c, area, r, name in sorted(_documents(hwnd), key=lambda d: -d[1]):
+        kids = sum(1 for _ in _children(c, 20, time.monotonic() + 0.2))
+        lines.append(f"{name[:40]!r} rect={r} children={kids}{'+' if kids >= 20 else ''}")
+    return lines
 
 
 def web_document_empty(hwnd: int) -> Optional[bool]:
@@ -337,15 +364,31 @@ def _visible_text(c, limit: int = 1024) -> Optional[str]:
     return "\n".join(parts) if parts else None
 
 
-def walk_text(hwnd: int, chromium: bool, max_depth: int, max_elements: int, budget_s: float) -> Optional[WalkResult]:
+# Reading modes for walk_text() and tree():
+#   "browser"  only the page (web Document). Never the browser's own UI: its tab strip holds the
+#              titles of other tabs, which may be sites the privacy rules skip.
+#   "web"      Electron and other Chromium-based apps: the page first, then the whole window.
+#   "native"   everything else: the whole window.
+READ_MODES = ("browser", "web", "native")
+
+
+def walk_text(hwnd: int, mode: str, max_depth: int, max_elements: int, budget_s: float) -> Optional[WalkResult]:
     deadline = time.monotonic() + budget_s
-    root = _find_document(hwnd) if chromium else None
-    if root is None:
-        root = _root(hwnd)
-    if root is None:
-        return None
+    doc = _find_document(hwnd) if mode in ("browser", "web") else None
+    res = _walk_text_from(doc, True, max_depth, max_elements, deadline) if doc is not None else None
+    if mode == "browser":
+        return res if res is not None else WalkResult()
+    if res is None or not res.items:
+        root = _root(hwnd)  # no page, or the page exposed nothing: read the window itself
+        if root is None:
+            return res
+        res = _walk_text_from(root, False, max_depth, max_elements, max(deadline, time.monotonic() + budget_s / 2))
+    return res
+
+
+def _walk_text_from(root, root_is_doc: bool, max_depth: int, max_elements: int, deadline: float) -> WalkResult:
     res = WalkResult()
-    first_doc = root if chromium else None
+    first_doc = root if root_is_doc else None
     for c, _, ct in _walk(root, max_depth, max_elements, deadline):
         res.visited += 1
         if ct in SKIP_TEXT_TYPES:
@@ -374,15 +417,20 @@ def rect_of(handle) -> Optional[Rect]:
     return _rect(handle) if handle is not None else None
 
 
-def tree(hwnd: int, chromium: bool, max_count: int, budget_s: float) -> List[ElementInfo]:
-    """Named, on-screen, pointable elements of a window (for point_at)."""
+def tree(hwnd: int, mode: str, max_count: int, budget_s: float) -> List[ElementInfo]:
+    """Named, on-screen, pointable elements of a window (for point_at). Modes as for walk_text()."""
     deadline = time.monotonic() + budget_s
-    root = _find_document(hwnd) if chromium else None
-    if root is None:
+    doc = _find_document(hwnd) if mode in ("browser", "web") else None
+    out = _pointable(doc, max_count, deadline) if doc is not None else []
+    if not out and mode != "browser":
         root = _root(hwnd)
+        if root is not None:
+            out = _pointable(root, max_count, max(deadline, time.monotonic() + budget_s / 2))
+    return out
+
+
+def _pointable(root, max_count: int, deadline: float) -> List[ElementInfo]:
     out: List[ElementInfo] = []
-    if root is None:
-        return out
     for c, _, ct in _walk(root, 25, 3000, deadline):
         if ct not in POINTABLE_TYPES or _safe(lambda: c.IsOffscreen, False):
             continue

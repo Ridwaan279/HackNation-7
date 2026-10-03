@@ -597,3 +597,41 @@ def test_hung_app_is_reported_once_a_minute(env):
     eng.fast_tick()
     warns = [w for w in env.out.of("warning") if w["code"] == "uia_timeout"]
     assert len(warns) == 1 and "not be responding" in warns[0]["detail"]
+
+
+def test_browser_reads_are_page_only_and_tab_titles_hidden(env):
+    erp(env.backend)
+    env.backend.elements[1].append(element("Chase - Account Summary", "TabItem", (200, 0, 400, 30)))
+    env.backend.walks[1] = WalkResult(items=[WalkItem("Text", "Invoice 4471", None, False)])
+    eng = env.build(mode="session")
+    eng.fast_tick()
+    click(eng, 300, 15, env.clock.tick(0.1))
+    assert env.out.of("click")[-1]["target"]["name"] == "browser tab"
+    assert env.backend.last_content_only is True
+    eng.execute({"id": 1, "cmd": "tree", "max": 5})
+    assert env.backend.last_content_only is True
+
+
+def test_native_app_reads_whole_window(env):
+    env.backend.add_window(make_window(hwnd=3, pid=300, process="EXCEL.EXE", title="Q3.xlsx - Excel", class_name="XLMAIN"),
+                           elements=[element("Sheet1", "TabItem", (10, 760, 100, 790), pid=300)],
+                           walk=WalkResult(items=[WalkItem("Text", "Accruals", None, False)]))
+    eng = env.build(mode="session")
+    eng.fast_tick()
+    click(eng, 50, 775, env.clock.tick(0.1))
+    assert env.out.of("click")[-1]["target"]["name"] == "Sheet1"  # only browser tabs are anonymised
+    assert env.backend.last_content_only is False
+
+
+def test_typing_a_search_in_the_address_bar_keeps_the_page_key(env):
+    erp(env.backend)
+    eng = env.build()
+    eng.fast_tick()
+    env.backend.urls[1] = "how to code invoices"  # typing in the address bar
+    env.clock.tick(0.6)
+    eng.fast_tick()
+    assert [e["key"] for e in env.out.of("context")] == ["browser:minierp.local"]
+    env.backend.urls[1] = "online.mybank.com"      # typed a bank address: blocked at once
+    env.clock.tick(0.6)
+    eng.fast_tick()
+    assert env.out.events[-1]["type"] == "blocked" and env.out.events[-1]["reason"] == "banking"

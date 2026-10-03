@@ -12,7 +12,8 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 | Threads | Hook thread → queue → fast thread (clicks, keys, focus, context) and slow thread (text, health, screenshots, displays). Both are COM-initialised in MTA | `observer.py` |
 | Privacy gate | Password managers, banking, private windows (title + toolbar badge), internal browser pages, system dialogs, our own windows, user block lists, allow-only, pause | `privacy.py`, `config/skiplists.json` |
 | Masking | Cards (Luhn, keeps last 4), IBANs (mod-97, keeps last 4), SSNs, API keys, JWT, PEM, `key=value` secrets, high-entropy strings; email/phone optional | `redact.py` |
-| Context | `context` / `blocked` at 2 Hz on change. Popups and dialogs belong to their owner window. A click on another window emits its `context` first | `engine.py` |
+| Context | `context` / `blocked` at 2 Hz on change. Popups and dialogs belong to their owner window. A click on another window emits its `context` first. While the user types a search in the address bar, the page's last URL keeps the key stable (typing a bank's address still blocks at once) | `engine.py` |
+| Browsers read the page only | Text snapshots, sensitive-field scans and `tree` read only the web page, never the browser's tab strip (other tabs' titles could be skipped sites). A click on a browser tab is reported as "browser tab". Electron apps may fall back to the whole window | `uia.py`, `engine.py` |
 | Clicks | Element under the cursor, rect check, window-only screenshot (sessions) with a ring and a box, sensitive fields blurred | `engine.py`, `shots.py`, `uia.py` |
 | Commits | Field value when focus leaves or Enter/Tab/Ctrl+S (`final: true`), or after 0.8 s idle (`final: false`). Never reads password-like fields | `commit.py` |
 | Keys | `key` (Enter, Tab, Esc, Ctrl+S, Ctrl+Enter) and throttled `activity`. No characters, ever | `hooks.py` |
@@ -22,7 +23,7 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 | Accessibility health | ok / weak / blind per app (named elements, text, click resolution, Chromium empty document checked twice 2 s apart, remote-session processes). `prompt: true` at most once per app per 24 h | `health.py` |
 | Commands | `redact`, `tree` (pointable elements, corrected rects, masked names), `mode`, `shot`, `set_capture`, `reload_config`, `a11y_ack` | `engine.py` |
 | Hardening | Hook watchdog (`hook_restarted`). UIA timeouts 2 s / 3 s instead of up to 20 s. `uia_timeout` warning when an app hangs | `engine.py`, `uia.py` |
-| Phase 1 spike | Guided 2-minute check of every OS capability | `spike.py` |
+| Phase 1 spike | Guided 2-minute check of every OS capability; opens its own test page (`spike_page.html`) | `spike.py`, `spike_page.html` |
 
 **Electron** (`app/src/main/services/`):
 - `observer.ts`: spawns the sidecar, bridges every `observer:*` request, re-emits events as `observer:event`, and restarts after a crash (also when Python is missing) while keeping the mode. `OBSERVER_FAKE` replays a fixture.
@@ -49,7 +50,14 @@ pytest tests                               # should also pass on Windows
 
 Not yet run on Windows: `winapi.py`, the Windows branch of `display.py`, `uia.py` against real apps, `hooks.py` with real pynput, mss capture, and the UIA timeouts. If the spike shows web content empty, start Edge with `--force-renderer-accessibility`.
 
-Spike results: _(paste here)_
+Spike results (one laptop, 2560x1600 at 150%, Edge):
+
+- **Run 1:** the wrong window was in front (VS Code). The spike now waits for a browser window.
+- **Run 2: 13/17 passed.** DPI, monitors, UIA timeouts (after the CUIAutomation8 swap), address-bar URL, private-window check, web content visible, window screenshot, click → element with correct rect at 150%, keyboard hook and Enter.
+- **Run 2 failures and what was done:**
+  - "Text snapshot" and "Pointable elements" visited only 2 elements: the first web Document found wasn't the page. Fixed by picking the largest visible Document; the spike now also prints every Document it sees.
+  - "Password field" timed out because no password field was on screen, and the last check ran after Enter had navigated Google. The spike now opens its own test page (`spike_page.html`) and reads the field before Enter.
+- **Run 3:** _(paste here)_
 
 ## Stubbed / faked
 

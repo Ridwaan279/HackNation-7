@@ -164,6 +164,8 @@ def test_iso_roundtrip():
     ("edge://newtab/", ("edge", "newtab")),
     ("about:blank", ("about", "blank")),
     ("file:///C:/temp/a.html", ("file", "local-file")),
+    ("file:///C:/UNI 3rd year/sidecar/spike_page.html", ("file", "local-file")),
+    ("C:/UNI 3rd year/sidecar/spike_page.html", ("file", "local-file")),
     ("user:pw@intranet.corp/x", (None, "intranet.corp")),
     ("bank of america", (None, None)),
     ("invoice", (None, None)),

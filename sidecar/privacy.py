@@ -34,6 +34,8 @@ def parse_url(text: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
     if not text:
         return None, None
     s = text.strip().lower()
+    if s.startswith("file:") or re.match(r"^[a-z]:[\\/]", s):
+        return "file", "local-file"  # local files (the path may contain spaces)
     if not s or re.search(r"\s", s):
         return None, None
     m = _SCHEME_SLASHES_RE.match(s)

@@ -175,7 +175,7 @@ def test_walk_text_never_reads_password_values(fake_uia):
     uia, state = fake_uia
     root, parts = chromium_window()
     state.roots[1] = root
-    res = uia.walk_text(1, True, 10, 300, 1.5)
+    res = uia.walk_text(1, "browser", 10, 300, 1.5)
     names = [i.name for i in res.items]
     assert "Invoice 4471" in names and "Cost center" in names and "Offscreen row" not in names
     by_name = {i.name: i for i in res.items}
@@ -222,10 +222,10 @@ def test_tree_lists_named_pointable_elements(fake_uia):
     uia, state = fake_uia
     root, _ = chromium_window()
     state.roots[1] = root
-    names = [(e.name, e.control_type) for e in uia.tree(1, True, 50, 1.5)]
+    names = [(e.name, e.control_type) for e in uia.tree(1, "browser", 50, 1.5)]
     assert ("Post", "Button") in names and ("Cost center", "Edit") in names
     assert ("Offscreen row", "Text") not in names
-    assert len(uia.tree(1, True, 2, 1.5)) == 2
+    assert len(uia.tree(1, "browser", 2, 1.5)) == 2
 
 
 def test_walk_respects_node_cap(fake_uia):
@@ -233,7 +233,7 @@ def test_walk_respects_node_cap(fake_uia):
     big = FakeControl("Window", rect=(0, 0, 100, 100),
                       children=[FakeControl("Text", name=f"row {i}", rect=(0, i, 10, i + 1)) for i in range(500)])
     state.roots[5] = big
-    res = uia.walk_text(5, False, 10, 50, 1.5)
+    res = uia.walk_text(5, "native", 10, 50, 1.5)
     assert res.visited == 50 and res.truncated
 
 
@@ -246,7 +246,7 @@ def test_vanished_elements_are_tolerated(fake_uia):
             raise OSError("UIA_E_ELEMENTNOTAVAILABLE")
 
     state.roots[6] = FakeControl("Window", rect=(0, 0, 100, 100), children=[Gone("Text", rect=(0, 0, 5, 5))])
-    res = uia.walk_text(6, False, 10, 50, 1.5)
+    res = uia.walk_text(6, "native", 10, 50, 1.5)
     assert res is not None and res.items == []
 
 
@@ -499,3 +499,68 @@ def test_timeouts_keep_defaults_when_swap_fails(fake_uia, monkeypatch, capsys):
     assert client.IUIAutomation is original and client.ViewWalker == "walker-of-cui7"
     err = capsys.readouterr().err
     assert "keeping the Windows defaults" in err and "harmless" in err
+
+
+# ------------------------------------------------------------- which web document, and what a browser reads
+
+
+def edge_with_side_panel():
+    """Edge with a small side-panel document first in tree order, the real page second, and a tab strip."""
+    tabs = FakeControl("Tab", name="Tabs", children=[
+        FakeControl("TabItem", name="Chase - Account Summary", rect=(200, 0, 400, 30)),
+        FakeControl("TabItem", name="MiniERP", rect=(400, 0, 600, 30))])
+    side = FakeControl("Document", name="Copilot", rect=(2200, 80, 2560, 1500),
+                       children=[FakeControl("Group", rect=(2200, 80, 2560, 1500))])
+    page = FakeControl("Document", name="MiniERP", rect=(0, 80, 2200, 1500), children=[
+        FakeControl("Text", name="Invoice 4471", rect=(40, 120, 300, 150)),
+        FakeControl("Button", name="Post", rect=(780, 425, 850, 455))])
+    root = FakeControl("Window", name="MiniERP - Microsoft Edge", cls="Chrome_WidgetWin_1", rect=(0, 0, 2560, 1528),
+                       children=[FakeControl("Pane", children=[tabs, side, page])])
+    return root, page, side
+
+
+def test_largest_visible_document_is_the_page(fake_uia):
+    uia, state = fake_uia
+    root, page, side = edge_with_side_panel()
+    state.roots[1] = root
+    res = uia.walk_text(1, "browser", 10, 300, 1.5)
+    assert [i.name for i in res.items] == ["MiniERP", "Invoice 4471", "Post"]
+    assert [e.name for e in uia.tree(1, "browser", 50, 1.5)] == ["Invoice 4471", "Post"]
+    lines = uia.document_diagnostics(1)
+    assert lines[0].startswith("'MiniERP'") and "children=2" in lines[0] and lines[1].startswith("'Copilot'")
+
+
+def test_browser_mode_never_reads_the_tab_strip(fake_uia):
+    uia, state = fake_uia
+    root, page, side = edge_with_side_panel()
+    page.children = []  # the page exposes nothing (e.g. accessibility still waking up)
+    side._rect = (0, 0, 0, 0)
+    state.roots[1] = root
+    res = uia.walk_text(1, "browser", 10, 300, 1.5)
+    names = [i.name for i in res.items]
+    assert "Chase - Account Summary" not in names and "Tabs" not in names
+    assert uia.tree(1, "browser", 50, 1.5) == []
+
+
+def test_web_mode_falls_back_to_the_window(fake_uia):
+    uia, state = fake_uia
+    root, page, side = edge_with_side_panel()
+    page.children = []
+    page._name = ""
+    side._rect = (0, 0, 0, 0)
+    state.roots[1] = root
+    names = [i.name for i in uia.walk_text(1, "web", 10, 300, 1.5).items]
+    assert "Tabs" in names  # Electron apps have no tab strip of other sites, so this is fine there
+
+
+def test_windows_backend_read_modes(fake_backend_windows, fake_uia):
+    _, state = fake_uia
+    root, page, side = edge_with_side_panel()
+    page.children = []
+    page._name = ""  # the page exposes nothing at all
+    side._rect = (0, 0, 0, 0)
+    state.roots[10] = root
+    b = fake_backend_windows.WindowsBackend([])
+    win = b.foreground()
+    assert all(i.name != "Chase - Account Summary" for i in b.walk_text(win, 10, 300, 1.5, content_only=True).items)
+    assert any(i.name == "Chase - Account Summary" for i in b.walk_text(win, 10, 300, 1.5).items)  # "web" mode
