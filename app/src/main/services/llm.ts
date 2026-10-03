@@ -1,5 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import type { AppContext, PrivacyConfig, ServiceInit } from '@shared/contracts'
 import { getStore } from './store'
 
@@ -85,3 +87,19 @@ export function getLlm(ctx: AppContext): ReturnType<typeof createLlm> {
   return client
 }
 export const init: ServiceInit = (ctx) => { getLlm(ctx) }
+
+/** B should package app/prompts in resources/prompts for production. */
+export async function readPrompt(name: 'question_picker' | 'step_vision'): Promise<string> {
+  const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
+  const candidates = [
+    ...(resources ? [path.join(resources, 'prompts', `${name}.md`)] : []),
+    path.resolve('app', 'prompts', `${name}.md`),
+    path.resolve('prompts', `${name}.md`),
+    path.resolve('..', 'app', 'prompts', `${name}.md`),
+  ]
+  for (const filename of candidates) {
+    try { return await readFile(filename, 'utf8') }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error }
+  }
+  throw new Error(`Missing packaged prompt: ${name}`)
+}

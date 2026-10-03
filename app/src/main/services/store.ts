@@ -63,15 +63,31 @@ export class JsonStore {
   }
 
   write(parts: string[], value: unknown): Promise<void> {
-    const file = this.file(...parts)
     const serialized = JSON.stringify(value, null, 2)
     if (serialized === undefined) return Promise.reject(new Error('Value must be JSON serializable'))
+    return this.writeBytes(parts, Buffer.from(`${serialized}\n`))
+  }
+
+  async readBytes(parts: string[], maxBytes = 5_000_000): Promise<Buffer> {
+    const file = this.file(...parts)
+    await this.pending.get(file)?.catch(() => undefined)
+    await this.checkPath(file)
+    const info = await lstat(file)
+    if (!info.isFile() || info.size > maxBytes) throw new Error('Image is too large or unavailable')
+    const bytes = await readFile(file)
+    if (bytes.length > maxBytes) throw new Error('Image is too large')
+    return bytes
+  }
+
+  writeBytes(parts: string[], bytes: Buffer): Promise<void> {
+    const file = this.file(...parts)
+    const snapshot = Buffer.from(bytes)
     return this.serialize(file, async () => {
       await this.checkPath(file)
       await mkdir(path.dirname(file), { recursive: true })
       const temp = `${file}.${randomUUID()}.tmp`
       try {
-        await writeFile(temp, `${serialized}\n`, { encoding: 'utf8', flag: 'wx', mode: 0o600 })
+        await writeFile(temp, snapshot, { flag: 'wx', mode: 0o600 })
         // Windows scanners can briefly lock the destination. Preserve the old
         // document throughout bounded retries; never unlink it to force a write.
         for (let attempt = 0; ; attempt++) {
