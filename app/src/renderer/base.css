@@ -1,0 +1,45 @@
+:root {
+  --sky: #7cc7f4;
+  --lavender: #b38de8;
+  --pink: #f59fdf;
+  --ink: #0d0b1a;
+  --ink-2: #17142b;
+  --ink-3: #221e3d;
+  --line: #2f2a52;
+  --text: #ece9ff;
+  --muted: #9a94c4;
+  --rec: #ff4d6d;
+  --ok: #6ee7b7;
+  color-scheme: dark;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--ink);
+}
+
+html[data-route='overlay'],
+html[data-route='overlay'] body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}

@@ -1,0 +1,127 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overlay [data-hit] {
+  pointer-events: auto;
+}
+
+.ghost-anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 150px;
+}
+
+/* Invisible hit box over the body only (not the glow / speed-line margins of the SVG). */
+.ghost-hit {
+  position: absolute;
+  left: 23%;
+  top: 13%;
+  width: 54%;
+  height: 72%;
+  border-radius: 45% 45% 20% 20%;
+  cursor: grab;
+}
+
+.ghost-hit:active {
+  cursor: grabbing;
+}
+
+.status-pill {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(20, 18, 36, 0.85);
+  color: #c9c6dc;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.bubble-wrap {
+  position: absolute;
+  right: calc(100% - 20px);
+  bottom: 60%;
+  width: 300px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bubble {
+  pointer-events: auto;
+  background: rgba(23, 20, 43, 0.96);
+  border: 1px solid rgba(179, 141, 232, 0.45);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 24px rgba(124, 150, 255, 0.25);
+  border-radius: 16px 16px 4px 16px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.bubble.caption {
+  pointer-events: none;
+  opacity: 0.92;
+  font-size: 13px;
+  max-height: 140px;
+  overflow: hidden;
+}
+
+.bubble p {
+  margin: 0;
+}
+
+.bubble .choices {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.bubble button {
+  border: 1px solid var(--line);
+  background: var(--ink-3);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.bubble button.primary {
+  border: none;
+  background: linear-gradient(90deg, var(--sky), var(--lavender), var(--pink));
+  color: #1a1030;
+  font-weight: 600;
+}
+
+.highlight {
+  position: absolute;
+  border-radius: 10px;
+  border: 3px solid var(--pink);
+  box-shadow: 0 0 0 4px rgba(245, 159, 223, 0.25), 0 0 26px rgba(179, 141, 232, 0.9);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.highlight span {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #2a0f2a;
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 9px rgba(245, 159, 223, 0.1), 0 0 36px rgba(179, 141, 232, 1);
+  }
+}
