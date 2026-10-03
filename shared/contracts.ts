@@ -441,8 +441,9 @@ export interface GuideSaveRequest { id: string; revision: number; edit: GuideEdi
 export interface GuideImageRequest { id: string; step_id: string }
 export interface GuideBlurRequest extends GuideImageRequest {
   revision: number
-  /** Canvas-flattened PNG; coordinates below are image pixels. */
+  /** Renderer preview only. Main paints regions into the original image; it does not trust these pixels. */
   data_url: string
+  /** Coordinates are original image pixels. */
   regions: Rect[]
 }
 export interface GuideIpc {
