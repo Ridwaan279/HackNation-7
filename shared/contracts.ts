@@ -29,6 +29,8 @@ export interface ShotMeta {
   size_px: [number, number]
   scale: number
   monitor: number
+  /** false when sensitive fields could not be blurred automatically (vision-mode apps). */
+  auto_blur?: boolean
 }
 
 export interface Monitor {
@@ -62,7 +64,7 @@ export interface ContextEvent {
   type: 'context'
   t: number
   app: string
-  /** Process name, or "browser:<domain>" for web apps. */
+  /** Lowercase process name, or "browser:<domain>" for web apps. */
   key: string
   title: string
   blocked: false
@@ -102,6 +104,8 @@ export interface CommitEvent {
   rect: Rect | null
   masked: boolean
   source: 'uia' | 'vision'
+  /** true when the user left the field or pressed Enter/Tab; false for an idle (0.8 s) commit that may still change. */
+  final?: boolean
 }
 
 export interface KeyEvent {
@@ -152,6 +156,8 @@ export interface A11yHealthEvent {
   score: { named_elements: number; text_chars: number; click_resolution: number }
   /** Suggested fix the pop-up can offer, e.g. relaunch a Chromium browser with the a11y flag. */
   hint?: 'chromium_flag' | 'remote_session' | 'none'
+  /** true when the "screen record instead?" pop-up should be shown (not asked in the last 24 h, not "never"). */
+  prompt?: boolean
 }
 
 export interface AppScalingEvent {
@@ -159,18 +165,31 @@ export interface AppScalingEvent {
   t: number
   key: string
   status: 'ok' | 'corrected' | 'untrusted'
-  /** Multiply reported rects by this to get physical px (only when status = corrected). */
+  /** Correction factor (status = corrected). The sidecar already applies it to every rect it emits; informational. */
   rect_scale?: number
+  /** What the correction scales around: the screen origin or the window's monitor origin. */
+  rect_anchor?: 'screen' | 'monitor'
 }
 
 export interface WarningEvent {
   type: 'warning'
   t: number
-  code: 'dpi_unaware' | 'hook_restarted' | 'uia_timeout' | 'rect_mismatch' | 'sidecar_restarted'
+  code: 'dpi_unaware' | 'hook_restarted' | 'uia_timeout' | 'rect_mismatch' | 'sidecar_restarted' | 'display_mismatch'
   detail?: string
 }
 
+/** First line the sidecar prints after starting. */
+export interface ReadyEvent {
+  type: 'ready'
+  t: number
+  version: string
+  platform: string
+  backend: 'windows' | 'fake'
+  dpi_awareness: DpiAwareness
+}
+
 export type SidecarEvent =
+  | ReadyEvent
   | ContextEvent
   | BlockedEvent
   | ClickEvent
@@ -193,6 +212,8 @@ export type SidecarCommand =
   | { id: number; cmd: 'shot'; reason: 'on_demand' }
   | { id: number; cmd: 'set_capture'; key: string; value: CaptureMode }
   | { id: number; cmd: 'reload_config' }
+  /** Answer to the a11y pop-up: yes = vision mode, later = ask again in 24 h, never = block the app. */
+  | { id: number; cmd: 'a11y_ack'; key: string; choice: 'yes' | 'later' | 'never' }
 
 /** Every reply echoes the command id. Extra fields depend on the command. */
 export interface SidecarReply {
@@ -321,6 +342,7 @@ export interface AppModes {
   [appKey: string]: {
     capture: CaptureMode
     rect_scale?: number
+    rect_anchor?: 'screen' | 'monitor'
     a11y_prompted_at?: string
     never_ask?: boolean
   }
@@ -390,6 +412,7 @@ export interface BusRequests {
   'observer:mode': { req: { value: Mode }; res: { ok: boolean } } // [A]
   'observer:shot': { req: Record<string, never>; res: { path: string; meta: ShotMeta } } // [A]
   'observer:setCapture': { req: { key: string; value: CaptureMode }; res: { ok: boolean } } // [A]
+  'observer:a11yAck': { req: { key: string; choice: 'yes' | 'later' | 'never' }; res: { ok: boolean } } // [A]
   'displays:toDip': { req: { rect: Rect }; res: { rect: Rect } } // [A]
   'brain:pickQuestion': { req: { session: string }; res: PickedQuestion | null } // [C]
   'brain:locate': { req: { target: string }; res: { rect: Rect; source: 'uia' | 'vision' } | null } // [C]
