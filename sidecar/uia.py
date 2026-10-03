@@ -43,8 +43,17 @@ _timeouts_lock = threading.Lock()
 _timeouts_done = False
 
 
+CUIAUTOMATION8_CLSID = "{e22ad333-b25f-460c-83d0-0581107395c9}"
+
+
 def _ensure_timeouts(connection_ms: int = 2000, transaction_ms: int = 3000) -> None:
-    """Bound how long a hung app can block a UIA call (IUIAutomation2, Windows 8+; default is 20 s)."""
+    """Bound how long a hung app can block a UIA call (default: up to 20 s).
+
+    The timeouts live on IUIAutomation2. uiautomation creates the Windows 7
+    CUIAutomation object, which doesn't have it, so we create CUIAutomation8
+    (Windows 8+, same API plus timeouts) and swap it into uiautomation's
+    client before any element exists. Any failure keeps the defaults.
+    """
     global _timeouts_done
     with _timeouts_lock:
         if _timeouts_done:
@@ -52,13 +61,25 @@ def _ensure_timeouts(connection_ms: int = 2000, transaction_ms: int = 3000) -> N
         _timeouts_done = True
         try:
             client = auto.uiautomation._AutomationClient.instance()
-            iface = client.IUIAutomation.QueryInterface(client.UIAutomationCore.IUIAutomation2)
+            core = client.UIAutomationCore
+            try:
+                iface = client.IUIAutomation.QueryInterface(core.IUIAutomation2)
+                swap = None
+            except Exception:
+                import comtypes.client
+                swap = comtypes.client.CreateObject(CUIAUTOMATION8_CLSID, interface=core.IUIAutomation)
+                iface = swap.QueryInterface(core.IUIAutomation2)
             iface.ConnectionTimeout = connection_ms
             iface.TransactionTimeout = transaction_ms
+            if swap is not None:
+                walker = swap.RawViewWalker
+                client.IUIAutomation = swap
+                client.ViewWalker = walker
             print(f"[observer] UIA timeouts set: connection {connection_ms} ms, transaction {transaction_ms} ms",
                   file=sys.stderr, flush=True)
         except Exception as ex:
-            print(f"[observer] UIA timeouts left at defaults ({type(ex).__name__})", file=sys.stderr, flush=True)
+            print(f"[observer] UIA timeouts: keeping the Windows defaults ({type(ex).__name__}); this is harmless",
+                  file=sys.stderr, flush=True)
 
 
 @contextmanager

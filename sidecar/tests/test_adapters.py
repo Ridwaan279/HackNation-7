@@ -416,3 +416,86 @@ def test_windows_backend_hooks_lifecycle(fake_backend_windows, fake_pynput):
     b.restart_hooks()
     b.stop()
     assert len(fake_pynput.created) == 4 and not any(l.running for l in fake_pynput.created)
+
+
+# ------------------------------------------------------------- UIA timeouts (CUIAutomation8 swap)
+
+
+class _Core:
+    class IUIAutomation:
+        pass
+
+    class IUIAutomation2:
+        pass
+
+
+class _Iface2:
+    def __init__(self, owner):
+        object.__setattr__(self, "owner", owner)
+
+    def __setattr__(self, name, value):
+        self.owner.timeouts[name] = value
+
+
+class _Automation:
+    def __init__(self, supports2, name):
+        self.supports2, self.name, self.timeouts = supports2, name, {}
+        self.RawViewWalker = f"walker-of-{name}"
+
+    def QueryInterface(self, iface):
+        if iface is _Core.IUIAutomation2 and self.supports2:
+            return _Iface2(self)
+        raise OSError("E_NOINTERFACE")
+
+
+def _install_client(fake_uia, monkeypatch, original, create=None):
+    uia, _ = fake_uia
+    client = SimpleNamespace(IUIAutomation=original, ViewWalker=f"walker-of-{original.name}", UIAutomationCore=_Core)
+    sys.modules["uiautomation"].uiautomation = SimpleNamespace(
+        _AutomationClient=SimpleNamespace(instance=lambda: client))
+    created = []
+
+    def create_object(clsid, interface=None):
+        created.append((clsid, interface))
+        if create is None:
+            raise OSError("class not registered")
+        return create
+
+    comtypes_pkg = types.ModuleType("comtypes")
+    comtypes_client = types.ModuleType("comtypes.client")
+    comtypes_client.CreateObject = create_object
+    comtypes_pkg.client = comtypes_client
+    monkeypatch.setitem(sys.modules, "comtypes", comtypes_pkg)
+    monkeypatch.setitem(sys.modules, "comtypes.client", comtypes_client)
+    uia._timeouts_done = False
+    return uia, client, created
+
+
+def test_timeouts_set_directly_when_supported(fake_uia, monkeypatch, capsys):
+    original = _Automation(True, "cui8")
+    uia, client, created = _install_client(fake_uia, monkeypatch, original)
+    uia._ensure_timeouts()
+    assert original.timeouts == {"ConnectionTimeout": 2000, "TransactionTimeout": 3000}
+    assert created == [] and client.IUIAutomation is original
+    assert "UIA timeouts set" in capsys.readouterr().err
+
+
+def test_timeouts_swap_in_cuiautomation8(fake_uia, monkeypatch, capsys):
+    original, newer = _Automation(False, "cui7"), _Automation(True, "cui8")
+    uia, client, created = _install_client(fake_uia, monkeypatch, original, create=newer)
+    uia._ensure_timeouts()
+    assert created == [(uia.CUIAUTOMATION8_CLSID, _Core.IUIAutomation)]
+    assert newer.timeouts == {"ConnectionTimeout": 2000, "TransactionTimeout": 3000}
+    assert client.IUIAutomation is newer and client.ViewWalker == "walker-of-cui8"
+    assert "UIA timeouts set" in capsys.readouterr().err
+    uia._ensure_timeouts()  # only once per process
+    assert len(created) == 1
+
+
+def test_timeouts_keep_defaults_when_swap_fails(fake_uia, monkeypatch, capsys):
+    original = _Automation(False, "cui7")
+    uia, client, created = _install_client(fake_uia, monkeypatch, original, create=None)
+    uia._ensure_timeouts()
+    assert client.IUIAutomation is original and client.ViewWalker == "walker-of-cui7"
+    err = capsys.readouterr().err
+    assert "keeping the Windows defaults" in err and "harmless" in err

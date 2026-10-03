@@ -49,12 +49,27 @@ def wait_for(q, kinds, seconds):
     return None
 
 
-def countdown(msg, seconds):
-    print(f"\n>>> {msg}", flush=True)
-    for i in range(seconds, 0, -1):
-        print(f"    {i}...", end="\r", flush=True)
-        time.sleep(1)
-    print(" " * 20, end="\r")
+BROWSERS = {"msedge.exe", "chrome.exe", "firefox.exe", "brave.exe", "opera.exe", "vivaldi.exe", "arc.exe", "chromium.exe"}
+
+
+def wait_for_browser(winapi, seconds=30):
+    """Wait until a browser window is in front (the terminal is in front when the spike starts)."""
+    print(f"\n>>> Click into an Edge window now (MiniERP, or any page with a form). Waiting up to {seconds} s...", flush=True)
+    deadline = time.time() + seconds
+    last = None
+    hwnd, proc = 0, ""
+    while time.time() < deadline:
+        fg = winapi.foreground_hwnd()
+        hwnd = winapi.visible_root_owner(fg) if fg else 0
+        proc = winapi.process_name(winapi.window_pid(hwnd)) if hwnd else ""
+        if proc.lower() in BROWSERS:
+            time.sleep(0.5)  # let the window settle after the click
+            return hwnd, proc
+        if proc != last:
+            print(f"    in front: {proc or '(nothing)'} - waiting for a browser window...", flush=True)
+            last = proc
+        time.sleep(0.25)
+    return hwnd, proc
 
 
 def main() -> int:
@@ -77,14 +92,13 @@ def main() -> int:
     check("Monitors with DPI", bool(mons), "; ".join(f"#{m.id} {m.rect} {m.dpi}dpi x{m.scale}{' primary' if m.primary else ''}" for m in mons))
 
     with uia.thread_init():
-        countdown("Click into the MiniERP window in Edge now", 5)
-        fg = winapi.foreground_hwnd()
-        hwnd = winapi.visible_root_owner(fg)
-        pid = winapi.window_pid(hwnd)
-        proc = winapi.process_name(pid)
-        cls = winapi.class_name(hwnd)
-        rect = winapi.window_rect(hwnd)
-        check("Foreground window", bool(hwnd and proc), f'{proc} class={cls} rect={rect} title="{winapi.window_text(hwnd)}"')
+        hwnd, proc = wait_for_browser(winapi)
+        cls = winapi.class_name(hwnd) if hwnd else ""
+        rect = winapi.window_rect(hwnd) if hwnd else None
+        is_browser = proc.lower() in BROWSERS
+        check("Browser window in front", is_browser,
+              f'{proc or "(nothing)"} class={cls} rect={rect} title="{winapi.window_text(hwnd) if hwnd else ""}"'
+              + ("" if is_browser else "  <- click into Edge during the wait, then run the spike again"))
         aw, dpi = display.window_dpi_info(hwnd)
         mon = display.monitor_for_window(hwnd)
         check("Window DPI facts", True, f"awareness={aw} window_dpi={dpi} monitor=#{mon.id if mon else '?'} scale={mon.scale if mon else '?'}")
@@ -92,7 +106,7 @@ def main() -> int:
         url, ms = timed(lambda: uia.browser_url(hwnd))
         check("Address bar URL", bool(url), f"{url!r} ({ms:.0f} ms)")
         url2, ms2 = timed(lambda: uia.browser_url(hwnd))
-        check("Address bar URL (cached)", url2 == url, f"{ms2:.0f} ms")
+        check("Address bar URL (cached)", url is not None and url2 == url, f"{ms2:.0f} ms")
 
         private, ms = timed(lambda: uia.private_window(hwnd, ["InPrivate", "Incognito", "Private Browsing"]))
         check("Private-window check runs", True, f"private={private} ({ms:.0f} ms) - open an InPrivate window to confirm it says True")
@@ -101,11 +115,13 @@ def main() -> int:
         check("Web content visible to accessibility", empty is False,
               f"empty={empty} ({ms:.0f} ms). If True: restart Edge with --force-renderer-accessibility")
 
+        print("    reading the page text (up to 2 s)...", flush=True)
         walk, ms = timed(lambda: uia.walk_text(hwnd, cls == "Chrome_WidgetWin_1", 10, 300, 1.5))
         sample = ", ".join(repr(i.name)[:40] for i in (walk.items[:5] if walk else []))
         check("Text snapshot", bool(walk and walk.items),
               f"{len(walk.items) if walk else 0} items, visited {walk.visited if walk else 0}, truncated={walk.truncated if walk else '-'} ({ms:.0f} ms): {sample}")
 
+        print("    listing clickable elements (up to 2 s)...", flush=True)
         els, ms = timed(lambda: uia.tree(hwnd, cls == "Chrome_WidgetWin_1", 300, 1.5))
         check("Pointable elements (tree)", bool(els), f"{len(els)} elements ({ms:.0f} ms)")
 
