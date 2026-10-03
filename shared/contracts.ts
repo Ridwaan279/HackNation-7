@@ -413,6 +413,8 @@ export interface BusRequests {
   'observer:shot': { req: Record<string, never>; res: { path: string; meta: ShotMeta } } // [A]
   'observer:setCapture': { req: { key: string; value: CaptureMode }; res: { ok: boolean } } // [A]
   'observer:a11yAck': { req: { key: string; choice: 'yes' | 'later' | 'never' }; res: { ok: boolean } } // [A]
+  /** After the dashboard rewrites privacy.json / app_modes.json (atomically), tell the sidecar to re-read them. */
+  'observer:reloadConfig': { req: Record<string, never>; res: { ok: boolean } } // [A]
   'displays:toDip': { req: { rect: Rect }; res: { rect: Rect } } // [A]
   'brain:pickQuestion': { req: { session: string }; res: PickedQuestion | null } // [C]
   'brain:locate': { req: { target: string }; res: { rect: Rect; source: 'uia' | 'vision' } | null } // [C]
