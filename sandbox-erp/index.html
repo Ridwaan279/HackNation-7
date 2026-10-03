@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MiniERP | Accounts payable</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
+<body>
+  <header><a class="brand" href="/">MiniERP<span>Finance workspace</span></a><div class="environment">Local demo · Synthetic data</div><span class="avatar" aria-label="Demo user Sabine">S</span></header>
+  <main>
+    <section class="page-heading"><div><p class="eyebrow">Accounts payable</p><h1>Invoice inbox</h1><p>Review, code and route supplier invoices.</p></div><div class="setup"><label for="dataset">Invoice set</label><select id="dataset"><option value="expert">Expert session</option><option value="newhire">New-hire lesson</option></select><button id="reset" type="button">Reset set</button></div></section>
+    <div class="workspace">
+      <aside aria-label="Invoice queue"><div class="queue-heading"><h2>Invoices</h2><span id="count"></span></div><div id="invoice-list"></div><p class="queue-note">Changes stay in this tab. Reset the set to start the demo again.</p></aside>
+      <section class="detail" aria-labelledby="invoice-heading">
+        <div class="detail-heading"><div><p class="eyebrow">Invoice details</p><h2 id="invoice-heading"></h2></div><span id="status" class="status"></span></div>
+        <form id="invoice-form">
+          <fieldset id="fields"><legend class="sr-only">Invoice fields</legend>
+            <div class="form-grid">
+              <label>Supplier<input id="supplier" name="supplier" required></label>
+              <label>Amount (EUR)<input id="amount" name="amount" type="number" min="0.01" step="0.01" required></label>
+              <label class="wide">Description<input id="description" name="description"></label>
+              <label>Invoice date<input id="date" name="date" type="date"></label>
+              <label>Subsidiary<select id="subsidiary" name="subsidiary"><option>Germany</option><option>Czech Republic</option></select></label>
+              <label>Cost center<input id="costCenter" name="costCenter" aria-label="Cost center" list="cost-centers" required aria-describedby="cost-help"><small id="cost-help">6100 · Operating expense / 0400 · Capital expenditure</small></label>
+              <label>Asset number<input id="assetNumber" name="assetNumber" placeholder="Enter asset reference"></label>
+              <label class="wide">Bank details<input id="bankDetails" name="bankDetails" autocomplete="off"></label>
+              <label class="wide">Notes<textarea id="notes" name="notes" rows="3"></textarea></label>
+            </div>
+          </fieldset>
+          <datalist id="cost-centers"><option value="6100">Operating expense</option><option value="0400">Capital expenditure</option></datalist>
+          <div class="actions"><button type="button" id="hold">Hold invoice</button><button type="button" id="approval">Send for approval</button><button class="primary" type="submit" id="post">Post invoice</button></div>
+        </form>
+        <p id="feedback" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+    <details class="privacy-test"><summary>Privacy test field</summary><label>Demo password<input id="demo-password" type="password" autocomplete="new-password" aria-describedby="password-help"></label><p id="password-help">Use a made-up value to verify that the observer skips password fields.</p></details>
+  </main>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-heading" aria-describedby="confirm-summary"><form method="dialog"><p class="eyebrow">Review before posting</p><h2 id="confirm-heading">Post this invoice?</h2><p id="confirm-summary"></p><p>Check the coding and any approval requirements before you confirm.</p><div class="actions"><button value="cancel" autofocus>Back to invoice</button><button value="confirm" class="primary">Confirm posting</button></div></form></dialog>
+</body>
+</html>
