@@ -1,7 +1,7 @@
 // Shared contracts for the AI Apprentice.
 // Single source of truth for data passed between the Python sidecar, the
 // Electron main-process services and the renderer windows.
-// Rules (see CLAUDE.md): additive changes only, never rename or remove a field,
+// Rules (see AGENT.md): additive changes only, never rename or remove a field,
 // and commit contract changes on their own ("contracts: ...").
 // The Python sidecar emits exactly these JSON shapes.
 
@@ -316,7 +316,7 @@ export interface PrivacyConfig {
   ambient_screenshots: boolean
 }
 
-/** config/app_modes.json, keyed by app key. Written after a11y / scaling detection. */
+/** Runtime app_modes.json (%APPDATA%/apprentice/config/), keyed by app key. Written after a11y / scaling detection. */
 export interface AppModes {
   [appKey: string]: {
     capture: CaptureMode

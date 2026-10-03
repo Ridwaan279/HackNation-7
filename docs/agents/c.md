@@ -1,6 +1,6 @@
 # Agent C status
 
-_Not started. Overwrite this at every merge point (see CLAUDE.md §6)._
+_Not started. Overwrite this at every merge point (see AGENT.md §6)._
 
 ## Done
 

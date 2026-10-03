@@ -1,13 +1,13 @@
-# AI Apprentice: instructions for Claude Code agents
+# AI Apprentice: instructions for coding agents
 
-This file is for every Claude Code session working in this repo. **Three agents build in parallel**, each on its own branch and in its own folders, and their work is merged at fixed merge points.
+This file is for every coding-agent session working in this repo, whether it's Claude Code, Codex or another tool. `CLAUDE.md`, `CODEX.md` and `AGENTS.md` only point here. **Three agents build in parallel**, each on its own branch and in its own folders, and their work is merged at fixed merge points.
 
 - **Product spec and design decisions:** `docs/PLAN.md` (§ numbers below refer to it). Read it before writing code.
 - **Shared data types:** `shared/contracts.ts`. Every message between the sidecar, the main process and the windows is defined there.
 - **Mascot reference:** `assets/mascot/ghost-reference.webp` (the spec is in PLAN §5.10).
 
 When you start a session, the human tells you which agent you are, for example:
-`You are Agent A (Observer). Read CLAUDE.md and docs/PLAN.md, then start Phase 1.`
+`You are Agent A (Observer). Read AGENT.md and docs/PLAN.md, then start Phase 1.`
 Stay inside your agent's role and file ownership.
 
 ---
@@ -47,7 +47,7 @@ There are three judged modules: **Capture**, **Map** and **Teach** (PLAN §2).
 | Path | Owner | What |
 |---|---|---|
 | `sidecar/**` | **A** | Python observer: hooks, UI Automation, privacy, redaction, screenshots, display/DPI, accessibility health |
-| `config/**` | **A** | `privacy.default.json`, skip lists, `app_modes.json` defaults |
+| `config/**` | **A** | Repo defaults: `privacy.default.json`, `skiplists.json`, `app_modes.default.json`. On first run the sidecar copies them into the runtime config folder, `%APPDATA%/apprentice/config/` (`privacy.json`, `app_modes.json`) |
 | `app/src/main/services/observer.ts` | **A** | Spawns the sidecar, JSON-lines protocol, restart on crash, `OBSERVER_FAKE` replay mode, handles `observer:*` requests |
 | `app/src/main/services/displays.ts` | **A** | Physical px ↔ DIP conversion (`displays:toDip`), monitor matching |
 | `app/` scaffold: `package.json`, `electron.vite.config.ts`, `tsconfig*`, `src/main/index.ts`, `src/preload/**` | **B** | Electron app, window creation, service loader, bus, generic preload API |
@@ -59,7 +59,7 @@ There are three judged modules: **Capture**, **Map** and **Teach** (PLAN §2).
 | `sandbox-erp/**`, `fixtures/**` | **C** | MiniERP demo app, fake event streams |
 | `shared/contracts.ts` | shared | Additive changes only (rule 6) |
 | `docs/agents/<a\|b\|c>.md` | each agent | Status notes at every merge |
-| `CLAUDE.md`, `docs/PLAN.md` | humans | Ask before changing |
+| `AGENT.md`, `CLAUDE.md`, `CODEX.md`, `AGENTS.md`, `docs/PLAN.md` | humans | Ask before changing |
 
 `app/` uses the standard electron-vite layout (`src/main`, `src/preload`, `src/renderer`). It has **one renderer with hash routes**: `#/overlay`, `#/panel` and `#/dashboard`. Import shared types via the alias `@shared/contracts`.
 
@@ -93,10 +93,12 @@ main services ──ctx.broadcast(channel)──▶ windows      windows ──i
 ```bash
 # base = main containing this file, docs/PLAN.md and shared/contracts.ts
 git checkout main && git pull
-git worktree add ../hn-a -b agent/a-observer
+# agent/a-observer already exists on origin (Agent A's work has started there),
+# so check it out instead of creating it:
+git worktree add ../hn-a agent/a-observer
 git worktree add ../hn-b -b agent/b-shell
 git worktree add ../hn-c -b agent/c-brain
-# open one Claude Code session in each worktree
+# open one agent session (Claude Code or Codex) in each worktree
 ```
 
 The **integrator** is one human; Agent B can help resolve conflicts. At each merge point:
@@ -107,7 +109,7 @@ The **integrator** is one human; Agent B can help resolve conflicts. At each mer
 
 | Merge | Time | Who merges | Smoke test (must pass on Windows) |
 |---|---|---|---|
-| **M0** | 0:45 | B only | `npm run dev` in `app/` opens the overlay, panel and dashboard. The ghost renders. A talks to the Interviewer agent from the overlay |
+| **M0** | 0:45 | B only | `npm run dev` in `app/` opens the overlay, panel and dashboard. The ghost renders. You can talk to the Interviewer agent from the overlay |
 | **M1** | 3:00 | A → C → B | Real clicks in MiniERP produce masked steps with screenshots in the panel and guide editor. In a 3-minute task the agent asks ≥3 questions at pauses, ≥1 about a guardrail. A password field is never read |
 | **M2** | 5:30 | A → C → B | Stop → debrief (≥3 questions + teach-back) → confirmed Work Map linked to guide steps. App Profiles exist for 3+ apps. The ghost shows "not watching" in a password manager. A browser with accessibility off triggers the "screen record instead?" pop-up. Correct pointer position at 100% and 150% scaling |
 | **M3** | 7:45 | A → C → B | The new hire's €7,200 opex mistake is caught before Post, explained in Sabine's words, with her screenshots replayed. The ghost flies to the field. The mastery report shows. **Feature freeze at 8:00** |
@@ -155,7 +157,7 @@ Read the other two status files right after each `git merge main`.
 
 **Phase 3 (3:00–5:30): scaling, accessibility health, ambient → M2.**
 - [ ] `display.py`: emit `displays` at start and on change (poll every 5 s). Add per-window `dpi_awareness`, `window_dpi`, `monitor_scale` and `monitor` to `context`.
-- [ ] Rect check on every click. On repeated mismatch, try a correction factor (×scale or ÷scale), then emit `app_scaling` (corrected / untrusted) and save it to `config/app_modes.json` (PLAN §5.7).
+- [ ] Rect check on every click. On repeated mismatch, try a correction factor (×scale or ÷scale), then emit `app_scaling` (corrected / untrusted) and save it to the runtime `app_modes.json` (PLAN §5.7).
 - [ ] `health.py`: score per app (named elements, text characters, click resolution, Chromium empty-document check, remote-session process names). Emit `a11y_health` with status `blind` and a `hint` (PLAN §5.8).
 - [ ] Ambient text snapshots: caps from PLAN §5.2, masking, only new lines → `text` events.
 - [ ] Screenshots (PLAN §5.9):
@@ -276,7 +278,8 @@ Read the other two status files right after each `git merge main`.
 ```bash
 # app (Agent B sets these up)
 cd app && npm install && npm run dev        # Electron in dev mode
-OBSERVER_FAKE=../fixtures/expert-session.jsonl npm run dev
+OBSERVER_FAKE=../fixtures/expert-session.jsonl npm run dev      # bash
+$env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # PowerShell
 
 # sidecar (Agent A)
 cd sidecar && pip install -r requirements.txt
@@ -287,4 +290,4 @@ pytest tests                                # redaction tests (run in any OS)
 cd sandbox-erp && npm install && npm run dev
 ```
 
-Keep these commands working. If you change how something runs, update this section in your next merge (that's the only CLAUDE.md edit agents may make without asking).
+Keep these commands working. If you change how something runs, update this section in your next merge (that's the only AGENT.md edit agents may make without asking).

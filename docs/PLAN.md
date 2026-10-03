@@ -223,7 +223,7 @@ On top of that, Windows bitmap-stretches apps that aren't DPI-aware, and some of
 
 **Correct:**
 - **Overlay.** Every physical rectangle goes through one helper, `displays:toDip`, which uses `screen.screenToDipRect()`. That handles mixed-DPI multi-monitor setups and windows dragged between monitors (the monitor ID is in every `context`).
-- **Suspect apps.** Try a correction factor (multiply by the monitor scale, or divide by it). If the corrected rectangles contain the clicks, save the factor as `rect_scale` in `config/app_modes.json` and apply it automatically (`app_scaling: corrected`). If neither works, that app's pointer uses vision coordinates instead (`app_scaling: untrusted`).
+- **Suspect apps.** Try a correction factor (multiply by the monitor scale, or divide by it). If the corrected rectangles contain the clicks, save the factor as `rect_scale` in the runtime `app_modes.json` (`%APPDATA%/apprentice/config/`) and apply it automatically (`app_scaling: corrected`). If neither works, that app's pointer uses vision coordinates instead (`app_scaling: untrusted`).
 - **Screenshots.** Capture at physical resolution, draw highlights there, then downscale for vision. Store `ShotMeta` (origin, size, scale) so coordinates from vision map back: `screen_px = origin_px + image_px / scale`.
 - **In-app zoom** (browser Ctrl +/−, Excel zoom) needs no handling: accessibility rectangles and screenshots already reflect it.
 - **Self-test.** Settings has a "Test pointer" button: the ghost flies to the Windows Start button. Run it at 100% and 150% before the demo.
@@ -372,7 +372,7 @@ Freeze these in hour 1 and hand-write fixtures, so all four streams can build in
 ```
 
 ```jsonc
-// config/app_modes.json (written by detection and by the a11y pop-up)
+// %APPDATA%/apprentice/config/app_modes.json (written by detection and by the a11y pop-up)
 { "browser:legacy.example": { "capture": "vision", "a11y_prompted_at": "2026-10-04T14:02:00Z" },
   "OLDAPP.EXE": { "capture": "uia", "rect_scale": 0.6667 } }
 ```
@@ -427,7 +427,7 @@ Freeze these in hour 1 and hand-write fixtures, so all four streams can build in
 ```
 
 ```jsonc
-// privacy.json (defaults)
+// privacy.json (runtime copy in %APPDATA%/apprentice/config/; defaults in config/privacy.default.json)
 {
   "mask": { "passwords": true, "secrets": true, "cards": true, "ssn": true, "iban": true, "email": false, "phone": false },
   "skip": { "banking": true, "password_managers": true, "private_windows": true },
@@ -466,7 +466,7 @@ MiniERP is a single local web page, opened in Edge. It's your demo stage, and it
   - an invoice from the Czech subsidiary (needs a second approval).
 - **New-hire set** (never shown to the expert): a €7,200 equipment invoice and one routine invoice.
 - **Masking demo:** one invoice has an IBAN and a card number in its notes field, so masking shows up visibly in the guide.
-- A web coding tool (v0, Lovable or Bolt) can produce this in about 30 minutes. It can also produce the guide editor and the dashboard pages. Those tools can't do the Electron main process or the sidecar; that's Claude Code's job.
+- A web coding tool (v0, Lovable or Bolt) can produce this in about 30 minutes. It can also produce the guide editor and the dashboard pages. Those tools can't do the Electron main process or the sidecar; that's the coding agents' job.
 
 ---
 
@@ -500,7 +500,8 @@ MiniERP is a single local web page, opened in Edge. It's your demo stage, and it
 ## 10. Repo layout
 
 ```
-CLAUDE.md                       agent roles, file ownership, merge protocol (read first)
+AGENT.md                        agent roles, file ownership, merge protocol (read first)
+CLAUDE.md, CODEX.md, AGENTS.md  pointers to AGENT.md for Claude Code and Codex
 shared/contracts.ts             every event, command, document and bus message (TypeScript)
 assets/mascot/                  ghost reference image
 app/                            electron-vite (React + TS), one renderer with hash routes
@@ -519,7 +520,7 @@ app/                            electron-vite (React + TS), one renderer with ha
                                 app_rollup guardrail_check locate mastery                     [C]
 sidecar/                        observer.py hooks.py uia.py privacy.py redact.py shots.py
                                 display.py health.py tests/ requirements.txt                  [A]
-config/                         privacy.default.json app_modes.json skip lists                [A]
+config/                         privacy.default.json skiplists.json app_modes.default.json    [A]
 fixtures/                       fake event streams for parallel development                   [C]
 sandbox-erp/                    MiniERP                                                       [C]
 docs/PLAN.md, docs/agents/      this plan; per-agent status notes
@@ -529,7 +530,7 @@ docs/PLAN.md, docs/agents/      this plan; per-agent status notes
 
 ## 11. Timeline: 3 parallel agents (feature freeze at H8)
 
-Three Claude Code agents, each in its own git worktree and branch, owning separate folders. The full task lists, ownership rules and merge protocol are in **`CLAUDE.md`**. This is the overview.
+Three coding agents (Claude Code or Codex), each in its own git worktree and branch, owning separate folders. The full task lists, ownership rules and merge protocol are in **`AGENT.md`**. This is the overview.
 
 | Agent | Role | Owns |
 |---|---|---|
@@ -578,8 +579,8 @@ Start the ambient observer on every team laptop right after M2, with personal ap
 11. **Overrides and dynamic variables** must be enabled in each agent's security settings, or they're silently ignored.
 12. **API keys** stay in the main process (`.env`), never in renderer code.
 13. **The ghost shows up in screenshots.** The overlay sits on top of everything. Try `setContentProtection(true)`; the fallback is in §5.10.
-14. **Merge conflicts between agents.** Prevented by folder ownership, additive-only contracts and a fixed merge order (`CLAUDE.md` §5). Don't let an agent "quickly fix" another agent's file; it goes in that agent's status notes instead.
-15. **Build on the Windows laptops** (run Claude Code locally there). A Linux or cloud session can write the code and the platform-neutral parts (redaction and tests, contracts, fixtures, prompts, MiniERP), but it can't run the sidecar, screen capture on Windows, or the overlay.
+14. **Merge conflicts between agents.** Prevented by folder ownership, additive-only contracts and a fixed merge order (`AGENT.md` §5). Don't let an agent "quickly fix" another agent's file; it goes in that agent's status notes instead.
+15. **Build on the Windows laptops** (run your coding agent locally there). A Linux or cloud session can write the code and the platform-neutral parts (redaction and tests, contracts, fixtures, prompts, MiniERP), but it can't run the sidecar, screen capture on Windows, or the overlay.
 
 ---
 
