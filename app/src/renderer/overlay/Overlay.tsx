@@ -113,8 +113,14 @@ function OverlayInner() {
     if (e.type === 'blocked') setBlockReason(e.reason)
     else if (e.type === 'context') setBlockReason(null)
   })
-  useChannel<Popup>('popup:show', (p) => {
-    setPopup(p)
+  useChannel<Popup>('popup:show', async (p) => {
+    // Fly in from the screen edge (PLAN §5.10) unless the ghost is busy pointing or being dragged.
+    if (!target && !flying && !dragging.current && p.kind !== 'warning') {
+      x.set(window.innerWidth + 20)
+      y.set(dock().y - 40)
+      setPopup(p)
+      await flyTo(dock())
+    } else setPopup(p)
     if (p.speak) void speak(p.text)
   })
   useChannel<GhostPoint>('ghost:point', async (p) => {
@@ -193,7 +199,7 @@ function OverlayInner() {
   }
 
   const bubble = popup ? (
-    <div className="bubble" data-hit>
+    <div className={`bubble ${popup.kind === 'warning' ? 'notice' : ''}`} data-hit>
       <p>{popup.text}</p>
       {popup.choices.length > 0 && (
         <div className="choices">

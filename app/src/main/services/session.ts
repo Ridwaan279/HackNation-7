@@ -196,6 +196,11 @@ export function isRecording() {
   return state.phase === 'live'
 }
 
+/** Any session or debrief in progress (no "teach me this app?" offers then). */
+export function isBusy() {
+  return state.phase !== 'idle'
+}
+
 function startDebrief(wm: WorkMap | null) {
   if (!state.id) return
   debriefWorkmap = wm

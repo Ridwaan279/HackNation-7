@@ -73,6 +73,11 @@
   overflow: hidden;
 }
 
+.bubble.notice {
+  border-color: rgba(255, 200, 120, 0.5);
+  font-size: 13px;
+}
+
 .bubble p {
   margin: 0;
 }
