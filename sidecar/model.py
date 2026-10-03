@@ -24,6 +24,10 @@ class WindowInfo:
     window_dpi: int
     dpi_awareness: str  # 'unaware' | 'system' | 'per_monitor' | 'unknown'
     minimized: bool = False
+    # Owned popup (dropdown, menu, dialog) the user is interacting with. The context
+    # (privacy decision, app key) is always the visible owner window; screenshots
+    # cover owner + popup.
+    popup_rect: Optional[Rect] = None
 
 
 @dataclass(frozen=True)
