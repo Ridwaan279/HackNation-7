@@ -1,4 +1,4 @@
-# Agent B status (Shell, Voice and Ghost): M0
+# Agent B status (Shell, Voice and Ghost): M0 + Phase 3 pop-ups
 
 Branch: `agent/b-shell`. Tested on Windows 11 at 150% scaling (2560×1600).
 
@@ -38,6 +38,21 @@ Branch: `agent/b-shell`. Tested on Windows 11 at 150% scaling (2560×1600).
   Sends `sendUserActivity` while the expert is busy, and screen events as contextual updates.
 - **Hotkeys:** `Ctrl+Shift+O` off the record, `Ctrl+Shift+R` record/stop, `Ctrl+Shift+Space` opens the
   panel (placeholder for "Ask the ghost").
+- **Pop-ups** (`popups.ts`, a new B service):
+  - **Accessibility-blind:** shown only when `a11y_health.prompt === true` (A decides when to ask). Choices
+    Yes / Not now / Never, plus the Chromium tip and the "can't blur in vision mode" warning. Answered with
+    `observer:a11yAck` (timeout → `later`).
+  - **"Want to teach me <app>?"** after 2 minutes of foreground use in a new app, only when no session is
+    running. Asked at most once a day per app; never again after Yes or Never. Yes starts a teach session.
+    Never adds the app or domain to `privacy.json` (atomic write), then calls `observer:reloadConfig`.
+    Offers are tracked in `%APPDATA%/apprentice/popups.json`.
+  - **Warnings** (`sidecar_restarted`, `hook_restarted`, `uia_timeout`, `display_mismatch`, `dpi_unaware`)
+    show as a short notice, at most once per 5 minutes per code.
+  - The ghost flies in from the screen edge when a pop-up opens.
+- **Integration check** (a throwaway merge of A + C + B, not committed): no merge conflicts, the merged tree
+  typechecks, and all 10 services load with `observer` last. A fixture replay through A's `FakeReplay`
+  showed the a11y pop-up, the throttled warning notice, not-watching on `blocked`, and the camera badge on
+  `capture: vision`.
 - **Panel:** watching status, Record / Quick guide / Stop / Off the record, live steps with screenshots,
   debrief controls, tutor replay slideshow.
 
@@ -51,13 +66,14 @@ Branch: `agent/b-shell`. Tested on Windows 11 at 150% scaling (2560×1600).
 - **No `brain:pickQuestion`:** gate sends a generic `[pause]` question instead.
 - **Not tested yet:** a live ElevenLabs conversation (no agent IDs or keys in `.env` yet), and the debrief
   and tutor flows end to end.
-- **Not done:** the "Ask the ghost" hotkey, the a11y-blind / teach-me pop-up *triggers* (the bubble UI
-  works), MediaRecorder video, the pointer self-test (Start button), first-run wizard.
+- **Not done:** the "Ask the ghost" hotkey, MediaRecorder video, the pointer self-test (Start button), first-run wizard.
 
 ## Needs from others
-- **A:** `observer:redact`, `observer:mode`, `displays:toDip` bus handlers. `observer.ts` should kill the
-  sidecar on `app.on('will-quit')`. Is `ClickEvent.shot` / `ShotEvent.path` absolute or relative to
-  `%APPDATA%/apprentice`? `apx://` accepts both, as long as the file is under that folder.
+- **A:** nothing blocking. Your notes answered my questions: shot paths are relative to `ctx.paths.root`,
+  which `apx://` serves. I cherry-picked your two `contracts:` commits so `popups.ts` compiles. They are
+  identical to yours, so the merge is clean.
+- **A, a fake-mode detail:** `FakeReplay` answers `redact` with the text unchanged. That's fine for
+  fixtures, but it means my over-eager fallback masking never runs in fake mode.
 - **C:**
   - `Guide.session` must be set; the panel and debrief match on it.
   - Emit a **draft** `workmap:updated` after `session:stopped`; that starts the debrief.
@@ -78,7 +94,11 @@ Branch: `agent/b-shell`. Tested on Windows 11 at 150% scaling (2560×1600).
 - Version pins: `@vitejs/plugin-react@6` needs Vite 8, but `electron-vite@5` supports only Vite ≤7, so I
   pinned Vite 7 and plugin-react 5. TypeScript resolved to 7 (the native port), so the tsconfigs don't use
   `baseUrl`.
-- `GATE_MIN_GAP_S` defaults to **45 s**, not PLAN's 90 s: M1 needs ≥3 questions in 3 minutes.
+- **Two app instances on one desktop interfere.** During my test, another checkout's Electron
+  (`Codex_coding/…`) was running at the same time. Both apps put the ghost and panel in the same spots,
+  share `%APPDATA%/apprentice`, and compete for the global hotkeys. Stray clicks started a session in my
+  instance. Only one agent should do GUI testing at a time.
+- `GATE_MIN_GAP_S` defaults to **45 s** (**needs a human decision**: C asked that the gate not change silently), not PLAN's 90 s: M1 needs ≥3 questions in 3 minutes.
 - `GHOST_CONTENT_PROTECTION=1` hides the ghost from *all* capture, including OBS and Zoom, so it's off by
   default. Turn it on only after the backup video is recorded.
 - The overlay covers the primary display only, so the ghost can't point at windows on a second monitor.
