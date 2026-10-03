@@ -577,3 +577,23 @@ def test_all_events_match_contract_types(env):
     assert kinds >= {"ready", "displays", "context", "activity", "text", "shot", "click"}
     for k in kinds:
         assert f"type: '{k}'" in contracts, k
+
+
+def test_hung_app_is_reported_once_a_minute(env):
+    import time as _time
+    erp(env.backend)
+    eng = env.build()
+    eng.fast_tick()
+    real = env.backend.focused
+
+    def slow_focus(tracked):
+        _time.sleep(0.05)
+        return real(tracked)
+    env.backend.focused = slow_focus
+    eng.SLOW_FAST_STEP_S = 0.01  # make the test fast
+    env.clock.tick(0.4)
+    eng.fast_tick()
+    env.clock.tick(0.4)
+    eng.fast_tick()
+    warns = [w for w in env.out.of("warning") if w["code"] == "uia_timeout"]
+    assert len(warns) == 1 and "not be responding" in warns[0]["detail"]

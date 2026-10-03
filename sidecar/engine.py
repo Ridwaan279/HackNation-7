@@ -76,6 +76,8 @@ class Engine:
     SENSITIVE_MAX_AGE_S = 3.0  # screenshots need a sensitive-field map at most this old
     QUICK_SCAN_ELEMENTS = 200
     QUICK_SCAN_BUDGET_S = 0.4
+    SLOW_FAST_STEP_S = 2.0  # a fast-thread step this slow usually means a hung app
+    SLOW_SLOW_STEP_S = 5.0
 
     def __init__(self, backend: Backend, emitter, config: ConfigStore, data_dir: Path,
                  own_pids: Iterable[int] = (), mode: str = "ambient", clock: Callable[[], float] = time.time):
@@ -123,6 +125,7 @@ class Engine:
         self._text_state: Dict[tuple, Tuple[float, str]] = {}
         self._web_next: Dict[tuple, float] = {}
         self._health_next = 0.0
+        self._last_slow_warning = -1e9  # time.monotonic()
 
     # ------------------------------------------------------------------ output
 
@@ -236,9 +239,25 @@ class Engine:
         ctx = self.ctx
         return ctx if ctx is not None and not ctx.decision.blocked else None
 
+    def _guard(self, what: str, started: float, limit: float) -> None:
+        """Report (at most once a minute) when one step took long enough to suggest a hung app."""
+        now = time.monotonic()
+        took = now - started
+        if took > limit and now - self._last_slow_warning > 60.0:
+            self._last_slow_warning = now
+            self._emit({"type": "warning", "t": self.clock(), "code": "uia_timeout",
+                        "detail": f"{what} took {took:.1f} s; the app under the cursor may not be responding"})
+
     # ------------------------------------------------------------------- hooks
 
     def on_hook(self, ev: HookEvent) -> None:
+        started = time.monotonic()
+        try:
+            self._on_hook(ev)
+        finally:
+            self._guard(f"handling a {ev.kind}", started, self.SLOW_FAST_STEP_S)
+
+    def _on_hook(self, ev: HookEvent) -> None:
         self._last_hook_t = self.clock()
         self._silent_restarts = 0
         self.last_input_t = ev.t
@@ -379,6 +398,13 @@ class Engine:
     # -------------------------------------------------------------- fast tick
 
     def fast_tick(self) -> None:
+        started = time.monotonic()
+        try:
+            self._fast_tick()
+        finally:
+            self._guard("reading the focused field", started, self.SLOW_FAST_STEP_S)
+
+    def _fast_tick(self) -> None:
         now = self.clock()
         dt = min(max(0.0, now - self._last_fast_tick), 1.0)
         self._last_fast_tick = now
@@ -413,6 +439,13 @@ class Engine:
     # -------------------------------------------------------------- slow tick
 
     def slow_tick(self) -> None:
+        started = time.monotonic()
+        try:
+            self._slow_tick()
+        finally:
+            self._guard("reading the window's text", started, self.SLOW_SLOW_STEP_S)
+
+    def _slow_tick(self) -> None:
         now = self.clock()
         if now >= self._next["janitor"]:
             self._next["janitor"] = now + self.JANITOR_EVERY

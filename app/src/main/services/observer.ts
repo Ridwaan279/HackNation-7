@@ -330,6 +330,10 @@ export function registerHandlers(ctx: AppContext, client: Requester): void {
     const r = await client.request({ cmd: 'a11y_ack', key, choice }, 3000)
     return { ok: r.ok }
   })
+  ctx.bus.handle('observer:reloadConfig', async () => {
+    const r = await client.request({ cmd: 'reload_config' }, 3000)
+    return { ok: r.ok }
+  })
 }
 
 export const init: ServiceInit = (ctx) => {

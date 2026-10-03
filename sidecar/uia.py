@@ -12,8 +12,10 @@ Rules:
 from __future__ import annotations
 
 import re
+import sys
 import threading
 import time
+from contextlib import contextmanager
 from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
 
 import uiautomation as auto
@@ -37,9 +39,34 @@ _CHILD_LIMIT = 300
 _tls = threading.local()
 
 
+_timeouts_lock = threading.Lock()
+_timeouts_done = False
+
+
+def _ensure_timeouts(connection_ms: int = 2000, transaction_ms: int = 3000) -> None:
+    """Bound how long a hung app can block a UIA call (IUIAutomation2, Windows 8+; default is 20 s)."""
+    global _timeouts_done
+    with _timeouts_lock:
+        if _timeouts_done:
+            return
+        _timeouts_done = True
+        try:
+            client = auto.uiautomation._AutomationClient.instance()
+            iface = client.IUIAutomation.QueryInterface(client.UIAutomationCore.IUIAutomation2)
+            iface.ConnectionTimeout = connection_ms
+            iface.TransactionTimeout = transaction_ms
+            print(f"[observer] UIA timeouts set: connection {connection_ms} ms, transaction {transaction_ms} ms",
+                  file=sys.stderr, flush=True)
+        except Exception as ex:
+            print(f"[observer] UIA timeouts left at defaults ({type(ex).__name__})", file=sys.stderr, flush=True)
+
+
+@contextmanager
 def thread_init():
-    """Context manager that initialises COM for UI Automation in the current thread."""
-    return auto.UIAutomationInitializerInThread()
+    """Initialise COM for UI Automation in the current thread (and bound UIA timeouts once)."""
+    with auto.UIAutomationInitializerInThread():
+        _ensure_timeouts()
+        yield
 
 
 def _cache(name: str) -> Dict[int, tuple]:
