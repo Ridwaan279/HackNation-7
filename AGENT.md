@@ -283,8 +283,11 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # PowerShel
 
 # sidecar (Agent A)
 cd sidecar && pip install -r requirements.txt
-python observer.py --print                  # stream events to the terminal
-pytest tests                                # redaction tests (run in any OS)
+python spike.py                             # Phase 1: guided 2-minute capability check (Windows)
+python observer.py --print                  # stream events to the terminal (Windows)
+python observer.py --print --mode session   # ...including click screenshots
+python observer.py --fake --print           # built-in demo scene (any OS)
+pytest tests                                # all observer tests (any OS)
 
 # MiniERP (Agent C)
 cd sandbox-erp && npm install && npm run dev
