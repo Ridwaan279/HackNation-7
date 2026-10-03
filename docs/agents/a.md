@@ -57,7 +57,11 @@ Spike results (one laptop, 2560x1600 at 150%, Edge):
 - **Run 2 failures and what was done:**
   - "Text snapshot" and "Pointable elements" visited only 2 elements: the first web Document found wasn't the page. Fixed by picking the largest visible Document; the spike now also prints every Document it sees.
   - "Password field" timed out because no password field was on screen, and the last check ran after Enter had navigated Google. The spike now opens its own test page (`spike_page.html`) and reads the field before Enter.
-- **Run 3:** _(paste here)_
+- **Run 3: 15/19 passed.**
+  - Now passing: click → Button 'Post' with correct rect at 150%, focused password box detected and its value not read, the Cost center value read, Enter detected.
+  - Still failing: walking *down* from the page's Document gave only 2 elements, while "element at point" and "focused element" reached the page fine. Most likely cause: Edge builds the page's accessibility tree lazily, and the spike read the text before anything had hit-tested the page.
+  - Changes: the page Document is now found by hit-testing the middle of the window and walking *up* (which also wakes the tree). `FindAll` is used when tree-walking returns no children near the top of the page. A failing read now puts a diagnostic into the summary line.
+- **Run 4:** _(paste here)_
 
 ## Stubbed / faked
 

@@ -149,9 +149,10 @@ def main() -> int:
             time.sleep(2.0)
             walk, ms = timed(lambda: uia.walk_text(hwnd, "browser", 10, 300, 1.5))
         names = [i.name for i in (walk.items if walk else []) if i.name]
+        diag = "" if walk and walk.items else "  DIAGNOSTICS: " + " || ".join(uia.walk_diagnostics(hwnd))
         check("Text snapshot (page only)", bool(walk and walk.items),
               f"{len(walk.items) if walk else 0} items, visited {walk.visited if walk else 0}, "
-              f"truncated={walk.truncated if walk else '-'} ({ms:.0f} ms): " + ", ".join(repr(n)[:30] for n in names[:6]))
+              f"truncated={walk.truncated if walk else '-'} ({ms:.0f} ms): " + ", ".join(repr(n)[:30] for n in names[:6]) + diag)
         lines, sensitive, _ = classify(walk.items if walk else [], Redactor())
         masked = [line for line in lines if "[IBAN" in line or "[CARD" in line]
         check("Masking applied to page text", bool(masked), (masked[0] if masked else "no masked line found") +

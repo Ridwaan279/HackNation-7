@@ -142,9 +142,29 @@ def _children(c, limit: int, deadline: float) -> Iterator:
         child = _safe(child.GetNextSiblingControl)
 
 
+def _find_all_children(c, limit: int) -> List:
+    """Children via IUIAutomationElement.FindAll: a second path for when tree walking returns none."""
+    try:
+        client = auto.uiautomation._AutomationClient.instance()
+        found = c.Element.FindAll(2, client.IUIAutomation.CreateTrueCondition())  # 2 = TreeScope_Children
+        out = []
+        for i in range(min(int(found.Length), limit)):
+            ctl = auto.Control.CreateControlFromElement(found.GetElement(i))
+            if ctl is not None:
+                out.append(ctl)
+        return out
+    except Exception:
+        return []
+
+
 def _walk(root, max_depth: int, max_nodes: int, deadline: float,
-          prune: Optional[Callable[[object, str], bool]] = None) -> Iterator[Tuple[object, int, str]]:
-    """Bounded depth-first walk in document order. Yields (control, depth, control_type)."""
+          prune: Optional[Callable[[object, str], bool]] = None,
+          findall_depth: int = -1) -> Iterator[Tuple[object, int, str]]:
+    """Bounded depth-first walk in document order. Yields (control, depth, control_type).
+
+    findall_depth: for nodes at or above this depth, if tree walking finds no children,
+    ask FindAll as well (web pages sometimes only answer one of the two).
+    """
     stack = [(root, 0)]
     seen = 0
     while stack and seen < max_nodes and time.monotonic() < deadline:
@@ -155,6 +175,8 @@ def _walk(root, max_depth: int, max_nodes: int, deadline: float,
         if depth >= max_depth or (prune is not None and prune(c, ct)):
             continue
         kids = list(_children(c, _CHILD_LIMIT, deadline))
+        if not kids and depth <= findall_depth:
+            kids = _find_all_children(c, _CHILD_LIMIT)
         for k in reversed(kids):
             stack.append((k, depth + 1))
 
@@ -319,10 +341,69 @@ def _find_document(hwnd: int):
     if hit is not None and now - hit[1] < 5.0 and hit[0] is not None:
         if _safe(lambda: hit[0].Name, None) is not None:  # raises if the element is gone
             return hit[0]
-    docs = _documents(hwnd)
-    doc = max(docs, key=lambda d: d[1])[0] if docs else None
+    doc = _document_from_point(hwnd)
+    if doc is None:
+        docs = _documents(hwnd)
+        doc = max(docs, key=lambda d: d[1])[0] if docs else None
     cache[hwnd] = (doc, now)
     return doc
+
+
+def _content_point(root) -> Optional[Tuple[int, int]]:
+    """A point in the middle of the window, below the toolbars: almost always inside the page."""
+    r = _rect(root)
+    if r is None:
+        return None
+    return (r[0] + r[2]) // 2, r[1] + int((r[3] - r[1]) * 0.6)
+
+
+def _document_from_point(hwnd: int):
+    """The outermost Document above the element in the middle of the window.
+
+    Asking "what's at this point" also makes Chromium build the page's full
+    accessibility tree, which it otherwise does lazily.
+    """
+    root = _root(hwnd)
+    point = _content_point(root) if root is not None else None
+    if point is None:
+        return None
+    c = _safe(lambda: auto.ControlFromPoint(*point))
+    outer = None
+    for _ in range(80):
+        if c is None:
+            return None  # walked off the top without passing through this window (e.g. our overlay)
+        if _ctype(c) == "Document" and _rect(c):
+            outer = c
+        parent = _safe(c.GetParentControl)
+        if parent is not None and _safe(lambda: auto.ControlsAreSame(parent, root), False):
+            return outer
+        c = parent
+    return None
+
+
+def walk_diagnostics(hwnd: int) -> List[str]:
+    """What the accessibility tree looks like around the page (for spike.py when reading fails)."""
+    lines: List[str] = []
+    root = _root(hwnd)
+    if root is None:
+        return ["no accessibility element for the window"]
+    for c, area, r, name in sorted(_documents(hwnd), key=lambda d: -d[1]):
+        walker = sum(1 for _ in _children(c, 50, time.monotonic() + 0.3))
+        lines.append(f"doc {name[:30]!r} class={(_safe(lambda: c.ClassName, '') or '')[:30]!r} rect={r} "
+                     f"walker_children={walker} findall_children={len(_find_all_children(c, 50))}")
+    point = _content_point(root)
+    c = _safe(lambda: auto.ControlFromPoint(*point)) if point else None
+    chain = []
+    while c is not None and len(chain) < 30:
+        kids = sum(1 for _ in _children(c, 5, time.monotonic() + 0.2))
+        chain.append(f"{_ctype(c)}[{(_safe(lambda: c.ClassName, '') or '')[:20]}]"
+                     f"{(_safe(lambda: c.Name, '') or '')[:20]!r} kids={kids}{'+' if kids >= 5 else ''}")
+        parent = _safe(c.GetParentControl)
+        if parent is None or _safe(lambda: auto.ControlsAreSame(parent, root), False):
+            break
+        c = parent
+    lines.append(f"at {point}: " + (" < ".join(chain) if chain else "nothing"))
+    return lines
 
 
 def document_diagnostics(hwnd: int) -> List[str]:
@@ -389,7 +470,7 @@ def walk_text(hwnd: int, mode: str, max_depth: int, max_elements: int, budget_s:
 def _walk_text_from(root, root_is_doc: bool, max_depth: int, max_elements: int, deadline: float) -> WalkResult:
     res = WalkResult()
     first_doc = root if root_is_doc else None
-    for c, _, ct in _walk(root, max_depth, max_elements, deadline):
+    for c, _, ct in _walk(root, max_depth, max_elements, deadline, findall_depth=2 if root_is_doc else -1):
         res.visited += 1
         if ct in SKIP_TEXT_TYPES:
             continue
@@ -398,6 +479,8 @@ def _walk_text_from(root, root_is_doc: bool, max_depth: int, max_elements: int, 
         if _safe(lambda: c.IsOffscreen, False):
             continue
         name = _safe(lambda: c.Name, "") or ""
+        if name == "Chrome Legacy Window":  # Chromium's wrapper element, not page text
+            name = ""
         is_pw = False
         value = None
         if ct in VALUE_TYPES:
@@ -431,7 +514,7 @@ def tree(hwnd: int, mode: str, max_count: int, budget_s: float) -> List[ElementI
 
 def _pointable(root, max_count: int, deadline: float) -> List[ElementInfo]:
     out: List[ElementInfo] = []
-    for c, _, ct in _walk(root, 25, 3000, deadline):
+    for c, _, ct in _walk(root, 25, 3000, deadline, findall_depth=2):
         if ct not in POINTABLE_TYPES or _safe(lambda: c.IsOffscreen, False):
             continue
         name = _safe(lambda: c.Name, "") or ""

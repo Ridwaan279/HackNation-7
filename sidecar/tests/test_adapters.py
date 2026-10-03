@@ -62,6 +62,7 @@ class FakeControl:
         self.ctype, self._name, self._aid, self._cls, self._rect = ctype, name, aid, cls, rect
         self._pid, self._password, self._offscreen = pid, password, offscreen
         self.value, self.text, self.value_reads = value, text, 0
+        self.hidden_from_walker = False  # True: children only reachable through FindAll
         self.children = list(children)
         self.parent = None
         for c in self.children:
@@ -84,7 +85,25 @@ class FakeControl:
         return None
 
     def GetFirstChildControl(self):
+        if self.hidden_from_walker:
+            return None
         return self.children[0] if self.children else None
+
+    def GetParentControl(self):
+        return self.parent
+
+    @property
+    def Element(self):
+        kids = self.children
+
+        class _Found:
+            Length = len(kids)
+
+            @staticmethod
+            def GetElement(i):
+                return kids[i]
+
+        return SimpleNamespace(FindAll=lambda scope, cond: _Found())
 
     def GetNextSiblingControl(self):
         if self.parent is None:
@@ -114,6 +133,10 @@ def fake_uia(monkeypatch):
     mod.ControlFromPoint = lambda x, y: state.at_point.get((x, y))
     mod.GetFocusedControl = lambda: state.focus
     mod.ControlFromHandle = lambda h: state.roots.get(h)
+    mod.ControlsAreSame = lambda a, b: a is b
+    mod.Control = SimpleNamespace(CreateControlFromElement=lambda e: e)
+    mod.uiautomation = SimpleNamespace(_AutomationClient=SimpleNamespace(
+        instance=lambda: SimpleNamespace(IUIAutomation=SimpleNamespace(CreateTrueCondition=lambda: "TRUE"))))
     monkeypatch.setitem(sys.modules, "uiautomation", mod)
     monkeypatch.delitem(sys.modules, "uia", raising=False)
     uia = importlib.import_module("uia")
@@ -564,3 +587,67 @@ def test_windows_backend_read_modes(fake_backend_windows, fake_uia):
     win = b.foreground()
     assert all(i.name != "Chase - Account Summary" for i in b.walk_text(win, 10, 300, 1.5, content_only=True).items)
     assert any(i.name == "Chase - Account Summary" for i in b.walk_text(win, 10, 300, 1.5).items)  # "web" mode
+
+
+# ------------------------------------------------------------- finding the page by hit-testing; FindAll fallback
+
+
+def test_page_found_by_hit_test_beats_a_bigger_unrelated_document(fake_uia):
+    uia, state = fake_uia
+    post = FakeControl("Button", name="Post", rect=(600, 470, 680, 500))
+    page = FakeControl("Document", name="Spike test page", rect=(0, 150, 1280, 800), children=[
+        FakeControl("Text", name="Invoice 4471", rect=(40, 200, 300, 230)), post])
+    legacy = FakeControl("Document", name="Chrome Legacy Window", cls="Chrome_RenderWidgetHostHWND",
+                         rect=(0, 150, 1280, 800), children=[page])
+    webui = FakeControl("Document", name="Edge WebUI", rect=(0, 0, 1280, 800),
+                        children=[FakeControl("Group", rect=(0, 0, 1280, 800))])  # bigger, unrelated
+    root = FakeControl("Window", name="Edge", cls="Chrome_WidgetWin_1", rect=(0, 0, 1280, 800),
+                       children=[FakeControl("Pane", children=[webui, legacy])])
+    state.roots[1] = root
+    state.at_point[(640, 480)] = post  # the middle of the window, 60% down
+    res = uia.walk_text(1, "browser", 10, 300, 1.5)
+    assert "Invoice 4471" in [i.name for i in res.items] and "Post" in [i.name for i in res.items]
+
+
+def test_overlay_at_the_point_falls_back_to_largest_document(fake_uia):
+    uia, state = fake_uia
+    root, page, side = edge_with_side_panel()
+    state.roots[1] = root
+    state.at_point[(1280, 916)] = FakeControl("Pane", name="ghost overlay", pid=4242, rect=(0, 0, 2560, 1600))
+    assert [i.name for i in uia.walk_text(1, "browser", 10, 300, 1.5).items] == ["MiniERP", "Invoice 4471", "Post"]
+
+
+def test_findall_fallback_when_walking_returns_no_children(fake_uia):
+    uia, state = fake_uia
+    root, page, side = edge_with_side_panel()
+    page.hidden_from_walker = True  # Edge answered FindAll but not GetFirstChild
+    state.roots[1] = root
+    names = [i.name for i in uia.walk_text(1, "browser", 10, 300, 1.5).items]
+    assert names == ["MiniERP", "Invoice 4471", "Post"]
+    assert [e.name for e in uia.tree(1, "browser", 50, 1.5)] == ["Invoice 4471", "Post"]
+
+
+def test_walk_diagnostics_describe_documents_and_the_chain(fake_uia):
+    uia, state = fake_uia
+    root, page, side = edge_with_side_panel()
+    page.hidden_from_walker = True
+    state.roots[1] = root
+    state.at_point[(1280, 916)] = page.children[1]
+    lines = uia.walk_diagnostics(1)
+    assert any("doc 'MiniERP'" in l and "walker_children=0" in l and "findall_children=2" in l for l in lines)
+    assert lines[-1].startswith("at (1280, 916): Button") and "Document" in lines[-1]
+
+
+def test_hit_test_ignores_elements_outside_this_window_and_wrapper_names(fake_uia):
+    uia, state = fake_uia
+    post = FakeControl("Button", name="Post", rect=(600, 470, 680, 500), pid=777)  # pid differs: still fine
+    page = FakeControl("Document", name="Spike test page", rect=(0, 150, 1280, 800), children=[post])
+    legacy = FakeControl("Document", name="Chrome Legacy Window", rect=(0, 150, 1280, 800), children=[page])
+    root = FakeControl("Window", name="Edge", rect=(0, 0, 1280, 800), children=[legacy])
+    state.roots[1] = root
+    state.at_point[(640, 480)] = post
+    names = [i.name for i in uia.walk_text(1, "browser", 10, 300, 1.5).items]
+    assert names == ["Spike test page", "Post"]  # wrapper name skipped
+    uia._tls.__dict__.clear()
+    state.at_point[(640, 480)] = FakeControl("Pane", name="other window", rect=(0, 0, 9, 9))  # parent None
+    assert uia._document_from_point(1) is None
