@@ -179,16 +179,27 @@ def main() -> int:
         hooks = Hooks(q.put_nowait, ctrl_down=winapi.ctrl_down)
         hooks.start()
         try:
-            print("\n>>> Click the blue 'Post' button on the test page (15 seconds)", flush=True)
+            print("\n>>> Click the blue 'Post' button on the test page (20 seconds)", flush=True)
             drain(q)
-            ev = wait_for(q, ("click",), 15)
+            ev = el = None
+            ms = 0.0
+            deadline = time.time() + 20
+            while time.time() < deadline:  # other clicks (empty page space, the title bar) don't count
+                nxt = wait_for(q, ("click",), deadline - time.time())
+                if nxt is None:
+                    break
+                ev = nxt
+                top = winapi.top_window_at(ev.x, ev.y)
+                el, ms = timed(lambda: uia.element_at(ev.x, ev.y, {os.getpid()}, winapi.visible_root_owner(top)))
+                if el is not None and el.name == "Post":
+                    break
+                print(f"    that click hit {el.control_type if el else None} {el.name if el else None!r}, "
+                      "not the Post button - click Post", flush=True)
             if ev is None:
                 check("Mouse hook sees clicks", False, "no click seen")
             else:
-                top = winapi.top_window_at(ev.x, ev.y)
-                el, ms = timed(lambda: uia.element_at(ev.x, ev.y, {os.getpid()}, winapi.visible_root_owner(top)))
                 inside = bool(el and el.rect and el.rect[0] - 2 <= ev.x <= el.rect[2] + 2 and el.rect[1] - 2 <= ev.y <= el.rect[3] + 2)
-                check("Click -> element under the cursor", bool(el and el.name),
+                check("Click -> element under the cursor (Post)", bool(el and el.name == "Post"),
                       f"({ev.x},{ev.y}) -> {el.control_type if el else None} {el.name if el else None!r} ({ms:.0f} ms)")
                 check("Click point inside the element's rect (scaling OK)", inside, f"rect={el.rect if el else None}")
 
@@ -203,20 +214,33 @@ def main() -> int:
             check("Focused password box detected, value not read",
                   seen_pw is not None and seen_pw.value is None, f"name={seen_pw.name if seen_pw else None!r}")
 
-            print("\n>>> Click into 'Cost center' and type a few letters (15 seconds)", flush=True)
+            print("\n>>> Click into 'Cost center' and type a few letters (20 seconds)", flush=True)
             drain(q)
-            typed = wait_for(q, ("typing",), 15)
-            check("Keyboard hook (timing only, no characters)", typed is not None)
-            field = None
-            deadline = time.time() + 2
+            typed = False
+            field = last = None
+            deadline = time.time() + 20
             while time.time() < deadline and field is None:  # read the value while still in the field
+                try:
+                    while True:
+                        if q.get_nowait().kind == "typing":
+                            typed = True
+                except queue.Empty:
+                    pass
                 f = uia.focused(TRACKED_TYPES)
-                if f is not None and f.control_type in TRACKED_TYPES and f.value:
-                    field = f
+                if f is not None:
+                    last = f
+                    if typed and f.control_type in TRACKED_TYPES and not f.is_password and f.value:
+                        field = f
                 time.sleep(0.2)
-            check("Focused field value readable", field is not None,
-                  f"{field.control_type if field else None} {field.name if field else None!r} "
-                  f"value_len={len(field.value) if field and field.value else 0}")
+            check("Keyboard hook (timing only, no characters)", typed)
+            if field is not None:
+                detail = f"{field.control_type} {field.name!r} value_len={len(field.value)}"
+            elif last is not None:
+                detail = (f"focus stayed on {last.control_type} {last.name!r} "
+                          f"(password={last.is_password}, value read={last.value is not None})")
+            else:
+                detail = "nothing focused"
+            check("Focused field value readable", field is not None, detail)
 
             print("\n>>> Now press Enter (15 seconds)", flush=True)
             enter = wait_for(q, ("key",), 15)

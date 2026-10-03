@@ -1,6 +1,8 @@
 # Agent A status: Observer
 
-Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. **The Windows-only parts have not run on Windows yet.** Run `python spike.py` first (see "Verify on Windows").
+Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. On Windows, the Phase 1 spike passes on one laptop (Edge, 150% scaling). **The full observer (`observer.py`) has not run end-to-end on Windows yet** (see "Verify on Windows").
+
+**Phase 1 go/no-go: all GO.** Per-monitor-v2 DPI awareness takes effect. A pynput click → `ControlFromPoint` gives Button 'Post' with the right rect at 150%. `IsPassword` is read and the password value never is. The Edge URL comes from the address bar (48 ms, then cached). `mss` grabs only the window. Edge's page content is visible without `--force-renderer-accessibility`.
 
 ## Done
 
@@ -31,7 +33,7 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 
 ## Verification so far (Linux)
 
-- **194 Python tests** (`cd sidecar && pytest tests`), covering:
+- **211 Python tests** (`cd sidecar && pytest tests`), covering:
   - masking vectors and near-misses, the privacy gate, the protocol and config;
   - engine scenarios: password manager never read, a tab navigating to a bank blocked even on an immediate click, password fields never emitted, pause drops pending typing, a blind app prompts once then switches to vision mode, scaling correction saved and applied, heartbeats only on change, a first click in a new window already blurs masked fields;
   - adapters against fakes that mirror the real `uiautomation` 2.0.29 and `pynput` 1.8.2 APIs (checked against their source);
@@ -48,7 +50,7 @@ python observer.py --print --mode session  # click around MiniERP: context, clic
 pytest tests                               # should also pass on Windows
 ```
 
-Not yet run on Windows: `winapi.py`, the Windows branch of `display.py`, `uia.py` against real apps, `hooks.py` with real pynput, mss capture, and the UIA timeouts. If the spike shows web content empty, start Edge with `--force-renderer-accessibility`.
+The spike has exercised `winapi.py`, the Windows branch of `display.py`, `uia.py` against Edge, `hooks.py` with real pynput, mss capture and the UIA timeouts. Not yet run on Windows: `observer.py` end-to-end (threads, engine, screenshots with blur), `pytest tests`, apps other than Edge, a second monitor, other scaling levels. If web content ever shows as empty, start Edge with `--force-renderer-accessibility` (not needed so far).
 
 Spike results (one laptop, 2560x1600 at 150%, Edge):
 
@@ -61,7 +63,16 @@ Spike results (one laptop, 2560x1600 at 150%, Edge):
   - Now passing: click → Button 'Post' with correct rect at 150%, focused password box detected and its value not read, the Cost center value read, Enter detected.
   - Still failing: walking *down* from the page's Document gave only 2 elements, while "element at point" and "focused element" reached the page fine. Most likely cause: Edge builds the page's accessibility tree lazily, and the spike read the text before anything had hit-tested the page.
   - Changes: the page Document is now found by hit-testing the middle of the window and walking *up* (which also wakes the tree). `FindAll` is used when tree-walking returns no children near the top of the page. A failing read now puts a diagnostic into the summary line.
-- **Run 4:** _(paste here)_
+- **Run 4: 18/19 passed.** Everything that reads the page now works:
+  - text snapshot: 11 items (16 visited, 20 ms);
+  - IBAN masked (`Pay to [IBAN ••••3000]`), 2 fields to blur;
+  - password field found, its value not read;
+  - `tree`: 10 elements including Post (18 ms).
+- **Run 4, the two interactive checks:** both depended on when the tester clicked and typed, not on the code (`focused()` is unchanged since run 3, which read the field).
+  - The first click landed on empty page space. It returned the page's Document, and the spike counted that as a pass.
+  - Typing started while focus was still in the Password box, so no field value was seen within the 2 s window.
+  - Change: the spike now waits for a click on Post (other clicks are reported and ignored), keeps reading the focused field for up to 20 s, and says where focus was if it fails.
+- **Run 5:** _(paste here)_
 
 ## Stubbed / faked
 
@@ -87,6 +98,7 @@ Spike results (one laptop, 2560x1600 at 150%, Edge):
 - **Screenshot paths:** relative to `ctx.paths.root`. Kept shots are `shots/YYYY-MM-DD/<ms>.jpg`, ephemeral ones `shots/tmp/<ms>.jpg`. Delete ephemeral files after describing them; the sidecar removes leftovers after 10 minutes.
 - **`ShotMeta`:** `screen_px = origin_px + image_px / scale`. `size_px` is the captured screen region in physical pixels. `auto_blur: false` means sensitive fields were *not* blurred (vision mode), so offer the manual blur.
 - **Commits:** an idle commit (`final: false`) can be followed by more commits for the same field, so coalesce them. Values are masked and capped at 1000 characters. `masked: true` tells you a value was masked.
+- **Clicks on empty page space:** the element is the page's `Document` (its rect is the whole page). Treat it as "clicked the page", not as a named control.
 - **App keys:** always lowercase (`excel.exe`, `browser:minierp.local`).
 - **`observer:shot`:** returns a `shots/tmp/` path and is not emitted as an event.
 - **`observer:tree`:** returns `[]` when the window is blocked or in vision mode. Fall back to vision in that case.
