@@ -301,6 +301,20 @@ def test_text_snapshot_delta_and_sensitive_blur(env):
     assert ImageStat.Stat(img.crop((110, 603, 490, 622))).stddev[0] < ImageStat.Stat(img.crop((110, 653, 490, 672))).stddev[0] * 0.3
 
 
+def test_first_click_in_new_window_already_blurs_masked_fields(env):
+    """No text snapshot has run yet: the click must trigger a quick scan before the shot is saved."""
+    erp(env.backend)
+    env.backend.walks[1] = WalkResult(items=[
+        WalkItem("Edit", "Notes", "Pay to DE89 3704 0044 0532 0130 00", False, {"rect": (100, 600, 500, 625)}),
+    ])
+    eng = env.build(mode="session")
+    click(eng, 800, 440, env.clock.tick(0.01))  # before any fast_tick / slow_tick
+    shot = env.out.of("click")[-1]["shot"]
+    img = Image.open(env.data / shot).convert("L")
+    assert ImageStat.Stat(img.crop((110, 603, 490, 622))).stddev[0] < ImageStat.Stat(img.crop((110, 653, 490, 672))).stddev[0] * 0.3
+    assert not env.out.of("text")  # the quick scan never emits text
+
+
 def test_text_discarded_if_window_changes_during_walk(env):
     erp(env.backend)
     env.backend.walks[1] = WalkResult(items=[WalkItem("Text", "Invoice 4471", None, False)])

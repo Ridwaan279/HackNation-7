@@ -29,7 +29,7 @@ from privacy import Decision, PrivacyGate
 from protocol import reply_error, reply_ok
 from redact import MaskOptions, Redactor, looks_like_password_field
 from scaling import ScalingTracker, rect_contains, rect_ok
-from textsnap import TextSnapshotter
+from textsnap import TextSnapshotter, classify
 
 VERSION = "0.1.0"
 MAX_VALUE_CHARS = 1000
@@ -73,6 +73,9 @@ class Engine:
     WALK_MAX_ELEMENTS = 300
     WALK_BUDGET_S = 1.5
     TREE_BUDGET_S = 1.5
+    SENSITIVE_MAX_AGE_S = 3.0  # screenshots need a sensitive-field map at most this old
+    QUICK_SCAN_ELEMENTS = 200
+    QUICK_SCAN_BUDGET_S = 0.4
 
     def __init__(self, backend: Backend, emitter, config: ConfigStore, data_dir: Path,
                  own_pids: Iterable[int] = (), mode: str = "ambient", clock: Callable[[], float] = time.time):
@@ -113,6 +116,7 @@ class Engine:
         self._monitors: List[MonitorInfo] = []
         self._monitor_sig: Optional[tuple] = None
         self._sensitive: Dict[tuple, List[Rect]] = {}  # (hwnd, key) -> rects relative to the window origin
+        self._sensitive_t: Dict[tuple, float] = {}  # when that map was last refreshed
         self._focus_sensitive: Optional[Rect] = None
         self._sig: Dict[int, Any] = {}
         self._last_shot_t: Dict[int, float] = {}
@@ -311,6 +315,8 @@ class Engine:
         if img is not None and region is not None:
             self._sig[win.hwnd] = shots.signature(img)
             self._last_shot_t[win.hwnd] = now
+            if not vision:
+                self._ensure_sensitive(ctx, now)  # pixels were taken at mouse-down; this only finds what to blur
             shot_rel, meta = self._finish_shot(img, region, win, ctx, now, click=(ev.x, ev.y), box=box,
                                                extra_sensitive=extra_sensitive, ephemeral=tutor_vision_shot,
                                                auto_blur=not vision, max_edge=shots.MAX_EDGE)
@@ -460,6 +466,7 @@ class Engine:
                 rects.append(self.scaling.correct(ctx.decision.key, r, win.monitor_rect[:2]))
         ox, oy = win.rect[0], win.rect[1]
         self._sensitive[wk] = [(r[0] - ox, r[1] - oy, r[2] - ox, r[3] - oy) for r in rects]
+        self._sensitive_t[wk] = now
         self.health.note_snapshot(ctx.decision.key, snap.named_elements, snap.text_chars)
         self._evaluate_health(ctx.decision.key, now)
         if snap.delta:
@@ -516,6 +523,8 @@ class Engine:
         if not shots.changed(self._sig.get(win.hwnd), sig):
             return
         self._sig[win.hwnd] = sig
+        if not vision:
+            self._ensure_sensitive(ctx, now)
         rel, meta = self._finish_shot(img, region, win, ctx, now, click=None, box=None, extra_sensitive=[],
                                       ephemeral=ephemeral, auto_blur=not vision, max_edge=max_edge, width=width)
         self._emit({"type": "shot", "t": now, "key": ctx.decision.key, "path": rel, "reason": reason,
@@ -529,6 +538,32 @@ class Engine:
         base = shots.union([win.rect, win.popup_rect]) if rect_ok(win.popup_rect) else win.rect
         virtual = shots.union(m.rect for m in self._monitors)
         return shots.intersect(base, virtual) if virtual else base
+
+    def _ensure_sensitive(self, ctx: Ctx, now: float) -> None:
+        """Make sure we know where this window's secrets are before saving a screenshot of it."""
+        wk = (ctx.win.hwnd, ctx.decision.key)
+        if now - self._sensitive_t.get(wk, -1e9) <= self.SENSITIVE_MAX_AGE_S:
+            return
+        self._sensitive_t[wk] = now
+        try:
+            res = self.backend.walk_text(ctx.win, self.WALK_MAX_DEPTH, self.QUICK_SCAN_ELEMENTS, self.QUICK_SCAN_BUDGET_S)
+        except Exception:
+            res = None
+        if res is None:
+            return
+        _, handles, _ = classify(res.items, self.redactor)
+        rects = []
+        for handle in handles[:50]:
+            try:
+                r = self.backend.rect_of(handle)
+            except Exception:
+                r = None
+            if rect_ok(r):
+                rects.append(self.scaling.correct(ctx.decision.key, r, ctx.win.monitor_rect[:2]))
+        ox, oy = ctx.win.rect[0], ctx.win.rect[1]
+        known = self._sensitive.get(wk, [])
+        fresh = [(r[0] - ox, r[1] - oy, r[2] - ox, r[3] - oy) for r in rects]
+        self._sensitive[wk] = (fresh + [r for r in known if r not in fresh])[:100]
 
     def _finish_shot(self, img, region: Rect, win: WindowInfo, ctx: Ctx, now: float, click, box,
                      extra_sensitive: List[Rect], ephemeral: bool, auto_blur: bool,
@@ -670,6 +705,8 @@ class Engine:
         if img is None:
             return reply_error(cid, "capture failed")
         now = self.clock()
+        if ctx.capture == "uia":
+            self._ensure_sensitive(ctx, now)
         rel, meta = self._finish_shot(img, region, ctx.win, ctx, now, click=None, box=None, extra_sensitive=[],
                                       ephemeral=True, auto_blur=ctx.capture == "uia", max_edge=shots.MAX_EDGE)
         return reply_ok(cid, path=rel, meta=meta)

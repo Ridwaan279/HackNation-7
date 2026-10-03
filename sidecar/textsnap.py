@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Hashable, List, Optional
+from typing import Any, Hashable, List, Optional, Tuple
 
 from model import WalkItem
 from redact import Redactor, looks_like_password_field
@@ -38,6 +38,36 @@ def _meaningful(line: str) -> bool:
     return len(line) >= 2 and any(ch.isalnum() for ch in line)
 
 
+def classify(items: List[WalkItem], redactor: Redactor) -> Tuple[List[str], List[Any], int]:
+    """Masked lines, handles of sensitive items (password or masked), and the named-element count.
+
+    Stateless, so the engine can also use it for a quick "where are the secrets" scan
+    before a screenshot without affecting what the ambient text stream has seen.
+    """
+    lines: List[str] = []
+    sensitive: List[Any] = []
+    named = 0
+    for item in items:
+        name = _norm(item.name)
+        if name:
+            named += 1
+        if item.is_password or (item.control_type in VALUE_TYPES and looks_like_password_field(item.name)):
+            if item.handle is not None:
+                sensitive.append(item.handle)
+            if name:
+                lines.append(redactor.redact(name))
+            continue
+        masked_any = False
+        for raw in (name, _norm(item.value) if item.control_type in VALUE_TYPES else ""):
+            if raw and _meaningful(raw):
+                text, changed = redactor.redact_with_flag(raw)
+                masked_any = masked_any or changed
+                lines.append(text)
+        if masked_any and item.handle is not None:
+            sensitive.append(item.handle)
+    return lines, sensitive, named
+
+
 class TextSnapshotter:
     def __init__(self, redactor: Redactor):
         self.redactor = redactor
@@ -47,27 +77,7 @@ class TextSnapshotter:
         self._seen.pop(window_key, None)
 
     def process(self, window_key: Hashable, items: List[WalkItem], doc_text: Optional[str]) -> SnapshotResult:
-        lines: List[str] = []
-        sensitive: List[Any] = []
-        named = 0
-        for item in items:
-            name = _norm(item.name)
-            if name:
-                named += 1
-            if item.is_password or (item.control_type in VALUE_TYPES and looks_like_password_field(item.name)):
-                if item.handle is not None:
-                    sensitive.append(item.handle)
-                if name:
-                    lines.append(self.redactor.redact(name))
-                continue
-            masked_any = False
-            for raw in (name, _norm(item.value) if item.control_type in VALUE_TYPES else ""):
-                if raw and _meaningful(raw):
-                    text, changed = self.redactor.redact_with_flag(raw)
-                    masked_any = masked_any or changed
-                    lines.append(text)
-            if masked_any and item.handle is not None:
-                sensitive.append(item.handle)
+        lines, sensitive, named = classify(items, self.redactor)
         if doc_text:
             budget = DOC_CHARS
             for raw in doc_text.splitlines():
