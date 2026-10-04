@@ -512,4 +512,10 @@ export interface GuideIpc {
   'guide:image': { req: GuideImageRequest; res: { data_url: string } | null }
   'guide:blur': { req: GuideBlurRequest; res: Guide }
   'guide:exportPdf': { req: { id: string }; res: { canceled: boolean; path?: string } }
+  'guide:exportHtml': { req: { id: string }; res: { canceled: boolean; path?: string } }
+  /** Markdown plus an images folder, written to a folder the user picks. */
+  'guide:exportMarkdown': { req: { id: string }; res: { canceled: boolean; path?: string } }
+  /** AI buttons (PLAN §5.4). */
+  'guide:polish': { req: { id: string; revision: number }; res: Guide }
+  'guide:addWhy': { req: { id: string; revision: number }; res: Guide }
 }
