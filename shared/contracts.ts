@@ -133,6 +133,15 @@ export interface TextEvent {
 }
 
 /** Periodic / on-demand screenshot. ephemeral = describe it, then delete the file. */
+/** Text the user highlighted (selected) in any allowed app, read through UIA TextPattern. Masked, max 1000 chars. */
+export interface SelectionEvent {
+  type: 'selection'
+  t: number
+  key: string
+  title: string
+  text: string
+}
+
 export interface ShotEvent {
   type: 'shot'
   t: number
@@ -199,6 +208,7 @@ export type SidecarEvent =
   | KeyEvent
   | ActivityEvent
   | TextEvent
+  | SelectionEvent
   | ShotEvent
   | DisplaysEvent
   | A11yHealthEvent
@@ -367,6 +377,7 @@ export type MemoryEntry =
   | { type: 'commit'; t: number; key: string; field: string; old: string; new: string; masked: boolean }
   | { type: 'click'; t: number; key: string; target: string; control_type: string }
   | { type: 'description'; t: number; key: string; text: string }
+  | { type: 'highlight'; t: number; key: string; title: string; text: string }
 
 export interface MemoryApp {
   key: string
