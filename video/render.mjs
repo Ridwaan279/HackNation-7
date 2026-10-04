@@ -5,6 +5,7 @@
 //   node render.mjs --preview 3,11.6,22  stills -> out/preview/*.jpg
 //   node render.mjs --from 14 --to 29    a section (for quick checks) -> out/silent-14-29.mp4
 //   node render.mjs --workers 3          parallel browser pages (default 3)
+//   node render.mjs --fps 15             half the frames (about twice as fast); mix.mjs converts to 30 fps
 
 import http from 'node:http'
 import fs from 'node:fs'
@@ -19,6 +20,7 @@ const ROOT = path.resolve(HERE, '..')
 const OUT = path.join(HERE, 'out')
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > -1 ? process.argv[i + 1] : d }
 const has = (k) => process.argv.includes(`--${k}`)
+const RATE = Number(arg('fps', FPS)) // --fps 15 renders half the frames; mix.mjs retimes to 30 fps
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.woff': 'font/woff', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.json': 'application/json' }
 const server = http.createServer((req, res) => {
@@ -61,7 +63,7 @@ if (has('preview')) {
 } else {
   const from = Number(arg('from', 0)), to = Number(arg('to', DURATION))
   const workers = Number(arg('workers', 3))
-  const total = Math.round((to - from) * FPS)
+  const total = Math.round((to - from) * RATE)
   const name = from === 0 && to === DURATION ? 'silent' : `silent-${from}-${to}`
   const per = Math.ceil(total / workers)
   const started = Date.now()
@@ -70,11 +72,11 @@ if (has('preview')) {
     const a = w * per, b = Math.min(total, a + per)
     if (a >= b) return null
     const file = path.join(OUT, `.${name}-part${w}.mp4`)
-    const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
-      '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p', '-r', String(FPS), file], { stdio: ['pipe', 'inherit', 'inherit'] })
+    const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(RATE), '-c:v', 'mjpeg', '-i', '-',
+      '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p', '-r', String(RATE), file], { stdio: ['pipe', 'inherit', 'inherit'] })
     const p = await openPage()
     for (let f = a; f < b; f++) {
-      const buf = await shot(p, from + f / FPS)
+      const buf = await shot(p, from + f / RATE)
       if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r))
       done++
       if (done % 60 === 0) {
