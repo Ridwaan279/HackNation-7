@@ -56,6 +56,8 @@ export interface UiControl {
   control_type: string
   automation_id: string
   rect: Rect
+  /** Current field value (Edit / ComboBox / Spinner), masked. Never present for password-like fields. */
+  value?: string
 }
 
 // ------------------------------------------------ sidecar → main (stdout lines)
