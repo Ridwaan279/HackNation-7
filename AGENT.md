@@ -298,6 +298,9 @@ python -m pytest tests                      # all observer tests (any OS)
 
 # MiniERP (sandbox-erp/) is not used for now: the apprentice is tested on real apps.
 
+# web recorder (static, no build; screen sharing needs localhost or https). Deploy: see web/README.md
+cd web && python -m http.server 5173        # then open http://localhost:5173 in Chrome or Edge
+
 # brain, dashboard and service tests (no API key needed; models are stubbed)
 cd fixtures && npm install && npm run typecheck && npm test
 cd app && npm run typecheck && npm run build

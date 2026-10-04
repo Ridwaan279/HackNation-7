@@ -24,7 +24,9 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 | **Always on** | Per-app daily memory (masked), active minutes, App Profiles (after 10 active minutes, 20 KB of new log, or Refresh), curiosity questions (1 per hour per app, 3 per day) answered on the App Profiles page | `memory.ts`, `rollup.ts`, `curiosity.ts`, `dashboard/ProfilesPage.tsx`, `MemoryPage.tsx` |
 | **Trust** | Masking toggles, default skips, block lists, allow-only, local-only apps, retention, capture mode per app, pause 15 min / 1 h / until tomorrow, off the record (Ctrl+Shift+O), delete per day / app / everything | `privacy.ts`, `dashboard/PrivacyPage.tsx`, `memory.ts` |
 | **Shell, voice, ghost** | Overlay ghost with states and pointer, panel, pop-ups (teach this app, a11y blind, warnings, curiosity), ElevenLabs Interviewer / Debrief / Tutor with client tools, hotkeys | `app/src/main/services/{windows,session,gate,tts,hotkeys,popups}.ts`, `app/src/renderer/{overlay,panel,mascot,agents}` |
-| **First run** | Role and expert name (used as `{{role}}` and in Work Maps); welcome panel on the dashboard | `settings.ts`, `dashboard/index.tsx` |
+| **First run, Company profile** | Company and role (used as `{{role}}`); welcome panel; a **Company profile** button in the header opens Company (role, what the apprentice knows, privacy at a glance, how onboarding works), Privacy, Memory and App profiles | `settings.ts`, `dashboard/index.tsx`, `dashboard/CompanyPage.tsx` |
+| **Listen first** | The Interviewer opens without a question; the gate asks nothing until the expert has talked or worked for 10 s (`GATE_WARMUP_S`), and tells the agent to listen to the introduction | `gate.ts`, `session.ts` |
+| **Web recorder** | Static site, no build: share a window, screenshot on every screen change, voice into a video, speech-to-text next to each step, 10 s introduction, guide editor, HTML / PDF / video export, banner and comparison page for the desktop app. Kept in the browser only | `web/` (deploy notes in `web/README.md`) |
 
 **Without a model:** the Work Map is drafted from the guide and the expert's answers; corrections become the step's reason; the guardrail checker uses a local rule (the value the expert corrected away from, plus the step's topic on screen and any amount threshold); App Profiles are built from the log itself; Polish removes repeated switches and empty-page clicks; the mastery summary is counted; question picking already had a local fallback.
 
@@ -44,7 +46,8 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 
 ## Not built
 
-- "Ask the ghost" (Ctrl+Shift+Space only opens the panel), the pointer self-test (ghost flies to the Start button), `MediaRecorder` video replay.
+- "Ask the ghost" (Ctrl+Shift+Space only opens the panel), the pointer self-test (ghost flies to the Start button), `MediaRecorder` video replay in the desktop app (the web recorder keeps a video).
+- Web recorder: no AI descriptions or masking of screenshots (a browser only sees pixels and keys must stay server-side); the Download links point at the repository until a release is published.
 - Polish only cleans titles and drops noise; it does not group steps into sections.
 - Production packaging: `app/prompts/*.md` must be copied to `resources/prompts` (dev mode reads them from `app/prompts`).
 - Stretch goals (PLAN §13): agent-ready export / MCP server, ask your history, two experts.
