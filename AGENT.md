@@ -306,6 +306,7 @@ sh scripts/make-download.sh                 # rebuild web/downloads/Protege-Wind
 cd video && npm install && node render.mjs && node audio.mjs && node mix.mjs   # -> video/out/protege-demo.mp4
 node audio.mjs --local                      # offline score and sound effects (no voices) when ElevenLabs is unreachable
 node render.mjs --film walkthrough --fps 15 && node audio.mjs --film walkthrough && node mix.mjs --film walkthrough   # 59 s technical walkthrough
+node render.mjs --fps 15 && node showcase/edit.mjs && node audio.mjs --film showcase && node mix.mjs --film showcase   # 59 s showcase with real app footage
 
 # brain, dashboard and service tests (no API key needed; models are stubbed)
 cd fixtures && npm install && npm run typecheck && npm test

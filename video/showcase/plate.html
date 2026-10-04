@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Footage frame</title>
+<link rel="stylesheet" href="../film.css" />
+<style>
+  /* A transparent rounded window for the real footage, inside the film's aura, with a label. edit.mjs screenshots
+     this page (?label=...) as a PNG with alpha and lays it over the footage. */
+  html, body { background: transparent !important; }
+  #p { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+  #bgc { position: absolute; inset: 0; background: var(--bg);
+    clip-path: path(evenodd, 'M0 0H1920V1080H0Z M180 130H1740A20 20 0 0 1 1760 150V1010A20 20 0 0 1 1740 1030H180A20 20 0 0 1 160 1010V150A20 20 0 0 1 180 130Z'); }
+  #bgc .aura { opacity: 0.8; }
+  .ring { position: absolute; left: 160px; top: 130px; width: 1600px; height: 900px; border-radius: 20px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 0 6px rgba(179, 141, 232, 0.10), 0 0 110px -6px rgba(150, 110, 240, 0.6); }
+  .top { position: absolute; left: 160px; right: 160px; top: 50px; display: flex; align-items: center; justify-content: space-between; }
+  .top .chip { padding: 11px 16px; font-size: 15px; }
+  .top .dot { background: var(--ok); box-shadow: 0 0 12px var(--ok); }
+  .lab { font: 500 15px/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div id="p">
+  <div id="bgc"><div class="aura a1"></div><div class="aura a2"></div><div class="aura a3"></div></div>
+  <div class="ring"></div>
+  <div class="top"><span class="chip glass"><span class="dot"></span>Real footage · Protégé desktop app on Windows</span><span class="lab" id="lab"></span></div>
+</div>
+<script>
+  document.getElementById('lab').textContent = new URLSearchParams(location.search).get('label') || ''
+</script>
+</body>
+</html>

@@ -55,3 +55,26 @@ node mix.mjs --film walkthrough               # -> out/walkthrough/protege-walkt
 ```
 
 The finished film is copied to `video/protege-walkthrough.mp4`.
+
+## 59 s showcase with real footage
+
+`video/protege-demo.mp4` is now a 59 s cut that mixes the cinematic film with three inserts of real footage from the Windows desktop app (`footage/app-session.mp4`), each in a framed plate labelled "Real footage":
+
+| Time | Segment |
+|---|---|
+| 0:00 | Film: the loss, the reveal |
+| 0:12.7 | **Real app**: name the task, press record, the ghost greets the expert in the document |
+| 0:18.7 | Film: capture (accessibility scan, masking, the ghost asks why) |
+| 0:28.1 | **Real app**: Building the Work Map, then the spoken debrief with the ghost's questions |
+| 0:33.6 | Film: the Work Map page, confirmed; then teach (the €7,200 mistake caught before Post) |
+| 0:49.3 | **Real app**: Company profile, what Protégé knows and privacy at a glance |
+| 0:53.5 | Film: end card |
+
+The edit list, narration over the footage, sound effects and music plan live in `showcase/cues.js`; film lines and effects are moved to the cut automatically.
+
+```bash
+node render.mjs --fps 15            # the film on its 66 s authored timeline -> out/silent.mp4 (skip if it exists)
+node showcase/edit.mjs              # film + framed footage, crossfaded -> out/showcase/silent.mp4
+node audio.mjs --film showcase      # voices, effects and music -> audio/showcase/ (reuses files that exist)
+node mix.mjs --film showcase        # -> out/showcase/protege-demo.mp4, copied to video/protege-demo.mp4
+```
