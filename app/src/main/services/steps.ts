@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import { z } from 'zod'
-import type { AppContext, ContextEvent, Guide, GuideEdit, GuideStep, PickedQuestion, ServiceInit, SidecarEvent } from '@shared/contracts'
+import type { AppContext, ContextEvent, Guide, GuideEdit, GuideStep, PickedQuestion, ServiceInit, SidecarEvent, WorkMap } from '@shared/contracts'
 import { getStore } from './store'
 import { getLlm, readPrompt } from './llm'
 import { getDescriber, screenshotData, shotStorage } from './describe'
@@ -21,6 +22,10 @@ const saveSchema = z.object({ id: idSchema, revision: z.number().int().nonnegati
 const imageRequest = z.object({ id: idSchema, step_id: idSchema }).strict()
 const rectSchema = z.tuple([z.number().nonnegative(), z.number().nonnegative(), z.number().positive(), z.number().positive()])
 const blurSchema = imageRequest.extend({ revision: z.number().int().nonnegative(), data_url: z.string().max(7_000_000), regions: z.array(rectSchema).min(1).max(50) }).strict()
+export const polishSchema = z.object({
+  title: z.string().min(1).max(200),
+  steps: z.array(z.object({ id: z.string().max(160), title: z.string().min(1).max(300), keep: z.boolean() }).strict()).max(500),
+}).strict()
 const questionSchema = z.object({ question: z.string().min(1).max(240), type: z.enum(['reason', 'guardrail', 'exception']), about_event_t: z.number() }).strict().nullable()
 
 function newStep(t: number, kind: GuideStep['kind'], title: string, target = ''): GuideStep {
@@ -156,6 +161,59 @@ export function editGuide(original: Guide, edit: GuideEdit): Guide {
   return guide
 }
 
+/** Polish without a model: drop repeated window switches and clicks on empty page space. */
+export function localPolish(guide: Guide): z.infer<typeof polishSchema> {
+  const steps = guide.steps.map((step, index) => {
+    const previous = guide.steps[index - 1]
+    const noise = (step.kind === 'switch' && previous?.kind === 'switch') || (step.kind === 'click' && step.target === 'page' && !step.note && !step.quote)
+    return { id: step.id, title: step.title, keep: !noise }
+  })
+  return { title: guide.title, steps }
+}
+
+/** Polish result applied: steps with an expert quote, a note or a manual edit are always kept. */
+export function applyPolish(original: Guide, result: z.infer<typeof polishSchema>): Guide {
+  const guide = clone(original)
+  const byId = new Map(result.steps.map((step) => [step.id, step]))
+  guide.title = result.title || guide.title
+  guide.steps = guide.steps.filter((step) => byId.get(step.id)?.keep !== false || !!step.quote || !!step.note || step.edited)
+  for (const step of guide.steps) {
+    const next = byId.get(step.id)
+    if (next && next.title !== step.title && !step.edited) { step.title = next.title; step.edited = true }
+  }
+  guide.steps.forEach((step, index) => { step.n = index + 1 })
+  return guide
+}
+
+/** "Add the why": each Work Map step's reason and guardrails go onto its guide steps. */
+export function addWhy(original: Guide, maps: WorkMap[]): Guide {
+  const guide = clone(original)
+  for (const map of maps) for (const wmStep of map.steps) {
+    const steps = wmStep.guide_steps.map((id) => guide.steps.find((step) => step.id === id)).filter((step): step is GuideStep => !!step)
+    const anchor = steps.find((step) => step.kind === 'enter') ?? steps[0]
+    if (!anchor) continue
+    if (wmStep.reason.text && !anchor.quote) { anchor.quote = { ...wmStep.reason }; anchor.edited = true }
+    for (const rail of wmStep.guardrails) {
+      const line = `Guardrail (${rail.type.replace(/_/g, ' ')}): ${rail.rule} — “${rail.quote}”`
+      if (!anchor.note.includes(rail.rule)) { anchor.note = [anchor.note, line].filter(Boolean).join('\n'); anchor.edited = true }
+    }
+  }
+  return guide
+}
+
+export function guideMarkdown(guide: Guide, images: Map<string, string>): string {
+  const out = [`# ${guide.title}`, '', guide.app ? `_${guide.app}_` : '', '']
+  for (const step of guide.steps) {
+    out.push(`## ${step.n}. ${step.title}`, '')
+    if (step.note) out.push(step.note, '')
+    const image = images.get(step.id)
+    if (image) out.push(`![Step ${step.n}](${image})`, '')
+    if (step.screen_moment) out.push(`_${step.screen_moment}_`, '')
+    if (step.quote) out.push(`> “${step.quote.text}”`, '')
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n')
+}
+
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!)
 export async function guideHtml(ctx: AppContext, guide: Guide): Promise<string> {
   const steps = await Promise.all(guide.steps.map(async (step) => {
@@ -184,6 +242,10 @@ export function createStepsService(ctx: AppContext, dependencies: {
   describe?: ReturnType<typeof getDescriber>['describe']
   questionPrompt?: string
   exportPdf?: (html: string, title: string) => Promise<{ canceled: boolean; path?: string }>
+  polishPrompt?: string
+  /** Tests: where a file or folder export goes (null = canceled). */
+  saveFile?: (defaultName: string, extension: string) => Promise<string | null>
+  chooseFolder?: () => Promise<string | null>
 } = {}) {
   const store = getStore(ctx)
   const guides = new Map<string, Guide>()
@@ -401,6 +463,88 @@ export function createStepsService(ctx: AppContext, dependencies: {
     if (result.canceled || !result.filePath) return { canceled: true }
     await writeFile(result.filePath, await printGuidePdf(html))
     return { canceled: false, path: result.filePath }
+  })
+  const revisionSchema = z.object({ id: idSchema, revision: z.number().int().nonnegative() }).strict()
+  ctx.handle('guide:polish', (payload) => queue(async () => {
+    const { id, revision } = revisionSchema.parse(payload)
+    const guide = await checked(id, revision)
+    let result: z.infer<typeof polishSchema>
+    try {
+      result = await (dependencies.model ?? getLlm(ctx)).smart({
+        appKeys: guide.app_keys?.length ? guide.app_keys : [guide.app],
+        system: dependencies.polishPrompt ?? await readPrompt('guide_polish'),
+        input: JSON.stringify({ title: guide.title, steps: guide.steps.map((step) => ({ id: step.id, n: step.n, kind: step.kind, title: step.title, target: step.target, value: step.value, note: step.note })) }),
+        schema: polishSchema, maxTokens: 4096,
+      })
+      result.title = (await ctx.bus.request('observer:redact', { text: result.title })).text
+      for (const step of result.steps) step.title = (await ctx.bus.request('observer:redact', { text: step.title })).text
+    } catch {
+      report('polish', 'Polished locally (repeated switches and empty-page clicks removed) because the model is unavailable.')
+      result = localPolish(guide)
+    }
+    const polished = applyPolish(guide, result)
+    await publish(polished)
+    return clone(polished)
+  }))
+  ctx.handle('guide:addWhy', (payload) => queue(async () => {
+    const { id, revision } = revisionSchema.parse(payload)
+    const guide = await checked(id, revision)
+    const maps: WorkMap[] = []
+    for (const file of await store.list(['workmaps'])) {
+      if (!file.endsWith('.json')) continue
+      const map = await store.read<WorkMap>(['workmaps', file]).catch(() => null)
+      if (map?.guide === id) maps.push(map)
+    }
+    if (!maps.length) throw new Error('This guide has no Work Map yet. Finish the debrief first.')
+    const withWhy = addWhy(guide, maps)
+    await publish(withWhy)
+    return clone(withWhy)
+  }))
+  async function exportable(id: string): Promise<Guide> {
+    const guide = await load(id)
+    if (!guide) throw new Error('Guide no longer exists.')
+    if (guide.recording) throw new Error('Stop recording before exporting.')
+    return clone(guide)
+  }
+  const fileName = (title: string) => title.replace(/[<>:"/\\|?*\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'apprentice-guide'
+  async function saveFile(defaultName: string, extension: string): Promise<string | null> {
+    if (dependencies.saveFile) return dependencies.saveFile(defaultName, extension)
+    const { dialog } = await import('electron')
+    const result = await dialog.showSaveDialog({ title: 'Export guide', defaultPath: `${defaultName}.${extension}`, filters: [{ name: extension.toUpperCase(), extensions: [extension] }] })
+    return result.canceled || !result.filePath ? null : result.filePath
+  }
+  ctx.handle('guide:exportHtml', async (payload) => {
+    const guide = await exportable(z.object({ id: idSchema }).strict().parse(payload).id)
+    const target = await saveFile(fileName(guide.title), 'html')
+    if (!target) return { canceled: true }
+    await writeFile(target, await guideHtml(ctx, guide))
+    return { canceled: false, path: target }
+  })
+  ctx.handle('guide:exportMarkdown', async (payload) => {
+    const guide = await exportable(z.object({ id: idSchema }).strict().parse(payload).id)
+    let folder: string | null
+    if (dependencies.chooseFolder) folder = await dependencies.chooseFolder()
+    else {
+      const { dialog } = await import('electron')
+      const result = await dialog.showOpenDialog({ title: 'Export guide as Markdown (choose a folder)', properties: ['openDirectory', 'createDirectory'] })
+      folder = result.canceled ? null : result.filePaths[0] ?? null
+    }
+    if (!folder) return { canceled: true }
+    const base = path.join(folder, fileName(guide.title))
+    await mkdir(path.join(base, 'images'), { recursive: true })
+    const images = new Map<string, string>()
+    for (const step of guide.steps) {
+      if (!step.shot || step.screenshot_hidden) continue
+      try {
+        const shot = await screenshotData(ctx, step.shot)
+        const name = `step-${String(step.n).padStart(2, '0')}.${shot.media === 'image/png' ? 'png' : shot.media === 'image/webp' ? 'webp' : 'jpg'}`
+        await writeFile(path.join(base, 'images', name), shot.bytes)
+        images.set(step.id, `images/${name}`)
+      } catch { /* a missing screenshot leaves the step without an image */ }
+    }
+    const target = path.join(base, 'guide.md')
+    await writeFile(target, guideMarkdown(guide, images))
+    return { canceled: false, path: target }
   })
   return { list, drain: async () => { while (pending.size) await Promise.allSettled([...pending]); await serialized.catch(() => undefined) } }
 }
