@@ -18,6 +18,7 @@ import type { BusEvents, Guide, GuideStep, SidecarEvent, WorkMap } from '@shared
 import type { ReplayCommand, SessionState } from '../../common/ipc'
 import { invoke, shotUrl, tryInvoke, useChannel } from '../lib/api'
 import { getMic, setMic, useMics } from '../lib/mic'
+import { ModeSwitch, type Mode } from '../lib/ModeSwitch'
 import { Ghost } from '../mascot/Ghost'
 import './panel.css'
 
@@ -44,12 +45,16 @@ export default function Panel() {
   const [ghost, setGhost] = useState<BusEvents['ghost:state']>({ state: 'idle', badge: null })
   const [replay, setReplay] = useState<ReplayCommand | null>(null)
   const [workmaps, setWorkmaps] = useState<WorkMap[] | null>(null)
+  const [mode, setMode] = useState<Mode>('expert')
 
   useEffect(() => {
     void tryInvoke<SessionState>('session:state').then((s) => s && setSession(s))
     // Agent C may expose this; the lesson picker only shows when it does.
     void tryInvoke<WorkMap[]>('workmaps:list').then((w) => Array.isArray(w) && setWorkmaps(w))
+    void tryInvoke<{ mode?: Mode }>('settings:get').then((s) => s?.mode && setMode(s.mode))
   }, [])
+  useChannel<{ mode?: Mode }>('settings:updated', (s) => s?.mode && setMode(s.mode))
+  useChannel<WorkMap>('workmap:updated', () => void tryInvoke<WorkMap[]>('workmaps:list').then((w) => Array.isArray(w) && setWorkmaps(w)))
 
   useChannel<SessionState>('session:state', setSession)
   useChannel<BusEvents['ghost:state']>('ghost:state', setGhost)
@@ -83,7 +88,10 @@ export default function Panel() {
         </div>
       </header>
 
-      <Controls session={session} workmaps={workmaps} />
+      <div className="panel-mode">
+        <ModeSwitch mode={mode} size="compact" disabled={session.phase !== 'idle'} onChange={(m) => { setMode(m); void tryInvoke('settings:set', { mode: m }) }} />
+      </div>
+      <Controls session={session} workmaps={workmaps} mode={mode} />
       <MicPicker />
 
       {replay ? <Replay cmd={replay} onClose={() => setReplay(null)} /> : <StepTrail guide={guide} live={live} />}
@@ -102,7 +110,7 @@ export default function Panel() {
 
 // ------------------------------------------------------------------ controls
 
-function Controls({ session, workmaps }: { session: SessionState; workmaps: WorkMap[] | null }) {
+function Controls({ session, workmaps, mode }: { session: SessionState; workmaps: WorkMap[] | null; mode: Mode }) {
   const start = (kind: 'teach' | 'quick_guide' | 'tutor', workmap_id?: string) => void invoke('session:start', { kind, workmap_id })
   const stop = () => void invoke('session:stop')
   const offRecord = () => void invoke('session:offRecord')
@@ -165,6 +173,30 @@ function Controls({ session, workmaps }: { session: SessionState; workmaps: Work
     )
   }
 
+  if (mode === 'newhire') {
+    return (
+      <section className="controls">
+        {workmaps && workmaps.length > 0 ? (
+          <select defaultValue="" aria-label="Start a lesson" onChange={(e) => e.target.value && start('tutor', e.target.value)}>
+            <option value="" disabled>
+              Start a lesson
+            </option>
+            {workmaps.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.steps.length ? `${w.steps[0].title} (${w.steps.length} steps)` : w.id}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="session-kind">No tasks to learn yet. An expert records one first.</span>
+        )}
+        <button className="quiet push" onClick={offRecord} title="Ctrl+Shift+O" aria-label="Go off the record">
+          <MicrophoneSlashIcon size={16} />
+        </button>
+      </section>
+    )
+  }
+
   return (
     <section className="controls">
       <button className="record" onClick={() => start('teach')} title="Ctrl+Shift+R">
@@ -173,18 +205,6 @@ function Controls({ session, workmaps }: { session: SessionState; workmaps: Work
       <button className="secondary" onClick={() => start('quick_guide')} title="Record steps with the voice agent off">
         <ListNumbersIcon size={16} /> Steps only
       </button>
-      {workmaps && workmaps.length > 0 && (
-        <select defaultValue="" aria-label="Start a lesson" onChange={(e) => e.target.value && start('tutor', e.target.value)}>
-          <option value="" disabled>
-            Start a lesson
-          </option>
-          {workmaps.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.steps[0]?.title ?? w.id}
-            </option>
-          ))}
-        </select>
-      )}
       <button className="quiet push" onClick={offRecord} title="Ctrl+Shift+O" aria-label="Go off the record">
         <MicrophoneSlashIcon size={16} />
       </button>

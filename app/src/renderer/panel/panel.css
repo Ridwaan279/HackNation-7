@@ -135,6 +135,11 @@
   border-width: 1px;
 }
 
+/* Expert / New hire, above the controls. */
+.panel-mode {
+  margin: 0 12px 8px;
+}
+
 /* -------------------------------------------------------------- controls */
 
 .controls {

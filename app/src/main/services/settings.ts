@@ -9,12 +9,15 @@ export interface Settings {
   expert: string
   /** The first-run wizard has been completed. */
   onboarded: boolean
+  /** Who is using the app: an expert teaching it, or a new hire learning from it. */
+  mode: 'expert' | 'newhire'
 }
 
 const schema = z.object({
   role: z.string().trim().min(1).max(80),
   expert: z.string().trim().min(1).max(60),
   onboarded: z.boolean(),
+  mode: z.enum(['expert', 'newhire']),
 })
 const patchSchema = schema.partial().strict()
 
@@ -22,6 +25,7 @@ const defaults = (): Settings => ({
   role: process.env.APPRENTICE_ROLE || 'Accounts payable clerk',
   expert: process.env.APPRENTICE_EXPERT || 'Sabine',
   onboarded: false,
+  mode: 'expert',
 })
 
 let current: Settings = defaults()

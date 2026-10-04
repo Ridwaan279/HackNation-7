@@ -1,0 +1,79 @@
+.mode-switch {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 12px;
+  background: var(--layer-hover);
+  border: 1px solid var(--stroke);
+}
+
+.mode-switch button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.mode-switch button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.mode-switch button.on {
+  color: var(--text);
+}
+
+.mode-switch button:not(.on):not(:disabled):hover {
+  color: var(--text);
+}
+
+/* The sliding highlight behind the selected option. */
+.mode-thumb {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: var(--layer-strong);
+  box-shadow: 0 1px 3px rgba(20, 16, 40, 0.12), 0 0 0 1px var(--stroke);
+}
+
+.mode-label,
+.mode-hint {
+  position: relative;
+}
+
+.mode-switch.large button {
+  min-width: 168px;
+  padding: 10px 20px;
+  gap: 2px;
+}
+
+.mode-switch.large .mode-label {
+  font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.mode-switch.large .mode-hint {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-2);
+}
+
+.mode-switch.compact {
+  width: 100%;
+}
+
+.mode-switch.compact button {
+  height: 30px;
+  font-size: 13px;
+  font-weight: 600;
+}

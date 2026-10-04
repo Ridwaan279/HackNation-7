@@ -67,7 +67,7 @@ export function PrivacyPage({ bridge }: { bridge?: DashboardBridge }) {
         <label className="dash-field">Blocked domains (wildcards allowed)<textarea rows={3} value={text.domains} placeholder="*.mybank.com" onChange={(e) => setText({ ...text, domains: e.target.value })} /></label>
       </section>
       <section className="dash-card"><h3>Allow-only mode</h3><label className="dash-toggle"><input type="checkbox" checked={allowOnly} onChange={(e) => set('allow_only', e.target.checked ? lines(text.allow) : null)} /><span><strong>Watch only the apps and domains listed</strong><small>For company deployments.</small></span></label>
-        {allowOnly && <label className="dash-field">Allowed apps and domains<textarea rows={3} value={text.allow} placeholder={'excel.exe\nminierp.local'} onChange={(e) => setText({ ...text, allow: e.target.value })} /></label>}
+        {allowOnly && <label className="dash-field">Allowed apps and domains<textarea rows={3} value={text.allow} placeholder={'excel.exe\nintranet.example.com'} onChange={(e) => setText({ ...text, allow: e.target.value })} /></label>}
         <label className="dash-field">Local-only apps (never sent to a model)<textarea rows={2} value={text.local} placeholder="browser:hr.example.com" onChange={(e) => setText({ ...text, local: e.target.value })} /></label>
       </section>
       <section className="dash-card"><h3>Keeping data</h3>

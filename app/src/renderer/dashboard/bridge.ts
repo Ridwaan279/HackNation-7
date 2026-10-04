@@ -1,6 +1,16 @@
 import type { AppModes, AppProfile, CaptureMode, GuideIpc, MasteryReport, MemoryApp, MemoryEntry, PrivacyConfig, WorkMap } from '@shared/contracts'
 
-export interface Settings { role: string; expert: string; onboarded: boolean }
+export type Mode = 'expert' | 'newhire'
+export interface Settings { role: string; expert: string; onboarded: boolean; mode: Mode }
+/** The shell's session state (app/src/common/ipc.ts SessionState). */
+export interface SessionInfo {
+  id: string | null
+  kind: 'teach' | 'quick_guide' | 'tutor' | null
+  phase: 'idle' | 'live' | 'debrief_pending' | 'debrief'
+  started_at: number | null
+  workmap_id?: string
+  offRecord: boolean
+}
 export interface PrivacyState { privacy: PrivacyConfig; app_modes: AppModes; paused_until: number | null }
 type Empty = Record<string, never>
 
@@ -24,6 +34,10 @@ export interface DashboardIpc extends GuideIpc {
   'settings:set': { req: Partial<Settings>; res: Settings }
   'mastery:list': { req: Empty; res: MasteryReport[] }
   'session:start': { req: { kind: 'teach' | 'quick_guide' | 'tutor'; workmap_id?: string }; res: unknown }
+  'session:stop': { req: Empty; res: SessionInfo }
+  'session:state': { req: Empty; res: SessionInfo }
+  'session:offRecord': { req: Empty; res: SessionInfo }
+  'debrief:start': { req: Empty; res: SessionInfo }
 }
 
 export interface DashboardBridge {
@@ -38,7 +52,7 @@ export function desktopBridge(): DashboardBridge | undefined {
 export const errorText = (failure: unknown, fallback = 'Operation failed. Try again.') =>
   failure instanceof Error ? failure.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : fallback
 
-/** App keys as people read them: "browser:minierp.local" → "minierp.local", "excel.exe" → "Excel". */
+/** App keys as people read them: "browser:intranet.example.com" → "intranet.example.com", "excel.exe" → "Excel". */
 export function appLabel(key: string): string {
   if (key.startsWith('browser:')) return key.slice(8).replace(/^www\./, '')
   return key.replace(/\.exe$/i, '').replace(/^./, (c) => c.toUpperCase())
