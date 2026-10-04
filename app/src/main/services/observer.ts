@@ -4,13 +4,16 @@
 //   writes commands to stdin. Shapes: shared/contracts.ts.
 // - Every event is re-emitted as bus 'observer:event'. Requests 'observer:*' become commands.
 // - Restarts the sidecar if it dies (1 s, 2 s, 5 s, 10 s, then every 30 s) and keeps the mode.
-// - OBSERVER_FAKE=<fixture.jsonl> replays a fixture instead of spawning Python.
+// - OBSERVER_FAKE=<fixture.jsonl> replays a fixture instead of watching the screen. Masking still
+//   runs in Python (`observer.py --redact-only`), the fixture's screenshots are copied to
+//   <root>/shots/fixture/, and the runtime config files are created if missing.
+//   OBSERVER_FAKE_SPEED=4 replays 4x faster; OBSERVER_FAKE_MAX_GAP=3 caps pauses at 3 s.
 //
 // Screenshot paths in events and replies are relative to ctx.paths.root ("shots/...").
 // Uses no Electron APIs, so it can be tested in plain Node.
 
 import { spawn, type ChildProcess } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { constants as fsConstants, copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import * as path from 'node:path'
 import { createInterface } from 'node:readline'
 import type {
@@ -216,55 +219,127 @@ export class ObserverClient implements Requester {
   }
 }
 
+export interface FakeReplayOptions {
+  file: string
+  onEvent: (ev: SidecarEvent) => void
+  /** ctx.paths.root: fixture screenshots are copied to <root>/shots/fixture/ and paths rewritten. */
+  root: string
+  speed?: number
+  /** Longest pause replayed, in seconds. 0 (default) keeps the fixture's own timing. */
+  maxGapS?: number
+  /** Answers `redact` (and `reload_config`): the sidecar in --redact-only mode. Without it, redact fails. */
+  masker?: Requester
+  log?: (msg: string) => void
+}
+
 /** OBSERVER_FAKE: replays a JSONL fixture of SidecarEvents with their original timing. */
 export class FakeReplay implements Requester {
   private timers: ReturnType<typeof setTimeout>[] = []
+  private readonly imported = new Map<string, string>()
 
-  constructor(
-    private readonly file: string,
-    private readonly onEvent: (ev: SidecarEvent) => void,
-    private readonly speed = 1,
-    private readonly log: (msg: string) => void = console.error
-  ) {}
+  constructor(private readonly opts: FakeReplayOptions) {}
 
   start(): void {
-    this.onEvent({ type: 'ready', t: nowSeconds(), version: 'fixture', platform: process.platform, backend: 'fake', dpi_awareness: 'unknown' })
+    this.opts.masker?.start()
+    this.opts.onEvent({ type: 'ready', t: nowSeconds(), version: 'fixture', platform: process.platform, backend: 'fake', dpi_awareness: 'unknown' })
     let events: SidecarEvent[] = []
     try {
-      events = parseFixture(readFileSync(this.file, 'utf8'))
+      events = parseFixture(readFileSync(this.opts.file, 'utf8'))
     } catch (err) {
-      this.log(`[observer] could not read fixture ${this.file}: ${String(err)}`)
+      this.log(`[observer] could not read fixture ${this.opts.file}: ${String(err)}`)
       return
     }
+    const speed = this.opts.speed && this.opts.speed > 0 ? this.opts.speed : 1
+    const maxGap = this.opts.maxGapS && this.opts.maxGapS > 0 ? this.opts.maxGapS : Infinity
     let delayMs = 0
     let prevT = events.length ? events[0].t : 0
     const started = nowSeconds()
     for (const ev of events) {
       if (ev.type === 'ready') continue
-      delayMs += (Math.min(Math.max(ev.t - prevT, 0), 3) * 1000) / this.speed // gaps capped at 3 s
+      if (ev.type === 'shot') ev.path = this.importShot(ev.path)
+      if (ev.type === 'click' && ev.shot) ev.shot = this.importShot(ev.shot)
+      delayMs += (Math.min(Math.max(ev.t - prevT, 0), maxGap) * 1000) / speed
       prevT = ev.t
       const at = delayMs
-      this.timers.push(setTimeout(() => this.onEvent({ ...ev, t: started + at / 1000 }), at))
+      this.timers.push(setTimeout(() => this.opts.onEvent({ ...ev, t: started + at / 1000 }), at))
     }
   }
 
   stop(): void {
     for (const t of this.timers) clearTimeout(t)
     this.timers = []
+    this.opts.masker?.stop()
   }
 
   setMode(): void {}
 
-  request(body: CommandBody): Promise<SidecarReply> {
+  request(body: CommandBody, timeoutMs?: number): Promise<SidecarReply> {
     switch (body.cmd) {
       case 'redact':
-        return Promise.resolve({ id: 0, ok: true, text: body.text })
+        // Fail closed: callers must not store the raw text when masking is unavailable.
+        return this.opts.masker
+          ? this.opts.masker.request(body, timeoutMs)
+          : Promise.reject(new Error('masking is not available (no redact-only sidecar)'))
+      case 'reload_config':
+        return this.opts.masker ? this.opts.masker.request(body, timeoutMs) : Promise.resolve({ id: 0, ok: true })
       case 'tree':
         return Promise.resolve({ id: 0, ok: true, controls: [] })
       case 'shot':
         return Promise.resolve({ id: 0, ok: false, error: 'screenshots are not available in fake mode' })
       default:
         return Promise.resolve({ id: 0, ok: true })
+    }
+  }
+
+  /** Copy a fixture screenshot into <root>/shots/fixture/ and return its runtime-relative path. */
+  private importShot(p: string): string {
+    const known = this.imported.get(p)
+    if (known !== undefined) return known
+    const dir = path.dirname(this.opts.file)
+    const candidates = path.isAbsolute(p)
+      ? [p]
+      : [path.resolve(dir, p), path.resolve(dir, '..', p), path.resolve(process.cwd(), p), path.resolve(process.cwd(), '..', p), path.resolve(this.opts.root, p)]
+    const src = candidates.find((c) => existsSync(c))
+    let out = p // not found: keep the original string (readers only accept shots/... under root)
+    if (src) {
+      const rel = path.posix.join('shots', 'fixture', path.basename(src))
+      const dest = path.join(this.opts.root, rel)
+      try {
+        if (path.resolve(src) !== path.resolve(dest)) {
+          mkdirSync(path.dirname(dest), { recursive: true })
+          copyFileSync(src, dest)
+        }
+        out = rel
+      } catch (err) {
+        this.log(`[observer] could not copy fixture screenshot ${src}: ${String(err)}`)
+      }
+    } else {
+      this.log(`[observer] fixture screenshot not found: ${p}`)
+    }
+    this.imported.set(p, out)
+    return out
+  }
+
+  private log(msg: string): void {
+    ;(this.opts.log ?? console.error)(msg)
+  }
+}
+
+/** Fake mode has no sidecar to create the runtime config files, so copy the repo defaults if missing. */
+export function ensureRuntimeConfig(configDir: string, defaultsDir: string, log: (msg: string) => void = console.error): void {
+  const files: [string, string][] = [
+    ['privacy.default.json', 'privacy.json'],
+    ['app_modes.default.json', 'app_modes.json']
+  ]
+  for (const [from, to] of files) {
+    const src = path.join(defaultsDir, from)
+    const dest = path.join(configDir, to)
+    if (existsSync(dest) || !existsSync(src)) continue
+    try {
+      mkdirSync(configDir, { recursive: true })
+      copyFileSync(src, dest, fsConstants.COPYFILE_EXCL) // never overwrite a file someone just wrote
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'EEXIST') log(`[observer] could not create ${dest}: ${String(err)}`)
     }
   }
 }
@@ -340,8 +415,22 @@ export const init: ServiceInit = (ctx) => {
   const onEvent = (ev: SidecarEvent): void => ctx.bus.emit('observer:event', ev)
   let client: Requester
   if (ctx.env.OBSERVER_FAKE) {
-    const speed = Number(process.env.OBSERVER_FAKE_SPEED) || 1
-    client = new FakeReplay(path.resolve(ctx.env.OBSERVER_FAKE), onEvent, speed)
+    const script = resolveSidecarScript()
+    ensureRuntimeConfig(ctx.paths.config, path.resolve(path.dirname(script), '..', 'config'))
+    const masker = new ObserverClient({
+      python: resolvePython(),
+      script,
+      args: ['--redact-only', '--data-dir', ctx.paths.root, '--config-dir', ctx.paths.config],
+      onEvent: () => {} // its own ready / restart events are not screen events
+    })
+    client = new FakeReplay({
+      file: path.resolve(ctx.env.OBSERVER_FAKE),
+      onEvent,
+      root: ctx.paths.root,
+      speed: Number(process.env.OBSERVER_FAKE_SPEED) || 1,
+      maxGapS: Number(process.env.OBSERVER_FAKE_MAX_GAP) || 0,
+      masker
+    })
   } else {
     client = new ObserverClient({
       python: resolvePython(),
