@@ -59,7 +59,7 @@
   position: absolute;
   right: calc(100% - 28px);
   bottom: 58%;
-  width: 320px;
+  width: min(480px, 42vw);
   display: flex;
   justify-content: flex-end;
 }
@@ -94,10 +94,19 @@
 
 .bubble.caption {
   pointer-events: none;
-  font-size: 13px;
-  color: var(--text-2);
-  max-height: 120px;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--text);
+  /* Grows with the text; if it is very long, keep the newest words in view. */
+  max-height: 50vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.bubble.caption p {
+  max-width: none;
 }
 
 .bubble.notice {

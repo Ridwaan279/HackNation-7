@@ -16,6 +16,8 @@ const GHOST_H = (SIZE * 165) / 220
 const DOCK_MARGIN = 24
 const DEFAULT_TIMEOUT_S = 12
 const CAPTION_MS = 7000
+/** Long answers stay up long enough to read: ~0.35 s per word. */
+const CAPTION_MS_PER_WORD = 350
 const POINT_MS = 6000
 
 const BLOCK_LABEL: Record<string, string> = {
@@ -142,7 +144,8 @@ function OverlayInner() {
   useEffect(() => {
     if (!agent.caption) return
     setCaption(agent.caption)
-    const t = setTimeout(() => setCaption(null), CAPTION_MS)
+    const words = agent.caption.split(/\s+/).length
+    const t = setTimeout(() => setCaption(null), Math.max(CAPTION_MS, words * CAPTION_MS_PER_WORD))
     return () => clearTimeout(t)
   }, [agent.caption])
 
@@ -242,7 +245,7 @@ function OverlayInner() {
           {state === 'not_watching' && (
             <div className="status-pill">Not watching{blockReason ? `: ${BLOCK_LABEL[blockReason] ?? blockReason}` : ''}</div>
           )}
-          {agent.connected && <MicMeter level={micLevel} name={micName} />}
+          {agent.connected && !agent.speaking && <MicMeter level={micLevel} name={micName} />}
         </div>
       </motion.div>
     </div>
@@ -252,6 +255,8 @@ function OverlayInner() {
 const QUIET_AFTER_MS = 8000
 
 /** Live mic level while the voice agent is connected, so you can see it hears you. */
+/** Only shown while the agent is quiet (it unmounts while the agent speaks), so the quiet timer
+ *  starts fresh each time the agent stops talking. */
 function MicMeter({ level, name }: { level: number; name: string }) {
   const lastSound = useRef(Date.now())
   const [quiet, setQuiet] = useState(false)
