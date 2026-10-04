@@ -58,7 +58,7 @@ Branch: `agent/b-shell`. Tested on Windows 11 at 150% scaling (2560×1600).
 
 ## Stubbed / faked
 - **Dashboard:** `#/dashboard` shows `src/renderer/devtools/DevDashboard.tsx` (ghost gallery, pop-up and
-  pointer test buttons, live event log) until **C adds `src/renderer/dashboard/Dashboard.tsx`** with a
+  pointer test buttons, live event log) until **C's `src/renderer/dashboard/index.tsx`** (default export) is merged, with a
   default export. That's picked up automatically and nothing in my files needs to change.
 - **No `observer:redact`** (A not merged): `session.ts` uses an over-eager regex fallback (IBAN-like,
   12+ digit runs, common key prefixes). Replace it with A's handler as soon as A's handler is merged.

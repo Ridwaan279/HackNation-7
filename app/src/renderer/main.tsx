@@ -4,8 +4,9 @@ import './base.css'
 
 type Page = () => Promise<{ default: ComponentType }>
 
-// Agent C owns src/renderer/dashboard/. Until Dashboard.tsx exists, show the dev dashboard.
-const dashboard = import.meta.glob<{ default: ComponentType }>('./dashboard/Dashboard.tsx')['./dashboard/Dashboard.tsx']
+// Agent C owns src/renderer/dashboard/ (entry: index.tsx, default export). Until it exists, show the dev dashboard.
+const dashboards = import.meta.glob<{ default: ComponentType }>(['./dashboard/index.tsx', './dashboard/Dashboard.tsx'])
+const dashboard = dashboards['./dashboard/index.tsx'] ?? dashboards['./dashboard/Dashboard.tsx']
 
 const routes: Record<string, Page> = {
   overlay: () => import('./overlay/Overlay'),

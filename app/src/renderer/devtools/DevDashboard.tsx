@@ -1,4 +1,4 @@
-// Shown at #/dashboard until Agent C adds src/renderer/dashboard/Dashboard.tsx.
+// Shown at #/dashboard until Agent C's src/renderer/dashboard/index.tsx is merged.
 // Doubles as Agent B's test bench: ghost states, pop-ups, pointer, live event log.
 import { useState } from 'react'
 import type { GhostState, Guide, Popup, SidecarEvent } from '@shared/contracts'
@@ -76,7 +76,7 @@ export default function DevDashboard() {
     <div className="dev">
       <header>
         <h1>Apprentice · dev dashboard</h1>
-        <p className="muted">Agent C's dashboard replaces this once src/renderer/dashboard/Dashboard.tsx exists.</p>
+        <p className="muted">Agent C's dashboard replaces this once src/renderer/dashboard/index.tsx is merged.</p>
       </header>
 
       <section>
