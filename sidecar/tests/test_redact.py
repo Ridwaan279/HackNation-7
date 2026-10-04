@@ -29,6 +29,28 @@ def test_iban_followed_by_uppercase_word(r):
     assert r.redact("DE89 3704 0044 0532 0130 00 EUR") == "[IBAN ••••3000] EUR"
 
 
+@pytest.mark.parametrize("text,expected", [
+    ("Pay to DE89 3704 0044 0532 0130 ff00", "Pay to [IBAN]"),  # edited in a field (spike, Windows)
+    ("Pay to DE00 3704 0044 0532 0130 00", "Pay to [IBAN]"),    # fails mod-97
+    ("DE89 3704 0044 0532 01", "[IBAN]"),                       # still being typed
+    ("DE00 3704 0044 0532 0130 00 EUR", "[IBAN] EUR"),
+    ("DE00 3704 0044 0532 0130 00 now please", "[IBAN] now please"),
+    ("de89 3704 0044 0532 0130 00", "[IBAN ••••3000]"),         # lower case, valid
+])
+def test_iban_failing_checksum_is_still_masked(r, text, expected):
+    assert r.redact(text) == expected
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("4242 4242 4242 4241", "[CARD]"),            # fails Luhn
+    ("4111-1111-1111-11", "[CARD]"),              # still being typed (14 digits, fails Luhn)
+    ("3782 822463 10006", "[CARD]"),              # Amex grouping, fails Luhn
+    ("card 4242424242424241 end", "card [CARD] end"),
+])
+def test_card_failing_luhn_is_still_masked(r, text, expected):
+    assert r.redact(text) == expected
+
+
 def test_ssn(r):
     assert r.redact("SSN 123-45-6789.") == "SSN [SSN]."
 
@@ -83,11 +105,13 @@ def test_high_entropy_token(r):
     "Phone +49 170 1234567",              # phone masking is off by default
     "sabine@example.com",                 # email masking is off by default
     "C:/Users/sabine/Documents/Q3/accruals/final-version-2024.xlsx",
-    "4242 4242 4242 4241",                # fails Luhn
-    "DE00 3704 0044 0532 0130 00",        # fails mod-97
     "000-12-3456",                        # invalid SSN area
     "The token approval workflow",        # prose, no key=value
     "Equipment over €5,000 is always capex.",
+    "VAT FR12345678901, NL123456789B01, SE123456789701, DE123456789",
+    "Tel 0049 30 1234 5678",              # phone grouping, not a card
+    "Order 123-456-789-012",
+    "XY12 3456 7890 1234 5678",           # IBAN-shaped, but XY isn't an IBAN country
 ])
 def test_not_masked(r, text):
     assert r.redact(text) == text

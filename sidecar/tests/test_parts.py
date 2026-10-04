@@ -9,7 +9,7 @@ from health import HealthTracker
 from model import FocusInfo, WalkItem
 from redact import Redactor
 from scaling import ScalingTracker, apply_scale, rect_contains
-from textsnap import MAX_DELTA_BYTES, TextSnapshotter
+from textsnap import MAX_DELTA_BYTES, TextSnapshotter, classify
 
 
 def focus(value, key=("f", 1), name="Cost center", ctype="Edit", is_password=False, rect=(0, 0, 10, 10)):
@@ -308,3 +308,10 @@ def test_rect_helpers():
     assert shots.intersect((0, 0, 10, 10), (10, 10, 20, 20)) is None
     assert shots.union([(0, 0, 1, 1), (5, 5, 6, 6)]) == (0, 0, 6, 6)
     assert shots.union([]) is None
+
+
+def test_edited_iban_field_stays_masked_and_blurred():
+    # Seen on Windows: typing into the IBAN broke its checksum, and the raw value went out.
+    items = [WalkItem("Edit", "Notes", "Pay to DE89 3704 0044 0532 0130 ff00", False, "notes")]
+    lines, sensitive, _ = classify(items, Redactor())
+    assert lines == ["Notes", "Pay to [IBAN]"] and sensitive == ["notes"]

@@ -4,6 +4,10 @@ Every piece of text the sidecar emits goes through Redactor.redact() first:
 window titles, element names, field values, ambient text and voice
 transcripts (via the `redact` command). Password fields are never read at
 all; that rule lives in the callers, `looks_like_password_field()` helps them.
+
+Stricter than PLAN §6.1 in one way: a card number that fails Luhn or an IBAN
+that fails mod-97 is still masked (as [CARD] / [IBAN], no digits kept) when it
+is written like one. An edited, mistyped or half-typed number is still private.
 """
 from __future__ import annotations
 
@@ -42,8 +46,18 @@ _KV_SECRET_RE = re.compile(
     r"(\s*[:=]\s*)([^\s,;'\"]{4,})"
 )
 _BEARER_RE = re.compile(r"(?i)\b(bearer\s+)([A-Za-z0-9\-._~+/]{12,}=*)")
-_IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}(?:[  ]?[A-Z0-9]){11,30}\b")
+_IBAN_RE = re.compile(r"\b[A-Za-z]{2}\d{2}(?:[  ]?[A-Za-z0-9]){11,30}\b")
+_IBAN_TRAILING_WORD_RE = re.compile(r"[  ][A-Za-z]+$")
+# Countries with IBANs (SWIFT registry, plus the partial / national ones).
+_IBAN_COUNTRIES = frozenset("""
+AD AE AL AT AZ BA BE BG BH BI BR BY CH CR CY CZ DE DJ DK DO EE EG ES FI FK FO FR GB GE GI GL GR GT
+HN HR HU IE IL IQ IS IT JO KW KZ LB LC LI LT LU LV LY MC MD ME MK MN MR MT MU NI NL NO OM PK PL PS
+PT QA RO RS RU SA SC SD SE SI SK SM SO ST SV TL TN TR UA VA VG XK YE
+AO BF BJ CF CG CI CM CV DZ GA GQ GW IR KM MA MG ML MZ NE SN TD TG
+""".split())
 _CARD_RE = re.compile(r"(?<![\d.,])\d(?:[   -]?\d){12,18}(?!\d)")
+# Written like a card number: 4-4-4-4(-3) groups, Amex 4-6-5, or 15-16 digits in a row.
+_CARD_SHAPED_RE = re.compile(r"\d{4}([   -])\d{4}\1\d{4}\1\d{1,7}|\d{4}([   -])\d{6}\2\d{4,5}|\d{15,16}")
 _SSN_RE = re.compile(r"\b(?!000|666|9\d\d)\d{3}[- ](?!00)\d{2}[- ](?!0000)\d{4}\b")
 _ENTROPY_CANDIDATE_RE = re.compile(r"[A-Za-z0-9+/=_\-]{32,}")
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
@@ -183,13 +197,23 @@ class Redactor:
             # Positions of the significant characters, so a trailing word that
             # the regex swallowed ("... 00 EUR") can be dropped again.
             positions = [i for i, ch in enumerate(raw) if ch not in "  "]
-            compact = "".join(raw[i] for i in positions)
+            compact = "".join(raw[i] for i in positions).upper()
             for length in range(len(compact), 14, -1):
                 candidate = compact[:length]
                 if iban_ok(candidate):
                     end = positions[length - 1] + 1
                     return f"[IBAN ••••{candidate[-4:]}]" + raw[end:]
-            return raw
+            if compact[:2] not in _IBAN_COUNTRIES:
+                return raw
+            # The checksum fails: mistyped, edited, or still being typed. It is still a bank
+            # account number, so mask it, without keeping any digits. Give back trailing words.
+            body = raw
+            while True:
+                m2 = _IBAN_TRAILING_WORD_RE.search(body)
+                if m2 is None or sum(ch not in "  " for ch in body[:m2.start()]) < 15:
+                    break
+                body = body[:m2.start()]
+            return "[IBAN]" + raw[len(body):]
 
         return _IBAN_RE.sub(repl, s)
 
@@ -199,6 +223,8 @@ class Redactor:
             digits = re.sub(r"\D", "", m.group(0))
             if 13 <= len(digits) <= 19 and luhn_ok(digits):
                 return f"[CARD ••••{digits[-4:]}]"
+            if _CARD_SHAPED_RE.fullmatch(m.group(0)):
+                return "[CARD]"  # fails Luhn (mistyped or still being typed), but written like a card
             return m.group(0)
 
         return _CARD_RE.sub(repl, s)
