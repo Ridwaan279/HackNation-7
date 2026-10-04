@@ -7,5 +7,5 @@ export default {
   githubUrl: 'https://github.com/Ridwaan279/HackNation-7',
   /** Public ElevenLabs agent id for "Ask the ghost" (README: "Website voice agent").
    *  Leave empty and a browser voice reads a short explanation instead. */
-  elevenLabsAgentId: '',
+  elevenLabsAgentId: 'agent_4401m42tr8pzfd7vksmmsns1wr0p',
 }
