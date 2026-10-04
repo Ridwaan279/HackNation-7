@@ -66,7 +66,7 @@ export const init: ServiceInit = async (ctx: AppContext) => {
       const profile = key ? await rollup.read(key) : null
       const q = profile ? pickQuestion(state, profile.open_questions, log, now()) : null
       if (!q || !key || state.key !== key) return
-      const popup: Popup = { id: `curiosity-${Date.now()}`, kind: 'curiosity', app_key: key, text: `Got a sec? ${q}`, speak: false, choices: [{ id: 'answer', label: 'Answer' }, { id: 'later', label: 'Not now' }], timeout_s: POPUP_TIMEOUT_S }
+      const popup: Popup = { id: `curiosity-${Date.now()}`, kind: 'curiosity', app_key: key, text: `Got a sec? ${q}`, speak: true, choices: [{ id: 'answer', label: 'Answer' }, { id: 'later', label: 'Not now' }], timeout_s: POPUP_TIMEOUT_S }
       mine.set(popup.id, { key, q })
       log = { asked: [...log.asked.filter((a) => now() - a.at < 30 * 86400), { key, q, at: now() }] }
       await store.write(['curiosity.json'], log)

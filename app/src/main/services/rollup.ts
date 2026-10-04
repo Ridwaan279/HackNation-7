@@ -32,6 +32,28 @@ export function appLabel(key: string): string {
 const top = <T>(counts: Map<T, number>, n: number) => [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, n)
 const bump = <T>(counts: Map<T, number>, key: T) => counts.set(key, (counts.get(key) ?? 0) + 1)
 
+/** A compact, value-free interaction dataset from masked ambient events. */
+export function summarizeHabits(entries: MemoryEntry[], previous?: AppProfile['habits']): NonNullable<AppProfile['habits']> {
+  const actions = new Map((previous?.frequent_actions ?? []).map((item) => [item.label, item.count]))
+  const fields = new Map((previous?.frequent_fields ?? []).map((item) => [item.label, item.count]))
+  const sequences = new Map((previous?.action_sequences ?? []).map((item) => [`${item.from}\u0000${item.to}`, item.count]))
+  let last: { label: string; t: number } | null = null
+  for (const entry of entries) {
+    const label = entry.type === 'click' && entry.target ? `Click ${entry.target.slice(0, 120)}`
+      : entry.type === 'commit' && entry.field ? `Enter ${entry.field.slice(0, 120)}` : ''
+    if (!label) continue
+    if (entry.type === 'click') bump(actions, label)
+    else if (entry.type === 'commit') bump(fields, entry.field.slice(0, 120))
+    if (last && entry.t - last.t >= 0 && entry.t - last.t <= 60 && last.label !== label) bump(sequences, `${last.label}\u0000${label}`)
+    last = { label, t: entry.t }
+  }
+  return {
+    frequent_actions: top(actions, 8).map(([label, count]) => ({ label, count })),
+    frequent_fields: top(fields, 8).map(([label, count]) => ({ label, count })),
+    action_sequences: top(sequences, 8).map(([pair, count]) => { const [from, to] = pair.split('\u0000'); return { from, to, count } }),
+  }
+}
+
 /** The log as compact lines: window titles, commits and clicks first (PLAN §5.2), then descriptions and text. */
 export function compressLog(entries: MemoryEntry[], budget = LOG_BUDGET): string {
   const titles = new Map<string, number>(), clicks = new Map<string, number>()
@@ -76,14 +98,18 @@ export function localProfile(key: string, entries: MemoryEntry[], existing: AppP
   }
   const merged = new Map((existing?.recurring_tasks ?? []).map((task) => [task.name, task.evidence] as const))
   for (const [name, n] of tasks) merged.set(name, (merged.get(name) ?? 0) + n)
+  const habits = summarizeHabits(entries, existing?.habits)
+  const observed = habits.action_sequences.find((item) => item.count >= 2)
+  const question = observed ? `Why do you usually ${observed.to.toLowerCase()} after ${observed.from.toLowerCase()} in ${appLabel(key)}?`
+    : habits.frequent_fields[0] ? `What should a new hire check before entering ${habits.frequent_fields[0].label} in ${appLabel(key)}?` : ''
   return {
     name: existing?.name || appLabel(key),
     purpose: existing?.purpose ?? '',
     recurring_tasks: top(merged, 6).map(([name, evidence]) => ({ name: name.slice(0, 120), evidence })),
     screens_fields: [...new Set([...top(titles, 6).map(([t]) => t.slice(0, 200)), ...(existing?.screens_fields ?? [])])].slice(0, 10),
-    patterns: existing?.patterns ?? [],
+    patterns: [...new Set([...(existing?.patterns ?? []), ...habits.action_sequences.filter((item) => item.count >= 2).slice(0, 3).map((item) => `${item.from} → ${item.to} (${item.count} times)`)])].slice(0, 10),
     exceptions: existing?.exceptions ?? [],
-    open_questions: existing?.open_questions ?? [],
+    open_questions: [...new Set([...(existing?.open_questions ?? []), ...(question ? [question] : [])])].slice(0, 5),
     today: [`${commitsToday} field entries`, `${clicksToday} clicks`, `${screensToday.size} screens`],
   }
 }
@@ -147,6 +173,7 @@ export function createRollup(ctx: AppContext, dependencies: { model?: ReturnType
     }
     const answered = new Set((existing?.expert_quotes ?? []).map((q) => q.q.trim().toLowerCase()))
     const clean = async (items: string[]) => Promise.all(items.map(redact))
+    const habits = summarizeHabits(entries, existing?.habits)
     const profile: AppProfile = {
       key,
       name: await redact(body.name),
@@ -161,6 +188,11 @@ export function createRollup(ctx: AppContext, dependencies: { model?: ReturnType
       expert_quotes: existing?.expert_quotes ?? [],
       today: await clean(body.today),
       ...(await links(key)),
+      habits: {
+        frequent_actions: await Promise.all(habits.frequent_actions.map(async (item) => ({ label: await redact(item.label), count: item.count }))),
+        frequent_fields: await Promise.all(habits.frequent_fields.map(async (item) => ({ label: await redact(item.label), count: item.count }))),
+        action_sequences: await Promise.all(habits.action_sequences.map(async (item) => ({ from: await redact(item.from), to: await redact(item.to), count: item.count }))),
+      },
     }
     memory.markRolledUp(key, Date.now() / 1000)
     return save(profile)

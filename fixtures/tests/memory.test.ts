@@ -4,7 +4,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import type { AppProfile, ContextEvent, MemoryApp, MemoryEntry } from '@shared/contracts'
 import { createMemory, deleteEverything } from '../../app/src/main/services/memory'
-import { compressLog, createRollup, localProfile } from '../../app/src/main/services/rollup'
+import { compressLog, createRollup, localProfile, summarizeHabits } from '../../app/src/main/services/rollup'
 import { pickQuestion, type PauseState } from '../../app/src/main/services/curiosity'
 import { appDirectory, getStore } from '../../app/src/main/services/store'
 import type { getLlm } from '../../app/src/main/services/llm'
@@ -62,10 +62,12 @@ test('retention drops old raw logs; deletes work per day, per app and for everyt
   assert.equal(await store.read(['profiles', `${appDirectory('excel.exe')}.json`]), null)
 
   await store.write(['guides', 'guide-x.json'], { id: 'guide-x' })
+  await store.writeBytes(['references', 'guide-x', 'policy.txt'], Buffer.from('Masked policy text'))
   let cleared = ''
   h.ctx.bus.on('data:cleared', (event) => { cleared = event.scope })
   await deleteEverything(h.ctx)
   assert.equal(await store.read(['guides', 'guide-x.json']), null)
+  assert.equal(await store.readBytes(['references', 'guide-x', 'policy.txt']).catch(() => null), null)
   assert.equal(cleared, 'all')
 })
 
@@ -115,6 +117,12 @@ test('local profile and compressed log come from the log itself', () => {
   const log = compressLog(entries)
   assert.ok(log.indexOf('Window titles') < log.indexOf('Field entries') && log.indexOf('Clicked') < log.indexOf('Visible text'))
   assert.ok(compressLog(entries, 40).length <= 40)
+  const habits = summarizeHabits(entries)
+  assert.deepEqual(habits.frequent_fields[0], { label: 'Cost center', count: 2 })
+  assert.equal(habits.action_sequences[0].from, 'Enter Cost center')
+  assert.equal(habits.action_sequences[0].to, 'Click Post')
+  assert.ok(!JSON.stringify(habits).includes('0400')) // values never enter the habit dataset
+  assert.ok(localProfile('browser:minierp.local', entries, null).open_questions.length > 0)
 })
 
 test('curiosity asks only at a natural pause and within its caps', () => {
