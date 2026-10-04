@@ -109,3 +109,15 @@
 .code pre i { color: var(--pink); font-style: normal; }
 .code .t { font: 500 20px/1.3 var(--sans); margin-top: 12px; letter-spacing: -0.01em; }
 .mine { position: absolute; z-index: 21; white-space: nowrap; padding: 5px 9px; border-radius: 7px; font: 600 12px/1 var(--sans); background: #1f2a26; color: #fff; opacity: 0; }
+
+/* recorded walkthrough: steps with blurred screenshots */
+.rec .hd .dot { width: 9px; height: 9px; }
+.rec .row { display: flex; gap: 16px; align-items: center; margin-top: 14px; opacity: 0; }
+.rec .th { position: relative; width: 288px; height: 176px; flex: none; border-radius: 10px; overflow: hidden; border: 1px solid var(--hair-2); background: #f3f5f4; }
+.rec .th .win { position: absolute; }
+.rec .bl { position: absolute; border: 2px dashed var(--pink); border-radius: 5px; opacity: 0; box-shadow: 0 0 12px rgba(245, 159, 223, 0.7); }
+.rec .meta .n { font: 500 11.5px/1 var(--mono); letter-spacing: 0.12em; color: var(--ink-3); }
+.rec .meta .tt { font: 500 19px/1.25 var(--sans); margin-top: 8px; letter-spacing: -0.01em; }
+.rec .meta .tt b { font-weight: 600; background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.rec .meta .pk { margin-top: 12px; font-size: 12px; padding: 6px 10px; color: #ffc6ee; border-color: rgba(245, 159, 223, 0.55); background: rgba(245, 159, 223, 0.1); opacity: 0; }
+.shut { position: absolute; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; }

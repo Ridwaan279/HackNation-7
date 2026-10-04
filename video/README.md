@@ -42,10 +42,10 @@ All timing lives in `cues.js`: scene boundaries, the spoken lines (with their sl
 | Time | Beat | What you see |
 |---|---|---|
 | 0:00 | **The onboarding gap** | One recorded hour on a year-long timeline; the habits outside it are struck through as "never mentioned" until Protégé fills the whole year |
-| 0:08 | **01 Windows UI Automation** | MiniERP's accessibility tree (control types, names, values), the JSON events the sidecar emits, the password field skipped, the IBAN masked, and the pipeline UI Automation → privacy gate → redact.py → event |
+| 0:08 | **01 Windows UI Automation** | MiniERP's accessibility tree (control types, names, values) with the password field skipped and the IBAN masked; then an expert records a walkthrough: each click takes a screenshot that becomes a step, with the IBAN and PIN blurred (UI Automation → privacy gate → mask + blur → step guide) |
 | 0:21 | **02 Always on, every expert** | Four experts in four apps stream masked events into the ghost while a day counter runs to 365; habits nobody mentioned pop out |
 | 0:31 | **03 A growing knowledge base** | A knowledge graph grows app by app; App Profiles and "Ready to teach" fill up |
-| 0:40 | **04 Guided pointing** | A new hire is stuck; the ghost flies to the exact button the expert used and highlights it (brain:locate → observer:tree → displays:toDip → overlay), while the new hire keeps their own mouse (click-through overlay) |
+| 0:40 | **04 Guided pointing** | A new hire is stuck; the ghost flies to the exact button an expert used and highlights it (brain:locate → observer:tree → displays:toDip → overlay), while the new hire keeps their own mouse (click-through overlay) |
 | 0:53 | **End card** | Protégé. Always learning. Ready to teach anyone. |
 
 ```bash

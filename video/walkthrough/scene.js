@@ -469,7 +469,7 @@ function erp(o) {
   </div>`)
 }
 const winA = erp({
-  id: 'INV-4471', user: 'S',
+  id: 'INV-4471', user: 'E',
   list: [['INV-4471', 'Nordwerk Equipment', '€6,400.00'], ['INV-4472', 'Müller GmbH', '€1,850.00'], ['INV-4473', 'Brenner Components', '€2,390.00']],
   fields: [
     ['sup', 'Supplier', 'Nordwerk Equipment'], ['amt', 'Amount (EUR)', '6400.00'], ['desc', 'Description', 'Production equipment: milling unit', 'wide'],
@@ -480,7 +480,7 @@ const winA = erp({
   actions: [['draft', 'Save draft'], ['post', 'Post invoice', 'primary']],
 })
 const winB = erp({
-  id: 'INV-5801', user: 'J',
+  id: 'INV-5801', user: 'N',
   list: [['INV-5801', 'Elbe Industrial', '€7,200.00'], ['INV-5802', 'Bürobedarf West', '€240.00']],
   fields: [
     ['sup', 'Supplier', 'Elbe Industrial'], ['amt', 'Amount (EUR)', '7200.00'], ['desc', 'Description', 'Production equipment: inspection station', 'wide'],
@@ -554,7 +554,7 @@ function setBubble(b, x, y, a, t, l, scale = 1) {
 const speed = add(FX, '<div style="width:220px;height:90px;opacity:0;transform-origin:100% 50%"><i style="position:absolute;right:0;top:12px;width:150px;height:10px;border-radius:6px;background:#7cc7f4;box-shadow:0 0 14px #7cc7f4"></i><i style="position:absolute;right:30px;top:40px;width:200px;height:10px;border-radius:6px;background:#b38de8;box-shadow:0 0 14px #b38de8"></i><i style="position:absolute;right:0;top:68px;width:140px;height:10px;border-radius:6px;background:#f59fdf;box-shadow:0 0 14px #f59fdf"></i></div>')
 
 
-// ------------------------------------------------------------------ DOM: scene 2, accessibility tree + events + pipeline
+// ------------------------------------------------------------------ DOM: scene 2, accessibility tree + recorded steps + pipeline
 const TAGS = [
   ['sup', 'Edit · "Supplier"'], ['amt', 'Edit · "Amount (EUR)"'], ['cc', 'ComboBox · "Cost center"'],
   ['pin', 'Edit · IsPassword → never read', 'mask'], ['bank', 'Edit · "Bank details" → masked', 'mask'], ['post', 'Button · "Post invoice"'],
@@ -575,32 +575,43 @@ const TREE = [
   [2, 'Edit', '"Approval PIN"', 'IsPassword · skipped', 'pw'],
 ]
 const TREE_T = [10.0, 10.45, 10.9, 11.35, 11.8, 12.05, 12.25, 12.5]
-const tree = add(FX, `<div class="xpanel glass"><div class="hd"><b>Accessibility tree</b>· UI Automation<span class="tag">text, not pixels</span></div>
+const tree = add(FX, `<div class="xpanel glass"><div class="hd"><b>Accessibility tree</b>· UI Automation<span class="tag">live · always on</span></div>
   ${TREE.map(([d, ct, nm, vl, cls = '']) => `<div class="trow ${cls}" style="padding-left:${10 + d * 24}px"><span class="ct">${ct}</span><span class="nm">${nm}</span><span class="vl">${vl}</span></div>`).join('')}</div>`)
 const trows = [...tree.querySelectorAll('.trow')]
-const s = (v, m = '') => `<span class="s ${m}">"${v}"</span>`
-const EVENTS = [
-  [14.3, `{"type":${s('context')},"app":${s('MiniERP')},"title":${s('INV-4471')}}`],
-  [14.95, `{"type":${s('click')},"target":${s('Cost center')},"control_type":${s('ComboBox')}}`],
-  [15.9, `{"type":${s('commit')},"field":${s('Cost center')},"old":${s('6100')},"new":${s('0400')}}`],
-  [17.0, `{"type":${s('commit')},"field":${s('Bank details')},"new":${s('DE•• •••• 3000', 'm')},"masked":<span class="b">true</span>}`],
-  [19.45, `{"type":${s('click')},"target":${s('Post invoice')},"control_type":${s('Button')}}`],
-]
-const events = add(FX, `<div class="xpanel glass"><div class="hd"><b>Events</b>· JSON lines on stdout<span class="tag">masked before emit</span></div>
-  <div style="margin-top:10px">${EVENTS.map(([, h]) => `<div class="ev">${h}</div>`).join('')}</div></div>`)
-const evs = [...events.querySelectorAll('.ev')]
-const pipe = add(FX, `<div class="pipe"><span class="pc">UI Automation</span><span class="ar">→</span><span class="pc">privacy gate</span><span class="ar">→</span><span class="pc">redact.py</span><span class="ar">→</span><span class="pc">event</span></div>`)
+// Recording mode: on each click the walkthrough keeps a screenshot as a step, with sensitive fields blurred.
+const shutA = add(A.win, '<div class="shut"></div>')
+const TH_K = 0.27, TH_X = 330, TH_Y = 225 // thumbnails zoom into the invoice form
+const rBank = rectOf(A, 'bank'), rPin = rectOf(A, 'pin')
+function thumb() {
+  const c = winA.cloneNode(true)
+  c.querySelectorAll('.ftag, .cursor, .scan, .ripple, .dim, .shut').forEach((n) => n.remove())
+  Object.assign(c.style, { left: '0px', top: '0px', transform: `translate(${-TH_X * TH_K}px, ${-TH_Y * TH_K}px) scale(${TH_K})`, transformOrigin: '0 0', opacity: 1, visibility: 'visible', boxShadow: 'none', filter: 'none' })
+  c.querySelector('[data-f="cc"] .v').innerHTML = '0400'
+  const box = (r) => `<div class="bl" style="left:${(r.x - 4 - TH_X) * TH_K}px;top:${(r.y - 4 - TH_Y) * TH_K}px;width:${(r.w + 8) * TH_K}px;height:${(r.h + 8) * TH_K}px"></div>`
+  const th = document.createElement('div')
+  th.className = 'th'
+  th.appendChild(c)
+  th.insertAdjacentHTML('beforeend', box(rBank) + box(rPin))
+  return { th, blur: [c.querySelector('[data-f="bank"]'), c.querySelector('[data-f="pin"]')], boxes: [...th.querySelectorAll('.bl')] }
+}
+const rec = add(FX, `<div class="xpanel glass rec"><div class="hd"><span class="dot"></span><b>Recording</b>· An expert's walkthrough<span class="tag">screenshots · blurred</span></div>
+  <div class="row"><div class="meta"><div class="n">STEP 3 · 0:42 · screenshot</div><div class="tt">Cost center <b>6100 → 0400</b></div><div class="chip mono pk">IBAN · PIN blurred</div></div></div>
+  <div class="row"><div class="meta"><div class="n">STEP 4 · 0:51 · screenshot</div><div class="tt">Click <b>Post invoice</b></div><div class="chip mono pk">IBAN · PIN blurred</div></div></div></div>`)
+const recRows = [...rec.querySelectorAll('.row')]
+const SHOTS = recRows.map((row, i) => { const th = thumb(); row.prepend(th.th); return { ...th, row, at: [15.05, 19.5][i], chip: row.querySelector('.pk') } })
+const recBadge = add(FX, '<div class="chip glass" style="padding:11px 16px;font-size:15px;opacity:0"><span class="dot"></span>Recording walkthrough · Expert · 0:42</div>')
+const pipe = add(FX, `<div class="pipe"><span class="pc">UI Automation</span><span class="ar">→</span><span class="pc">privacy gate</span><span class="ar">→</span><span class="pc">mask + blur</span><span class="ar">→</span><span class="pc">step guide</span></div>`)
 const pipeC = [...pipe.querySelectorAll('.pc')]
 
 // ------------------------------------------------------------------ DOM: scene 3, experts, day counter, habits
 const EXPERTS = [
-  { nm: 'Sabine', rl: 'Accounts payable · MiniERP', av: 'linear-gradient(140deg,#f3d7c6,#d6a98f)', x: 110, y: 250, sp: 34,
+  { nm: 'Payables expert', rl: 'Accounts payable · MiniERP', av: 'linear-gradient(140deg,#f3d7c6,#d6a98f)', x: 110, y: 250, sp: 34,
     feed: [['commit', 'Cost center → 0400'], ['click', 'Post invoice'], ['commit', 'IBAN → <span class="m">DE•• •••• 3000</span>'], ['text', '12 new lines · masked'], ['click', 'Match PO'], ['commit', 'Asset number → AS-2026-087']] },
-  { nm: 'Tomasz', rl: 'Procurement · SAP', av: 'linear-gradient(140deg,#c6e4f3,#8fbcd6)', x: 1430, y: 250, sp: 29,
+  { nm: 'Procurement expert', rl: 'SAP', av: 'linear-gradient(140deg,#c6e4f3,#8fbcd6)', x: 1430, y: 250, sp: 29,
     feed: [['click', 'Create purchase order'], ['commit', 'Vendor → Elbe Industrial'], ['commit', 'Incoterms → DAP'], ['click', 'Release'], ['text', '8 new lines · masked'], ['commit', 'Quantity → 4']] },
-  { nm: 'Amira', rl: 'Treasury · Excel', av: 'linear-gradient(140deg,#d9f3c6,#9fd68f)', x: 110, y: 690, sp: 26,
+  { nm: 'Treasury expert', rl: 'Excel', av: 'linear-gradient(140deg,#d9f3c6,#9fd68f)', x: 110, y: 690, sp: 26,
     feed: [['commit', 'B14 → 182,400.00'], ['click', 'Refresh all'], ['text', 'Cash forecast · 31 cells'], ['commit', 'FX rate → 1.0842'], ['click', 'Save'], ['commit', 'Card → <span class="m">•••• 4242</span>']] },
-  { nm: 'Lena', rl: 'Vendor desk · Outlook', av: 'linear-gradient(140deg,#e9d2f7,#b99ad8)', x: 1430, y: 690, sp: 31,
+  { nm: 'Vendor desk expert', rl: 'Outlook', av: 'linear-gradient(140deg,#e9d2f7,#b99ad8)', x: 1430, y: 690, sp: 31,
     feed: [['text', 'Supplier mail · 6 lines'], ['click', 'Reply'], ['commit', 'Subject → Duplicate invoice'], ['click', 'Flag'], ['text', 'Remittance advice · masked'], ['click', 'Move to AP folder']] },
 ].map((e) => {
   e.n = add(FX, `<div class="xcard glass"><div class="top"><div class="av" style="background:${e.av}">${e.nm[0]}</div><div><div class="nm">${e.nm}</div><div class="rl">${e.rl}</div></div><div class="lv"><i></i>Learning</div></div>
@@ -718,8 +729,8 @@ const fmt = (n) => Math.round(n).toLocaleString('en-US')
 
 // ------------------------------------------------------------------ DOM: scene 5, guided pointing
 const ringB = add(B.win, '<div class="hring"></div>')
-const pinB = add(B.win, '<div class="pinlab">Sabine clicked here · step 4 · on 212 invoices</div>')
-const mineB = add(B.win, '<div class="mine">Jonas · new hire</div>')
+const pinB = add(B.win, '<div class="pinlab">An expert clicked here · step 4 · on 212 invoices</div>')
+const mineB = add(B.win, '<div class="mine">New hire</div>')
 const toastB = add(B.win, '<div class="toast">✓ PO-20417 matched · ready to post</div>')
 {
   const r = rectOf(B, 'matchpo')
@@ -739,7 +750,7 @@ const code = add(FX, `<div class="code glass"><div class="k">Overlay window · E
   { forward: <i>true</i> })</pre>
   <div class="t">Click-through. It points; it never moves your mouse or clicks for you.</div></div>`)
 
-const bG1 = bubble('ghost', 'Protégé', '“This one. Sabine always matches the PO first.”')
+const bG1 = bubble('ghost', 'Protégé', '“This one. The expert always matches the PO first.”')
 
 // ------------------------------------------------------------------ the timeline
 function cameraAt(t) {
@@ -964,10 +975,22 @@ function seek(t) {
     trows[6].classList.toggle('flash', t > 19.45 && t < 20.2)
     trows[7].classList.toggle('flash', t > 12.5 && t < 13.2)
     // event stream
-    const ek = E.out(prog(t, 13.9, 14.5))
-    op(events, vis ? ek * (1 - tout) : 0)
-    place(events, 1170 + (1 - ek) * 80 + tout * 60, 540, `perspective(1400px) rotateY(${-8 + (1 - ek) * -14}deg)`)
-    evs.forEach((n, i) => { const a = E.out(prog(t, EVENTS[i][0], EVENTS[i][0] + 0.3)); op(n, a); n.style.transform = `translateY(${(1 - a) * 10}px)` })
+    // the recorded walkthrough: shutter on each click, the screenshot drops in as a step, then sensitive fields blur
+    const ek = E.out(prog(t, 14.0, 14.6))
+    op(rec, vis ? ek * (1 - tout) : 0)
+    place(rec, 1170 + (1 - ek) * 80 + tout * 60, 540, `perspective(1400px) rotateY(${-8 + (1 - ek) * -14}deg)`)
+    op(recBadge, vis ? E.out(prog(t, 14.1, 14.5)) * (1 - tout) : 0)
+    place(recBadge, 205 + drift(t, 3) * 2, 205)
+    op(shutA, Math.max(...SHOTS.map((sh) => (t > sh.at ? Math.exp(-(t - sh.at) * 9) * 0.85 : 0))))
+    SHOTS.forEach((sh, i) => {
+      const a = E.back(prog(t, sh.at + 0.15, sh.at + 0.6))
+      op(sh.row, clamp(a))
+      sh.row.style.transform = `translateY(${(1 - clamp(a)) * 30}px) scale(${0.94 + 0.06 * clamp(a, 0, 1.05)})`
+      const b = i === 0 ? E.out(prog(t, 18.6, 19.1)) : 1
+      sh.blur.forEach((n) => { n.style.filter = b > 0.01 ? `blur(${(b * 9).toFixed(1)}px)` : 'none' })
+      sh.boxes.forEach((n) => op(n, b * (0.6 + 0.4 * Math.sin(t * 6))))
+      op(sh.chip, b)
+    })
     // pipeline
     const pk = E.out(prog(t, 13.6, 14.2))
     op(pipe, vis ? pk * (1 - tout) : 0)
@@ -1052,7 +1075,7 @@ function seek(t) {
       setCursor(B, path, t, [41.6, 42.9, 50.6])
       const [cx, cy] = track(path, t)
       place(mineB, cx + 26, cy + 26)
-      const mineTxt = t < 48.4 ? 'Jonas · new hire' : 'Jonas’s mouse · Jonas’s click'
+      const mineTxt = t < 48.4 ? 'New hire' : 'New hire’s mouse · their own click'
       if (mineB.textContent !== mineTxt) mineB.textContent = mineTxt
       op(mineB, E.out(prog(t, 40.9, 41.3)) * (1 - E.in(prog(t, 52.6, 53.0))))
       B.fields.pon.classList.toggle('focus', t > 42.9 && t < 43.8)
