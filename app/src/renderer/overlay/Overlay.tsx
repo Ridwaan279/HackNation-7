@@ -200,7 +200,7 @@ function OverlayInner() {
       el.removeEventListener('pointerup', up)
       dragging.current = false
       if (moved) home.current = { x: x.get(), y: y.get() }
-      else void invoke('panel:toggle')
+      else void invoke('dashboard:open', { path: 'ask' })
     }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)
@@ -240,7 +240,7 @@ function OverlayInner() {
             e.preventDefault()
             void tryInvoke('ghost:menu')
           }}
-          title="Click: panel · Drag: move · Right-click: menu"
+          title="Click: ask Protégé · Drag: move · Right-click: menu"
         />
         <div className="pills">
           {state === 'not_watching' && (
@@ -269,7 +269,7 @@ function MicMeter({ level, name }: { level: number; name: string }) {
   const lit = Math.min(5, Math.round(Math.sqrt(level) * 9))
   const short = name.replace(/\s*\(.*\)\s*$/, '') || 'Microphone'
   return (
-    <div className={`status-pill mic ${quiet ? 'quiet' : ''}`} title={quiet ? `No sound from ${name || 'the microphone'}. Pick another mic in the panel.` : name}>
+    <div className={`status-pill mic ${quiet ? 'quiet' : ''}`} title={quiet ? `No sound from ${name || 'the microphone'}. Check your Windows input device.` : name}>
       {quiet ? <MicrophoneSlashIcon size={14} /> : <MicrophoneIcon size={14} />}
       <span className="bars" aria-hidden>
         {[0, 1, 2, 3, 4].map((i) => (

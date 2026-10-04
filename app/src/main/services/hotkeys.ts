@@ -1,15 +1,14 @@
 import { app, globalShortcut } from 'electron'
 import type { ServiceInit } from '@shared/contracts'
-import { isRecording, startSession, stopSession, toggleOffRecord } from './session'
-import { showPanel } from './windows'
+import { isRecording, stopSession, toggleOffRecord } from './session'
+import { openDashboard } from './windows'
 
 const KEYS: Record<string, () => unknown> = {
   // Off the record: pause everything, mute the agent's mic, mark the gap.
   'CommandOrControl+Shift+O': () => toggleOffRecord(),
   // Record / stop a teach session.
-  'CommandOrControl+Shift+R': () => (isRecording() ? stopSession() : startSession('teach')),
-  // "Ask the ghost" (Should): for now just brings up the panel.
-  'CommandOrControl+Shift+Space': () => showPanel(),
+  'CommandOrControl+Shift+R': () => (isRecording() ? stopSession() : openDashboard('record?new=1')),
+  'CommandOrControl+Shift+Space': () => openDashboard('ask'),
 }
 
 export const init: ServiceInit = () => {

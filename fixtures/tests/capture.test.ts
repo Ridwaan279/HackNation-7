@@ -13,6 +13,14 @@ const click = (t: number, name = 'Cost center', control_type = 'EditControl'): C
 const commit = (t: number, value: string, final = false): CommitEvent & {final: boolean} => ({ type: 'commit', t, field: 'Cost center', old: '', new: value, rect: [0, 0, 100, 30], masked: false, source: 'uia', final })
 const model = (value: unknown, reject = false) => ({ fast: async () => { if (reject) throw new Error('offline'); return value }, smart: async () => value }) as ReturnType<typeof getLlm>
 
+test('the task entered before recording stays the guide title as apps change', () => {
+  const capture = new CaptureSession('task-title', 'teach', 'Approve an equipment invoice')
+  capture.push(context)
+  capture.push({ ...context, t: 2, key: 'excel.exe', app: 'excel.exe', title: 'Budget workbook' })
+  assert.equal(capture.guide.title, 'Approve an equipment invoice')
+  assert.deepEqual(capture.guide.app_keys, ['browser:127.0.0.1', 'msedge.exe', 'excel.exe'])
+})
+
 test('capture coalesces idle commits through final commit, but a new field visit creates a step', () => {
   const capture = new CaptureSession('capture', 'teach')
   capture.push(context); capture.push(click(2)); capture.push(commit(3, '04')); capture.push(commit(4, '040')); capture.push(commit(5, '0400', true))

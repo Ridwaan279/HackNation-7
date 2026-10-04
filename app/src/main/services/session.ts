@@ -26,7 +26,7 @@ import type {
 } from '../../common/ipc'
 import { lastPicked, setOffRecord as gateOffRecord } from './gate'
 import { getSettings, roleForAgents } from './settings'
-import { showPanel, toOverlayLocal } from './windows'
+import { openDashboard, toOverlayLocal } from './windows'
 
 const ROLE = () => roleForAgents()
 /** Nobody is addressed or described by name: the agent talks to "you" and about "the expert". */
@@ -143,7 +143,7 @@ function guideText(g: Guide | null) {
 }
 
 function baseVariables(): Record<string, string> {
-  return { role: ROLE(), expert_name: EXPERT(), open_questions: '', draft_summary: '', workmap: '', guide: '' }
+  return { role: ROLE(), company: getSettings().company, task: state.task ?? '', expert_name: EXPERT(), open_questions: '', draft_summary: '', workmap: '', guide: '' }
 }
 
 function startAgent(agent: AgentKind, session: string, vars: Record<string, string> = {}, firstMessage?: string) {
@@ -158,19 +158,24 @@ function stopAgent() {
 }
 
 function reset() {
-  Object.assign(state, { id: null, kind: null, phase: 'idle', started_at: null, workmap_id: undefined, agent: null })
+  Object.assign(state, { id: null, kind: null, phase: 'idle', started_at: null, workmap_id: undefined, task: undefined, agent: null })
   debriefWorkmap = null
 }
 
 // ---------------------------------------------------------------- lifecycle
 
-export async function startSession(kind: SessionKind, workmap_id?: string) {
+export async function startSession(kind: SessionKind, workmap_id?: string, task?: string) {
+  if (!getSettings().onboarded || !getSettings().company.trim() || !getSettings().role.trim()) throw new Error('Complete your company profile before starting.')
+  const entered = task?.trim() ?? ''
+  if (kind !== 'tutor' && (!entered || entered.length > 120)) throw new Error('Describe what this recording is about before starting (up to 120 characters).')
+  const safeTask = kind === 'tutor' ? undefined : (await ctx.bus.request('observer:redact', { text: entered })).text.trim()
+  if (kind !== 'tutor' && !safeTask) throw new Error('The task name could not be prepared safely. Try again.')
   if (state.id) await stopSession()
   const id = `s-${new Date().toISOString().replace(/[:.]/g, '-')}`
-  Object.assign(state, { id, kind, phase: 'live', started_at: now(), workmap_id, agent: null })
+  Object.assign(state, { id, kind, phase: 'live', started_at: now(), workmap_id, task: safeTask, agent: null })
   await setObserverMode(kind === 'tutor' ? 'tutor' : 'session')
-  ctx.bus.emit('session:started', { id, kind, workmap_id })
-  if (kind === 'teach') startAgent('interviewer', id, {}, OVERVIEW_FIRST_MESSAGE)
+  ctx.bus.emit('session:started', { id, kind, workmap_id, task: safeTask })
+  if (kind === 'teach') startAgent('interviewer', id, {}, `This recording is about ${safeTask}. ${OVERVIEW_FIRST_MESSAGE}`)
   if (kind === 'tutor') startAgent('tutor', id, await tutorVariables(workmap_id))
   publish()
   return { ...state }
@@ -265,7 +270,7 @@ async function replay(step_id: string) {
   if (!steps.length) return `No screenshots for step ${step_id}.`
   const cmd: ReplayCommand = { step_id, steps }
   ctx.broadcast('panel:replay', cmd)
-  showPanel()
+  openDashboard('learn')
   return `Showing ${EXPERT()}'s screenshots for that step.`
 }
 
@@ -355,8 +360,8 @@ async function onMessage({ role, text }: AgentMessage) {
 
 export const init: ServiceInit = (c) => {
   ctx = c
-  c.handle('session:start', (p: { kind?: SessionKind; workmap_id?: string } = {}) =>
-    startSession(p.kind ?? 'teach', p.workmap_id)
+  c.handle('session:start', (p: { kind?: SessionKind; workmap_id?: string; task?: string } = {}) =>
+    startSession(p.kind ?? 'teach', p.workmap_id, p.task)
   )
   c.handle('session:stop', () => stopSession())
   c.handle('session:state', () => ({ ...state }))

@@ -4,7 +4,9 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { A11yHealthEvent, AppContext, Popup, PrivacyConfig, ServiceInit, WarningEvent } from '@shared/contracts'
-import { isBusy, startSession } from './session'
+import { isBusy } from './session'
+import { openDashboard } from './windows'
+import { getSettings } from './settings'
 
 /** Foreground time in a never-offered app before offering a teach session. */
 const TEACH_AFTER_S = 120
@@ -128,6 +130,7 @@ function accumulate() {
 
 function maybeOfferTeach() {
   accumulate()
+  if (!getSettings().onboarded || !getSettings().company.trim() || !getSettings().role.trim()) return
   if (!fg || isBusy() || Date.now() - lastShown < POPUP_GAP_MS) return
   const key = fg.key
   if ((usage.get(key) ?? 0) < TEACH_AFTER_S) return
@@ -170,7 +173,7 @@ async function blockApp(key: string) {
 async function answerTeach(key: string, choice: string) {
   offers.teach[key] = { at: offers.teach[key]?.at ?? new Date().toISOString(), choice }
   saveOffers()
-  if (choice === 'yes') await startSession('teach')
+  if (choice === 'yes') openDashboard('record?new=1')
   if (choice === 'never') await blockApp(key)
 }
 

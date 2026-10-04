@@ -1,11 +1,10 @@
-import { app, BrowserWindow, Menu, nativeTheme, screen, type BrowserWindowConstructorOptions } from 'electron'
+import { app, BrowserWindow, Menu, screen, type BrowserWindowConstructorOptions } from 'electron'
 import { join } from 'node:path'
 import type { AppContext, Rect, ServiceInit } from '@shared/contracts'
 import type { OverlayGeometry } from '../../common/ipc'
 
 let ctx: AppContext | null = null
 let overlay: BrowserWindow | null = null
-let panel: BrowserWindow | null = null
 let dashboard: BrowserWindow | null = null
 let quitting = false
 
@@ -79,45 +78,13 @@ function createOverlay() {
   screen.on('display-removed', refit)
 }
 
-/** Window controls drawn by Windows over the panel's custom title bar, matching the system theme. */
-function titleBarOverlay() {
-  // Protégé uses one dark look everywhere (it matches the website), so Mica and the title bar are dark too.
-  nativeTheme.themeSource = 'dark'
-  return { color: '#00000000', symbolColor: nativeTheme.shouldUseDarkColors ? '#f2f1f7' : '#1c1b22', height: 40 }
-}
-
-function createPanel() {
-  const { workArea } = screen.getPrimaryDisplay()
-  const width = 400
-  const height = Math.min(720, workArea.height - 40)
-  panel = new BrowserWindow({
-    // Left of the ghost's dock in the bottom-right corner, so the ghost never covers it.
-    x: workArea.x + workArea.width - width - 190,
-    y: workArea.y + workArea.height - height - 20,
-    width,
-    height,
-    minWidth: 320,
-    title: 'Protégé',
-    show: false,
-    alwaysOnTop: true,
-    // Native Windows 11 material; the page is transparent and draws its own title bar.
-    backgroundMaterial: 'mica',
-    titleBarStyle: 'hidden',
-    titleBarOverlay: titleBarOverlay(),
-    autoHideMenuBar: true,
-    webPreferences: webPreferences(),
-  })
-  nativeTheme.on('updated', () => panel?.setTitleBarOverlay(titleBarOverlay()))
-  hideOnClose(panel)
-  panel.once('ready-to-show', () => panel?.show())
-  load(panel, 'panel')
-}
-
 function createDashboard() {
   dashboard = new BrowserWindow({
     width: 1280,
     height: 820,
-    title: 'Protégé Dashboard',
+    minWidth: 860,
+    minHeight: 620,
+    title: 'Protégé',
     show: false,
     backgroundColor: '#050505',
     autoHideMenuBar: true,
@@ -130,24 +97,24 @@ function createDashboard() {
 
 export function createWindows() {
   createOverlay()
-  createPanel()
   createDashboard()
 }
 
 export function showPanel() {
-  if (!panel || panel.isDestroyed()) return
-  panel.showInactive()
+  openDashboard()
 }
 
 export function togglePanel() {
-  if (!panel || panel.isDestroyed()) return
-  if (panel.isVisible()) panel.hide()
-  else panel.show()
+  openDashboard('ask')
 }
 
 export function openDashboard(path?: string) {
   if (!dashboard || dashboard.isDestroyed()) return
-  if (path) load(dashboard, `dashboard/${path.replace(/^\/+/, '')}`)
+  if (path) {
+    const navigate = () => dashboard?.webContents.send('dashboard:navigate', path.replace(/^\/+/, ''))
+    if (dashboard.webContents.isLoading()) dashboard.webContents.once('did-finish-load', navigate)
+    else navigate()
+  }
   dashboard.show()
   dashboard.focus()
 }
@@ -173,7 +140,8 @@ export const init: ServiceInit = (c) => {
   c.handle('app:quit', () => quit())
   c.handle('ghost:menu', () => {
     Menu.buildFromTemplate([
-      { label: 'Open panel', click: () => panel?.show() },
+      { label: 'Ask Protégé', click: () => openDashboard('ask') },
+      { label: 'Record a task', click: () => openDashboard('record?new=1') },
       { label: 'Open dashboard', click: () => openDashboard() },
       { type: 'separator' },
       { label: 'Quit Protégé', click: () => quit() },

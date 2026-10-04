@@ -9,6 +9,7 @@ export interface SessionInfo {
   phase: 'idle' | 'live' | 'debrief_pending' | 'debrief'
   started_at: number | null
   workmap_id?: string
+  task?: string
   offRecord: boolean
 }
 export interface PrivacyState { privacy: PrivacyConfig; app_modes: AppModes; paused_until: number | null }
@@ -33,7 +34,8 @@ export interface DashboardIpc extends GuideIpc {
   'settings:get': { req: Empty; res: Settings }
   'settings:set': { req: Partial<Settings>; res: Settings }
   'mastery:list': { req: Empty; res: MasteryReport[] }
-  'session:start': { req: { kind: 'teach' | 'quick_guide' | 'tutor'; workmap_id?: string }; res: unknown }
+  'session:start': { req: { kind: 'teach' | 'quick_guide' | 'tutor'; workmap_id?: string; task?: string }; res: unknown }
+  'assistant:ask': { req: { question: string }; res: { answer: string; source: 'model' | 'local'; guide?: string } }
   'session:stop': { req: Empty; res: SessionInfo }
   'session:state': { req: Empty; res: SessionInfo }
   'session:offRecord': { req: Empty; res: SessionInfo }

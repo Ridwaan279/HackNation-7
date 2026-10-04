@@ -1,14 +1,21 @@
 // Thin helpers over window.apprentice, usable from every window (overlay, panel, dashboard).
 import { useEffect, useRef } from 'react'
+import type { ApprenticeApi } from '../../preload/api'
+
+const api = () => {
+  const bridge = (window as Window & { apprentice?: ApprenticeApi }).apprentice
+  if (!bridge) throw new Error('Desktop connection is unavailable.')
+  return bridge
+}
 
 export function invoke<T = unknown>(channel: string, payload?: unknown): Promise<T> {
-  return window.apprentice.invoke<T>(channel, payload)
+  return api().invoke<T>(channel, payload)
 }
 
 /** Like invoke, but resolves null (and logs) when nobody handles the channel yet. */
 export async function tryInvoke<T = unknown>(channel: string, payload?: unknown): Promise<T | null> {
   try {
-    return await window.apprentice.invoke<T>(channel, payload)
+    return await api().invoke<T>(channel, payload)
   } catch (err) {
     console.warn(`[ipc] ${channel} failed:`, err)
     return null
@@ -16,7 +23,7 @@ export async function tryInvoke<T = unknown>(channel: string, payload?: unknown)
 }
 
 export function on<T = unknown>(channel: string, cb: (payload: T) => void): () => void {
-  return window.apprentice.on<T>(channel, cb)
+  return api().on<T>(channel, cb)
 }
 
 /** Subscribe to a broadcast channel for the component's lifetime. The callback may change freely. */

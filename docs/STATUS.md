@@ -23,8 +23,10 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 | **Teach** | Guardrail checker on every commit and on Post / Save / Submit / Confirm clicks, using the form's current values; the ghost flies to the field; the expert's screenshots replay; `point_at` finds controls (vision fallback); mastery report | `checker.ts`, `locate.ts`, `mastery.ts`, `session.ts`, `dashboard/LessonsPage.tsx` |
 | **Always on** | Per-app daily memory (masked), active minutes, App Profiles (after 10 active minutes, 20 KB of new log, or Refresh), curiosity questions (1 per hour per app, 3 per day) answered on the App Profiles page | `memory.ts`, `rollup.ts`, `curiosity.ts`, `dashboard/ProfilesPage.tsx`, `MemoryPage.tsx` |
 | **Trust** | Masking toggles, default skips, block lists, allow-only, local-only apps, retention, capture mode per app, pause 15 min / 1 h / until tomorrow, off the record (Ctrl+Shift+O), delete per day / app / everything | `privacy.ts`, `dashboard/PrivacyPage.tsx`, `memory.ts` |
-| **Shell, voice, ghost** | Overlay ghost with states and pointer, panel, pop-ups (teach this app, a11y blind, warnings, curiosity), ElevenLabs Interviewer / Debrief / Tutor with client tools, hotkeys | `app/src/main/services/{windows,session,gate,tts,hotkeys,popups}.ts`, `app/src/renderer/{overlay,panel,mascot,agents}` |
-| **First run, Company profile** | Company, role and what you are teaching (nothing pre-filled; role and company become `{{role}}`, the teaching goes to the Interviewer at the start); welcome panel; a **Company profile** button in the header opens Company (role, what you are teaching, what Protégé knows, privacy at a glance, how onboarding works), Privacy, Memory and App profiles | `settings.ts`, `dashboard/index.tsx`, `dashboard/CompanyPage.tsx` |
+| **Shell, voice, ghost** | One visible dashboard workspace, plus the transparent floating ghost; pop-ups (teach this app, a11y blind, warnings, curiosity), ElevenLabs Interviewer / Debrief / Tutor, hotkeys. The old small panel is no longer opened | `app/src/main/services/{windows,session,gate,tts,hotkeys,popups}.ts`, `app/src/renderer/{overlay,dashboard,mascot,agents}` |
+| **First run, Company profile** | Full-screen first-run onboarding requires company and role. Those values inform the voice agents, Work Maps, training questions and Ask AI. The Company profile can update them later | `settings.ts`, `dashboard/index.tsx`, `dashboard/CompanyPage.tsx` |
+| **Recording context and labels** | Every new recording asks what task it covers before capture begins. That task names the guide and enters the Interviewer's question context; with a model key, captured step labels are refined after stopping | `session.ts`, `steps.ts`, `dashboard/RecordPage.tsx` |
+| **Ask anytime** | Click the ghost, use the Ask AI button or press Ctrl+Shift+Space to ask from the dashboard. It uses company/role plus a relevant recorded guide and Work Map; without a model it gives grounded local guidance | `assistant.ts`, `dashboard/AskPage.tsx`, `hotkeys.ts` |
 | **Listen first** | The Interviewer opens without a question; the gate asks nothing until the expert has talked or worked for 10 s (`GATE_WARMUP_S`), and tells the agent to listen to the introduction | `gate.ts`, `session.ts` |
 | **Website** | Static site plus one Vercel function (`api/tts.js`, ElevenLabs voice). Kickstart starts Protégé's spoken tour; web app (traditional onboarding) vs desktop app (always on, recommended); switching versions restarts the explanation; moonshot section; web onboarding (company, role, teaching, for whom); recordings with spoken questions at natural pauses, an end-of-recording overview and last questions, guide editor and exports; download served from `web/downloads/Protege-Windows.zip` | `web/`, `scripts/make-download.*`, `start.bat`; setup in the root `README.md` |
 | **Desktop look** | The website's dark glass theme for the dashboard, panel and overlay (`protege.css`), dark window chrome | `app/src/renderer/protege.css`, `windows.ts` |
@@ -34,7 +36,7 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 ## Checked
 
 - `cd sidecar; python -m pytest tests`: 228 tests.
-- `cd fixtures; npm test`: 36 tests (capture, guide tools, Work Map flow, memory, profiles, curiosity caps, checker incl. the €7,200 demo case, locate, mastery, privacy). Models are stubbed; no API calls.
+- `cd fixtures; npm test`: 40 tests (capture, guide tools, Work Map flow, Ask AI fallback, memory, profiles, curiosity caps, checker incl. the €7,200 demo case, locate, mastery, privacy). Models are stubbed; no API calls.
 - `cd app; npm run typecheck; npm run build`: pass.
 - Dashboard pages rendered in headless Chromium with sample data: no console errors.
 - On Windows (one laptop, 150%): the Phase 1 spike passes 19/19; `observer.py --print --mode session` captured clicks, commits, masked text and blurred screenshots correctly.
@@ -47,7 +49,7 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 
 ## Not built
 
-- "Ask the ghost" (Ctrl+Shift+Space only opens the panel), the pointer self-test (ghost flies to the Start button), `MediaRecorder` video replay in the desktop app (the web recorder keeps a video).
+- The pointer self-test (ghost flies to the Start button) and `MediaRecorder` video replay in the desktop app (the web recorder keeps a video).
 - Web recorder: no AI descriptions or masking of screenshots (a browser only sees pixels and keys must stay server-side); the Download links point at the repository until a release is published.
 - Polish only cleans titles and drops noise; it does not group steps into sections.
 - Production packaging: `app/prompts/*.md` must be copied to `resources/prompts` (dev mode reads them from `app/prompts`).

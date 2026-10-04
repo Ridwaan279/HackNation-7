@@ -7,9 +7,9 @@
 //   agent:auth {agent} -> AgentAuth     agent:status AgentStatus    agent:message AgentMessage
 //   agent:tool AgentToolCall -> string  tts:speak {text} -> TtsResult
 //   popup:answer {id, choice}           overlay:setInteractive boolean   overlay:geometry -> OverlayGeometry
-//   panel:toggle   panel:show   dashboard:open {path?}   ghost:menu   app:quit
+//   panel:toggle   panel:show (legacy aliases for dashboard)   dashboard:open {path?}   ghost:menu   app:quit
 //
-// main -> windows (broadcast): agent:command, ghost:point, panel:replay, session:state, overlay:geometry,
+// main -> windows (broadcast): agent:command, ghost:point, panel:replay (dashboard), session:state, overlay:geometry,
 //   plus these bus events forwarded verbatim: guide:updated, workmap:updated, profile:updated,
 //   tutor:violation, popup:show, ghost:state, session:started, session:stopped, transcript:line,
 //   agent:answer, observer:event (all except activity and text).
@@ -62,6 +62,7 @@ export interface SessionState {
   phase: 'idle' | 'live' | 'debrief_pending' | 'debrief'
   started_at: number | null
   workmap_id?: string
+  task?: string
   offRecord: boolean
   agent: AgentKind | null
 }
@@ -73,7 +74,7 @@ export interface GhostPoint {
   ms?: number
 }
 
-/** main -> panel on 'panel:replay': the expert's screenshots for one Work Map step. */
+/** main -> dashboard on 'panel:replay': the expert's screenshots for one Work Map step. */
 export interface ReplayCommand {
   step_id: string
   title?: string

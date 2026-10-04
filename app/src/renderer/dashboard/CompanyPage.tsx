@@ -80,7 +80,7 @@ export function CompanyPage({ bridge, settings, saved, open }: {
           <label>Your role<input value={role} maxLength={80} placeholder="Head of customer support" onChange={(e) => setRole(e.target.value)} /></label>
           <label>What you are teaching<input value={teaching} maxLength={120} placeholder="How we handle a refund request" onChange={(e) => setTeaching(e.target.value)} /></label>
           <p className="dash-muted">The role goes into every question the ghost asks and every lesson it gives. Nobody is called by name.</p>
-          <button className="guide-primary" disabled={!role.trim()}>Save</button>
+          <button className="guide-primary" disabled={!company.trim() || !role.trim()}>Save</button>
         </form>
       </section>
 

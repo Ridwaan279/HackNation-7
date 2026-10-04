@@ -15,7 +15,7 @@ const routes: Record<string, Page> = {
 }
 
 // One renderer, hash routes: #/overlay, #/panel, #/dashboard[/anything]
-const TITLES: Record<string, string> = { overlay: 'Protégé overlay', panel: 'Protégé', dashboard: 'Protégé Dashboard' }
+const TITLES: Record<string, string> = { overlay: 'Protégé overlay', panel: 'Protégé', dashboard: 'Protégé' }
 const route = location.hash.replace(/^#\/?/, '').split(/[/?]/)[0] || 'dashboard'
 document.documentElement.dataset.route = route
 document.title = TITLES[route] ?? 'Protégé'

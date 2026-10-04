@@ -6,6 +6,7 @@ import type { AppContext, ContextEvent, Guide, GuideEdit, GuideStep, PickedQuest
 import { getStore } from './store'
 import { getLlm, readPrompt } from './llm'
 import { getDescriber, screenshotData, shotStorage } from './describe'
+import { getSettings } from './settings'
 
 const clone = <T>(value: T): T => structuredClone(value)
 const normal = (text: string) => text.trim().toLowerCase()
@@ -27,6 +28,7 @@ export const polishSchema = z.object({
   steps: z.array(z.object({ id: z.string().max(160), title: z.string().min(1).max(300), keep: z.boolean() }).strict()).max(500),
 }).strict()
 const questionSchema = z.object({ question: z.string().min(1).max(240), type: z.enum(['reason', 'guardrail', 'exception']), about_event_t: z.number() }).strict().nullable()
+const labelsSchema = z.object({ steps: z.array(z.object({ id: z.string().max(160), title: z.string().trim().min(1).max(300) }).strict()).max(500) }).strict()
 
 function newStep(t: number, kind: GuideStep['kind'], title: string, target = ''): GuideStep {
   return { id: randomUUID(), n: 0, t, kind, title, note: '', target, shot: null, highlight: null, blur: [], screen_moment: '', edited: false }
@@ -41,8 +43,8 @@ export class CaptureSession {
   readonly eventSteps = new Map<number, string>()
   private lastClick: { identity: string; t: number; step: string } | null = null
   private pendingFields = new Map<string, string>()
-  constructor(id: string, readonly kind: 'teach' | 'quick_guide') {
-    this.guide = { id: `guide-${id}`, session: id, title: 'Untitled guide', app: '', steps: [], revision: 0, recording: true, app_keys: [] }
+  constructor(id: string, readonly kind: 'teach' | 'quick_guide', readonly task?: string) {
+    this.guide = { id: `guide-${id}`, session: id, title: task?.trim() || 'Untitled guide', app: '', steps: [], revision: 0, recording: true, app_keys: [] }
   }
   push(event: SidecarEvent): boolean {
     if (event.type === 'blocked') { this.blocked = true; this.context = null; this.pendingFields.clear(); this.lastClick = null; return false }
@@ -50,7 +52,7 @@ export class CaptureSession {
       const changed = !this.context || this.context.key !== event.key || this.context.title !== event.title
       this.context = event; this.blocked = false
       for (const key of [event.key, event.app]) if (!this.guide.app_keys!.includes(key)) this.guide.app_keys!.push(key)
-      if (!this.guide.app) { this.guide.app = event.key; this.guide.title = `${event.title} guide` }
+      if (!this.guide.app) { this.guide.app = event.key; if (!this.task) this.guide.title = `${event.title} guide` }
       if (!changed) return false
       this.events.length = 0
       this.pendingFields.clear(); this.lastClick = null
@@ -315,9 +317,37 @@ export function createStepsService(ctx: AppContext, dependencies: {
     }
   }
 
+  /** Improve captured action labels after recording, without changing the expert's task name or edits. */
+  async function labelSteps(guide: Guide): Promise<void> {
+    if (!process.env.OPENAI_API_KEY?.trim() || !ctx.env.MODEL_FAST?.trim() || !guide.steps.length) return
+    try {
+      const result = await (dependencies.model ?? getLlm(ctx)).fast({
+        appKeys: guide.app_keys?.length ? guide.app_keys : [guide.app || 'apprentice'],
+        system: 'Write concise, specific action labels for this recorded training guide. Use only the task and captured evidence. Keep each action and object accurate. Do not invent policies, missing steps, or field values. Return one title per supplied step id; keep switch and note steps recognizable.',
+        input: JSON.stringify({ task: guide.title, role: getSettings().role, company: getSettings().company, steps: guide.steps.map((step) => ({ id: step.id, kind: step.kind, title: step.title, target: step.target, screen_moment: step.screen_moment, note: step.note })) }).slice(0, 45_000),
+        schema: labelsSchema,
+        maxTokens: 2500,
+      })
+      const known = new Set(guide.steps.map((step) => step.id))
+      if (result.steps.length !== guide.steps.length || result.steps.some((step) => !known.has(step.id))) return
+      const safe = new Map<string, string>()
+      for (const step of result.steps) safe.set(step.id, (await ctx.bus.request('observer:redact', { text: step.title })).text.trim())
+      await queue(async () => {
+        const current = await load(guide.id)
+        if (!current || current.recording) return
+        let changed = false
+        for (const step of current.steps) {
+          const title = safe.get(step.id)
+          if (title && !step.edited && step.title !== title) { step.title = title; changed = true }
+        }
+        if (changed) await publish(current)
+      })
+    } catch { /* Keep the original evidence-based labels when the model is unavailable. */ }
+  }
+
   ctx.bus.on('session:started', (event) => {
     if (active) { active.guide.recording = false; track(publish(active.guide)) }
-    active = event.kind === 'tutor' ? null : new CaptureSession(idSchema.parse(event.id), event.kind)
+    active = event.kind === 'tutor' ? null : new CaptureSession(idSchema.parse(event.id), event.kind, event.task)
     if (active) {
       eventLinks.set(event.id, active.eventSteps)
       if (latestContext) active.push(latestContext)
@@ -326,8 +356,10 @@ export function createStepsService(ctx: AppContext, dependencies: {
   })
   ctx.bus.on('session:stopped', (event) => {
     if (active?.guide.session !== event.id) return
-    active.guide.recording = false
-    track(publish(active.guide)); active = null
+    const finished = active.guide
+    finished.recording = false
+    track((async () => { await publish(finished); await labelSteps(finished) })(), 'labels')
+    active = null
   })
   ctx.bus.on('observer:event', (event) => {
     if (event.type === 'context') latestContext = event
@@ -371,7 +403,7 @@ export function createStepsService(ctx: AppContext, dependencies: {
       const guardrail = !previous.some((question) => question.type === 'guardrail')
       let result: PickedQuestion | null = null
       try {
-        result = await (dependencies.model ?? getLlm(ctx)).fast({ appKeys: capture.guide.app_keys ?? [capture.guide.app], system: dependencies.questionPrompt ?? await readPrompt('question_picker'), input: JSON.stringify({ require_guardrail: guardrail, candidates, already_asked: previous }), schema: questionSchema })
+        result = await (dependencies.model ?? getLlm(ctx)).fast({ appKeys: capture.guide.app_keys ?? [capture.guide.app], system: dependencies.questionPrompt ?? await readPrompt('question_picker'), input: JSON.stringify({ task: capture.guide.title, role: getSettings().role, company: getSettings().company, require_guardrail: guardrail, candidates, already_asked: previous }), schema: questionSchema })
         if (result && (!candidates.some((event) => event.t === result!.about_event_t) || guardrail && result.type !== 'guardrail')) result = null
       } catch {
         // Local, evidence-based fallback works without API access; never invent policy.

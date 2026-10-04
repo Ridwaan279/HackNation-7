@@ -94,10 +94,12 @@ You need **Windows 10 or 11**, **[Node.js 20+](https://nodejs.org/en/download)**
 
 | Key in `app/.env` | What it's for |
 |---|---|
-| `OPENAI_API_KEY` | Step descriptions, Work Maps, the mistake checker. Without it, every step falls back to a simpler local version. |
+| `OPENAI_API_KEY` | Step descriptions, Work Maps, the mistake checker, Ask AI and improved training step labels. Without it, recorded guides still work and Ask AI gives local guidance from matching guides. |
 | `MODEL_FAST`, `MODEL_SMART` | Model names, e.g. `gpt-4.1-mini` and `gpt-4.1`. Both must accept images and JSON mode. |
 | `ELEVENLABS_API_KEY` | The ghost's voice. |
 | `VITE_AGENT_INTERVIEWER`, `VITE_AGENT_DEBRIEF`, `VITE_AGENT_TUTOR` | The three voice agents. How to create them: [`app/src/renderer/agents/README.md`](app/src/renderer/agents/README.md). |
+
+On first launch, enter your **company and role**. Before every recording, give the task a name; that name appears in the guide and helps Protégé ask relevant questions. The desktop app opens one main workspace, with the floating ghost beside it. Click the ghost or press **Ctrl+Shift+Space** to ask for help at any time. **Ctrl+Shift+R** opens the recording form, or stops an active recording.
 
 <details>
 <summary><b>Running it by hand</b></summary>
