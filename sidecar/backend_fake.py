@@ -24,9 +24,9 @@ def make_window(hwnd: int = 1, pid: int = 100, process: str = "msedge.exe", titl
 
 
 def element(name: str, control_type: str, rect: Rect, pid: int = 100, automation_id: str = "",
-            is_password: bool = False) -> ElementInfo:
+            is_password: bool = False, value: Optional[str] = None) -> ElementInfo:
     return ElementInfo(name=name, control_type=control_type, automation_id=automation_id, rect=rect,
-                       is_password=is_password, pid=pid)
+                       is_password=is_password, pid=pid, value=value)
 
 
 class FakeBackend:

@@ -271,8 +271,12 @@ def test_tree_lists_named_pointable_elements(fake_uia):
     uia, state = fake_uia
     root, _ = chromium_window()
     state.roots[1] = root
-    names = [(e.name, e.control_type) for e in uia.tree(1, "browser", 50, 1.5)]
+    els = uia.tree(1, "browser", 50, 1.5)
+    names = [(e.name, e.control_type) for e in els]
     assert ("Post", "Button") in names and ("Cost center", "Edit") in names
+    values = {e.name: e.value for e in els}
+    assert values["Cost center"] == "4711" and values["Post"] is None
+    assert values["Password"] is None and values["PIN"] is None  # never read
     assert ("Offscreen row", "Text") not in names
     assert len(uia.tree(1, "browser", 2, 1.5)) == 2
 

@@ -493,6 +493,24 @@ def test_tree_redacts_names_and_shot_saves_tmp(env):
     assert not env.out.of("shot")  # on-demand shots are replies, not events
 
 
+def test_tree_includes_masked_field_values_but_never_passwords(env):
+    erp(env.backend)
+    env.backend.elements[1] += [
+        element("Notes", "Edit", (10, 40, 300, 60), value="Pay to DE89 3704 0044 0532 0130 ff00"),
+        element("Amount", "Edit", (10, 70, 300, 90), value="7200.00"),
+        # A backend bug must still never leak these:
+        element("Password", "Edit", (10, 100, 300, 120), is_password=True, value="hunter2"),
+        element("PIN", "Edit", (10, 130, 300, 150), value="4821"),
+    ]
+    eng = env.build()
+    eng.fast_tick()
+    controls = {c["name"]: c for c in eng.execute({"id": 1, "cmd": "tree", "max": 50})["controls"]}
+    assert controls["Notes"]["value"] == "Pay to [IBAN]"
+    assert controls["Amount"]["value"] == "7200.00"
+    assert "value" not in controls["Password"] and "value" not in controls["PIN"]
+    assert "value" not in controls["Post"]
+
+
 def test_set_capture_and_reload_config(env):
     erp(env.backend)
     eng = env.build()

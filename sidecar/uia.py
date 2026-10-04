@@ -534,8 +534,12 @@ def _pointable(root, max_count: int, deadline: float) -> List[ElementInfo]:
         r = _rect(c)
         if not name.strip() or r is None:
             continue
-        out.append(ElementInfo(name=name, control_type=ct, automation_id=_safe(lambda: c.AutomationId, "") or "",
-                               rect=r, is_password=ct == "Edit" and bool(_safe(lambda: c.IsPassword, False)), pid=0))
+        aid = _safe(lambda: c.AutomationId, "") or ""
+        is_pw = ct in VALUE_TYPES and bool(_safe(lambda: c.IsPassword, False))
+        value = None
+        if ct in VALUE_TYPES and not is_pw and not looks_like_password_field(name) and not looks_like_password_field(aid):
+            value = _value(c)
+        out.append(ElementInfo(name=name, control_type=ct, automation_id=aid, rect=r, is_password=is_pw, pid=0, value=value))
         if len(out) >= max_count:
             break
     return out

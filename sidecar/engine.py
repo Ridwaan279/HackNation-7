@@ -735,8 +735,12 @@ class Engine:
             rect = self.scaling.correct(ctx.decision.key, el.rect, ctx.win.monitor_rect[:2])
             if not rect_ok(rect) or not el.name.strip():
                 continue
-            controls.append({"name": self.redactor.redact(el.name), "control_type": el.control_type,
-                             "automation_id": el.automation_id, "rect": list(rect)})
+            control = {"name": self.redactor.redact(el.name), "control_type": el.control_type,
+                       "automation_id": el.automation_id, "rect": list(rect)}
+            if el.value is not None and not el.is_password and not looks_like_password_field(el.name) \
+                    and not looks_like_password_field(el.automation_id):
+                control["value"] = self.redactor.redact(el.value[:2000])[:300]  # mask first, then cut
+            controls.append(control)
             if len(controls) >= max_count:
                 break
         return reply_ok(cid, controls=controls)

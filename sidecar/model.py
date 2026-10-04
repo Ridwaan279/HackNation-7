@@ -49,6 +49,7 @@ class ElementInfo:
     is_password: bool
     pid: int
     class_name: str = ""
+    value: Optional[str] = None  # field value (tree only); never set for password-like fields
 
 
 @dataclass
