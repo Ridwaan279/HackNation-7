@@ -1,7 +1,7 @@
 // Company profile: who Protégé works for, what it has learned so far, and how it treats privacy.
 // The detailed pages (Privacy, Memory, App profiles) sit next to it as tabs.
 import { useEffect, useState } from 'react'
-import { appLabel, errorText, type DashboardBridge, type PrivacyState, type Settings } from './bridge'
+import { appLabel, errorText, type DashboardBridge, type PrivacyState, type Settings, type SetupStatus } from './bridge'
 
 interface Knows { recordings: number; confirmed: number; guides: number; apps: number; minutes: number; profiles: number; lessons: number }
 
@@ -21,6 +21,7 @@ export function CompanyPage({ bridge, settings, saved, open }: {
   const [knows, setKnows] = useState<Knows | null>(null)
   const [privacy, setPrivacy] = useState<PrivacyState | null>(null)
   const [topApps, setTopApps] = useState<string[]>([])
+  const [setup, setSetup] = useState<SetupStatus | null>(null)
 
   useEffect(() => {
     let canceled = false
@@ -51,6 +52,7 @@ export function CompanyPage({ bridge, settings, saved, open }: {
     })
     return () => { canceled = true }
   }, [bridge])
+  useEffect(() => { void bridge.invoke('setup:status', {}).then(setSetup).catch(() => undefined) }, [bridge])
 
   async function save(e: React.FormEvent) {
     e.preventDefault()
@@ -104,6 +106,18 @@ export function CompanyPage({ bridge, settings, saved, open }: {
           <li><strong>Raw logs kept for:</strong> {privacy.privacy.raw_retention_days} days.{privacy.privacy.allow_only ? ' Only allowed apps are watched.' : ''}</li>
         </ul> : <p className="dash-muted">Loading…</p>}
         <div className="dash-actions"><button className="guide-primary" onClick={() => open('privacy')}>Privacy settings</button></div>
+      </section>
+
+      <section className="dash-card"><h3>App setup</h3>
+        <p className="dash-muted">API keys stay on this computer in app/.env. The download does not contain your keys. Save the file and restart Protégé to activate them.</p>
+        <ul className="company-list">
+          <li><strong>AI analysis:</strong> {setup ? setup.openai && setup.models ? 'Ready' : 'Add an OpenAI key and both model names' : 'Checking…'}</li>
+          <li><strong>Voice:</strong> {setup ? setup.elevenlabs ? 'ElevenLabs key found' : 'Add an ElevenLabs key' : 'Checking…'}</li>
+          <li><strong>Sound effects:</strong> {setup ? setup.soundEffects ? 'Ready' : 'Add an ElevenLabs key and SFX model' : 'Checking…'}</li>
+          <li><strong>Voice agents:</strong> {setup ? setup.voiceAgents ? 'Ready' : 'Add interviewer, debrief and tutor agent IDs' : 'Checking…'}</li>
+        </ul>
+        <div className="dash-actions"><button className="guide-primary" onClick={() => void bridge.invoke('setup:openEnv', {}).then(() => setNotice('app/.env opened. Restart Protégé after saving it.')).catch((failure) => setError(errorText(failure)))}>Open app/.env</button><button onClick={() => void bridge.invoke('settings:set', { tourDone: false }).then(saved).catch((failure) => setError(errorText(failure)))}>Replay introduction</button></div>
+        <label className="company-sound"><input type="checkbox" checked={settings.soundEffects} onChange={(e) => void bridge.invoke('settings:set', { soundEffects: e.target.checked }).then(saved).catch((failure) => setError(errorText(failure)))} /> Play subtle sound effects</label>
       </section>
 
       <section className="dash-card"><h3>How onboarding works here</h3>

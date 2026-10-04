@@ -2,7 +2,8 @@ import type { AppModes, AppProfile, CaptureMode, GuideIpc, MasteryReport, Memory
 import type { VoiceHelpState } from '../../main/services/assistant'
 
 export type Mode = 'expert' | 'newhire'
-export interface Settings { role: string; company: string; teaching: string; expert: string; onboarded: boolean; mode: Mode }
+export interface Settings { role: string; company: string; teaching: string; expert: string; onboarded: boolean; mode: Mode; tourDone: boolean; soundEffects: boolean }
+export interface SetupStatus { envPath: string; openai: boolean; models: boolean; elevenlabs: boolean; soundEffects: boolean; voiceAgents: boolean; assistant: boolean }
 /** The shell's session state (app/src/common/ipc.ts SessionState). */
 export interface SessionInfo {
   id: string | null
@@ -34,6 +35,9 @@ export interface DashboardIpc extends GuideIpc {
   'privacy:resume': { req: Empty; res: PrivacyState }
   'settings:get': { req: Empty; res: Settings }
   'settings:set': { req: Partial<Settings>; res: Settings }
+  'setup:status': { req: Empty; res: SetupStatus }
+  'setup:openEnv': { req: Empty; res: { envPath: string } }
+  'tts:speak': { req: { text: string }; res: { audio: string; mime: string } | { error: string } }
   'mastery:list': { req: Empty; res: MasteryReport[] }
   'session:start': { req: { kind: 'teach' | 'quick_guide' | 'tutor'; workmap_id?: string; task?: string }; res: unknown }
   'assistant:state': { req: Empty; res: VoiceHelpState }

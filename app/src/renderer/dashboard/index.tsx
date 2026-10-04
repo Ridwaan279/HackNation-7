@@ -17,6 +17,7 @@ import { PrivacyPage } from './PrivacyPage'
 import { LessonsPage } from './LessonsPage'
 import { CompanyPage } from './CompanyPage'
 import { AskPage } from './AskPage'
+import { Tour } from './Tour'
 import './dashboard.css'
 import './shell.css'
 import '../protege.css'
@@ -58,8 +59,8 @@ function Welcome({ bridge, settings, done }: { bridge: DashboardBridge; settings
       <div className="onboarding-ghost" aria-hidden><Ghost state="idle" size={270} /></div>
       <span className="onboarding-privacy"><ShieldCheckIcon size={18} /> Password fields and private apps stay off limits.</span>
     </div>
-    <form className="onboarding-form" onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { company: company.trim(), role: role.trim(), teaching: teaching.trim(), onboarded: true }).then(done).catch(() => setError('Could not save. Try again.')) }}>
-      <span className="workspace-kicker">STEP 01 / 01</span><h2>Set up your workspace</h2><p>You can change these details from Company profile later.</p>
+    <form className="onboarding-form" onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { company: company.trim(), role: role.trim(), teaching: teaching.trim(), onboarded: true, tourDone: false }).then(done).catch(() => setError('Could not save. Try again.')) }}>
+      <span className="workspace-kicker">STEP 01 / 02</span><h2>Set up your workspace</h2><p>You can change these details from Company profile later.</p>
       <label>Company name<input value={company} maxLength={80} onChange={(e) => setCompany(e.target.value)} placeholder="e.g. Northwind" required autoFocus /></label>
       <label>Your role<input value={role} maxLength={80} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Operations manager" required /></label>
       <label>What does your team do? <small>Optional</small><input value={teaching} maxLength={120} onChange={(e) => setTeaching(e.target.value)} placeholder="e.g. Approve supplier invoices" /></label>
@@ -112,6 +113,7 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
   if (!bridge) return <div className="shell"><main><section className="home"><h1>Open this in Protégé</h1></section></main></div>
   if (!settings) return <div className="onboarding-loading"><CircleNotchIcon size={28} className="spin" /> Loading Protégé…</div>
   if (!settings.onboarded || !settings.company.trim() || !settings.role.trim()) return <Welcome bridge={bridge} settings={settings} done={setSettings} />
+  if (!settings.tourDone) return <Tour bridge={bridge} settings={settings} done={setSettings} />
 
   let content: ReactNode
   switch (page) {
