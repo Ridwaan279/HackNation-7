@@ -10,12 +10,13 @@ the main process mints a conversation token, so the agents can be private. Witho
 - **Expressive Mode:** on.
 - **System tools:** enable `skip_turn`.
 - **Security:** allow overrides (first message and prompt). Overrides are silently ignored otherwise.
-- **Silence (Advanced settings):** people work quietly for minutes at a time, and the app decides when
+- **Silence (agent → Advanced tab):** people work quietly for minutes at a time, and the app decides when
   the agent speaks (`[pause]` and `[intervene]` messages). So:
-  - set **Turn timeout** to its maximum (or turn it off, if offered). Otherwise the agent takes a turn
-    after a few silent seconds and asks "Are you still there?";
-  - turn off the **silence end call timeout**, so a quiet session isn't hung up on;
-  - raise the **maximum conversation duration** to cover a whole session (30+ minutes).
+  - set **Take turn after silence** to its maximum, 30 seconds (it can't be turned off). This is what
+    makes the agent ask "Are you still there?"; the prompt rule "Silence is normal…" covers the rest;
+  - under **Call limits**, raise **Maximum conversation duration** to 3600 seconds or more (max 7200);
+  - leave **Soft timeout** alone (it is the "Hmm…" filler while the LLM thinks, not about silence);
+  - if the **End call** system tool is enabled, turn it off, so a quiet session isn't hung up on.
 - **Dynamic variables:** the app always sends all of these, so the prompt may use any of them:
   `{{role}}`, `{{expert_name}}` (always "the expert": nobody is called by name), `{{open_questions}}`, `{{draft_summary}}`, `{{workmap}}`, `{{guide}}`.
   Give each a placeholder default in the dashboard so test calls work.
