@@ -8,7 +8,6 @@ Updated 2026-10-04, after the three agent branches were merged into `main` and t
 cd sidecar; python -m pip install -r requirements.txt     # once
 cd ..\app; npm install; npm run dev                        # the app with the real observer (Windows)
 $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a recorded session instead
-cd ..\sandbox-erp; npm run dev                             # MiniERP at http://127.0.0.1:4173 (open it in Edge)
 ```
 
 `app/.env` needs `OPENAI_API_KEY`, `MODEL_FAST`, `MODEL_SMART`, `ELEVENLABS_API_KEY` and the three `VITE_AGENT_*` ids (see `app/.env.example`). Without the OpenAI key every model step falls back to a local version (below), so the app still runs end to end, just less cleverly.
@@ -33,7 +32,6 @@ cd ..\sandbox-erp; npm run dev                             # MiniERP at http://1
 
 - `cd sidecar; python -m pytest tests`: 228 tests.
 - `cd fixtures; npm test`: 36 tests (capture, guide tools, Work Map flow, memory, profiles, curiosity caps, checker incl. the €7,200 demo case, locate, mastery, privacy). Models are stubbed; no API calls.
-- `cd sandbox-erp; npm test`: 3 tests.
 - `cd app; npm run typecheck; npm run build`: pass.
 - Dashboard pages rendered in headless Chromium with sample data: no console errors.
 - On Windows (one laptop, 150%): the Phase 1 spike passes 19/19; `observer.py --print --mode session` captured clicks, commits, masked text and blurred screenshots correctly.
@@ -53,9 +51,11 @@ cd ..\sandbox-erp; npm run dev                             # MiniERP at http://1
 
 ## Demo smoke test (Windows)
 
-1. `npm run dev` in `app/`, MiniERP open in Edge. Complete the welcome (role, expert).
-2. **Capture:** Record in the panel, process the three expert invoices while talking. Steps with screenshots appear live; the agent asks at pauses, at least one guardrail question.
-3. **Map:** Stop → the draft Work Map appears (Work Maps tab), the debrief asks the open questions, correct one detail, confirm the teach-back → status Confirmed. Blur a region and export a PDF on the Guides tab.
-4. **Teach:** on the Work Maps tab, Start a lesson. In MiniERP set **Invoice set** to **New-hire lesson**, open INV-5801 (€7,200 equipment), leave cost center 6100, click Post → the ghost flies to Cost center and the tutor intervenes; the expert's screenshots replay. Fix it, stop the lesson → the Lessons tab opens with the report.
-5. **Trust:** the masked card number and IBAN in a step; Ctrl+Shift+O; Privacy → Delete everything.
-6. **Always on:** App Profiles for apps used today; a curiosity question pops up at a pause.
+The app is tested on real apps (Excel, a web app in Edge started with `--force-renderer-accessibility`, and so on). The MiniERP sandbox in `sandbox-erp/` is not used for now.
+
+1. `npm run dev` in `app/`. Complete the welcome card (role, expert's name).
+2. **Capture (Expert):** with the switch on **Expert**, press **Record** and do a real task while talking. Steps with screenshots appear live in the panel. The ghost asks at natural pauses and whenever you stop moving the mouse for a few seconds, including at least one guardrail question.
+3. **Map:** press **Stop**. The debrief asks the open questions; correct one detail and confirm the teach-back. **Recordings → Work Maps** shows it as Confirmed; **Recordings → Step guides** lets you blur a region and export a PDF.
+4. **Teach (New hire):** flip the switch to **New hire**, open **Learn** and press **Start lesson** on that task. Make the mistake the expert warned about; the ghost flies to the field and replays the expert's screenshots. **Finish lesson**, then see the report under **Progress**.
+5. **Trust:** masked card numbers and IBANs in steps; Ctrl+Shift+O; **Settings → Privacy → Delete everything**.
+6. **Always on:** **Settings → App profiles** for apps used today; a curiosity question pops up at a pause.

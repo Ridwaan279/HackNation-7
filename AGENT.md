@@ -296,8 +296,7 @@ python observer.py --fake --print           # built-in demo scene (any OS)
 python observer.py --redact-only            # masking only, no screen access (Electron starts it in fake mode)
 python -m pytest tests                      # all observer tests (any OS)
 
-# MiniERP (Agent C)
-cd sandbox-erp && npm install && npm run dev
+# MiniERP (sandbox-erp/) is not used for now: the apprentice is tested on real apps.
 
 # brain, dashboard and service tests (no API key needed; models are stubbed)
 cd fixtures && npm install && npm run typecheck && npm test
