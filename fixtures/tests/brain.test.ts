@@ -58,11 +58,12 @@ const resultSchema = z.object({ title: z.string(), evidence: z.number().int() })
 const request: ModelRequest<z.infer<typeof resultSchema>> = { appKeys: ['browser:127.0.0.1'], system: 'Describe the evidence.', input: 'Masked invoice', schema: resultSchema }
 function model(options: { text?: string; stop?: string; local?: string[]; privacy?: null; fail?: boolean } = {}) {
   const calls: unknown[] = []
-  const transport: ModelTransport = { messages: { create: async (payload) => {
+  const transport: ModelTransport = { chat: { completions: { create: async (payload) => {
     calls.push(payload)
     if (options.fail) throw new Error('sensitive-provider-response')
-    return { content: [{ type: 'text', text: options.text ?? '{"title":"Invoice","evidence":1}', citations: null }], stop_reason: (options.stop ?? 'end_turn') as 'end_turn' }
-  } } }
+    const finish_reason = (options.stop ?? 'stop') as 'stop'
+    return { choices: [{ index: 0, finish_reason, logprobs: null, message: { role: 'assistant', content: options.text ?? '{"title":"Invoice","evidence":1}', refusal: null } }] }
+  } } } }
   return { calls, client: createLlm({ fastModel: 'test-fast', smartModel: 'test-smart', privacy: async () => options.privacy === null ? null : { local_only_apps: options.local ?? [] }, transport }) }
 }
 
@@ -87,7 +88,7 @@ test('LLM fails closed for local-only apps, absent policy, and absent app proven
 })
 
 test('LLM rejects malformed, schema-invalid, and truncated results; hides provider errors', async () => {
-  for (const options of [{ text: 'not json' }, { text: '{"title":42}' }, { stop: 'max_tokens' }]) {
+  for (const options of [{ text: 'not json' }, { text: '{"title":42}' }, { stop: 'length' }]) {
     await assert.rejects(model(options).client.fast(request), { code: 'invalid_output' })
   }
   await assert.rejects(model({ fail: true }).client.fast(request), (error: Error) => !error.message.includes('sensitive-provider-response'))

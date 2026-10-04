@@ -11,7 +11,7 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 cd ..\sandbox-erp; npm run dev                             # MiniERP at http://127.0.0.1:4173 (open it in Edge)
 ```
 
-`app/.env` needs `ANTHROPIC_API_KEY`, `MODEL_FAST`, `MODEL_SMART`, `ELEVENLABS_API_KEY` and the three `VITE_AGENT_*` ids (see `app/.env.example`). Without the Anthropic key every model step falls back to a local version (below), so the app still runs end to end, just less cleverly.
+`app/.env` needs `OPENAI_API_KEY`, `MODEL_FAST`, `MODEL_SMART`, `ELEVENLABS_API_KEY` and the three `VITE_AGENT_*` ids (see `app/.env.example`). Without the OpenAI key every model step falls back to a local version (below), so the app still runs end to end, just less cleverly.
 
 ## What is built
 
@@ -41,7 +41,7 @@ cd ..\sandbox-erp; npm run dev                             # MiniERP at http://1
 ## Not yet checked on Windows
 
 - The whole Electron app with the real observer: the M1–M3 smoke tests in `AGENT.md` §5 (questions at pauses, debrief → confirmed Work Map, the tutor catching the €7,200 opex mistake before Post, mastery report).
-- Live ElevenLabs conversations and live Anthropic calls (all model paths are tested with stubs).
+- Live ElevenLabs conversations and live OpenAI calls (all model paths are tested with stubs).
 - Pointer accuracy at 100% scaling (150% was checked by B).
 
 ## Not built

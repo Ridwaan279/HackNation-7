@@ -6,7 +6,7 @@
     "baseUrl": "..",
     "paths": {
       "@shared/contracts": ["shared/contracts.ts"],
-      "@anthropic-ai/sdk": ["fixtures/node_modules/@anthropic-ai/sdk"],
+      "openai": ["fixtures/node_modules/openai"],
       "zod": ["fixtures/node_modules/zod"],
       "electron": ["fixtures/node_modules/electron"],
       "react": ["fixtures/node_modules/@types/react"],
