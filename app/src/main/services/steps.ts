@@ -58,8 +58,10 @@ export class CaptureSession {
       if (this.events.length > 200) this.events.shift()
     }
     if (event.type === 'click') {
-      const name = event.target?.name.trim() || 'unnamed control'
       const control = event.target?.control_type.toLowerCase() ?? ''
+      // A reports empty browser space as the page Document. Keep it as useful
+      // context without presenting the document title as an actionable control.
+      const name = control.includes('document') ? 'page' : event.target?.name.trim() || 'unnamed control'
       const identity = `${this.context.key}|${event.target?.automation_id}|${name}|${event.target?.rect.join(',')}`
       const previous = this.lastClick && this.guide.steps.find((step) => step.id === this.lastClick!.step)
       if (event.target && previous && this.lastClick!.identity === identity && event.t - this.lastClick!.t <= 1.5 && event.t >= this.lastClick!.t) {
