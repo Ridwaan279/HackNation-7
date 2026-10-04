@@ -157,11 +157,29 @@ The button already points at `downloads/Apprentice-Windows.zip`, a file next to 
 
 ## The website
 
-[`web/`](web) is a static site: plain HTML, CSS and JavaScript with no build step. It's the landing page, a web recorder, and the voice agent.
+[`web/`](web) is a static site: plain HTML, CSS and JavaScript with no build step.
 
-- **Record:** one click picks a window. It keeps a screenshot whenever the screen changes, records your voice into a video and writes down what you say. The first ten seconds are for your introduction.
-- **Guide:** edit titles, reorder or delete steps, then download one HTML file, print a PDF, or download the video. Everything stays in the browser; nothing is uploaded.
-- **Ask the ghost:** an ElevenLabs voice agent explains what the desktop app adds and scrolls the page to whatever it's talking about.
+1. **Kickstart.** The front page is the ghost and one button. Press **Kickstart** and the ghost starts talking.
+2. **Choose.** It explains the two versions side by side and recommends the desktop app, which has the glowing border:
+   - **Web app:** records your screen and voice, takes a screenshot whenever the screen changes, and writes down what you say.
+   - **Desktop app:** sees what you're doing in real time (every field, click and typed value, masked), asks why at the pauses, and keeps learning.
+3. **Overview.** Whichever you pick, the ghost gives a short overview of that version.
+4. **Then:**
+   - **Web app:** the dashboard opens. Start a recording, then open, edit, download or delete your guides.
+   - **Desktop app:** the page shows the download button and the three install steps.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/website-choose.webp" alt="Choosing between the web app and the desktop app" /></td>
+    <td width="50%"><img src="docs/images/web-dashboard.webp" alt="The web app dashboard" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>After Kickstart: the two versions, desktop recommended</sub></td>
+    <td align="center"><sub>The web app dashboard: every recording becomes a guide</sub></td>
+  </tr>
+</table>
+
+Recordings stay in the browser (IndexedDB). Nothing is uploaded.
 
 **Run it locally** (screen sharing needs `localhost` or `https`):
 
@@ -186,44 +204,47 @@ Every push to `main` redeploys automatically. All three serve HTTPS, which scree
 The desktop app uses three ElevenLabs agents (Interviewer, Debrief, Tutor). Their prompts, first messages and tools are in [`app/src/renderer/agents/README.md`](app/src/renderer/agents/README.md).
 
 <details>
-<summary><b>The website agent ("Ask the ghost")</b></summary>
+<summary><b>The website agent (Kickstart and "Ask the ghost")</b></summary>
 
-Without an agent, the website's button plays a short preview in the browser's own voice. To put the real ElevenLabs agent there:
+Without an agent, Kickstart plays a short tour in the browser's own voice: it highlights the two versions while it talks, and narrates whichever one you pick. To put the real ElevenLabs agent there:
 
 1. In the ElevenLabs dashboard, open **Agents → Create agent → Blank agent**. Name it *Apprentice website*.
-2. **First message:** `Hi, I'm the apprentice. Want to know what the desktop app can do that this page can't?`
+2. **First message:** `Hi, I'm the apprentice. I learn how your experts work and teach it to whoever comes next. You can use me online, or download me for Windows. Want me to explain the difference?`
 3. **System prompt:**
 
    ```text
-   You are the Apprentice ghost on the Apprentice website. Visitors are deciding whether to download
-   the desktop app. Be warm and brief: two or three short sentences per turn, then let them talk.
+   You are the Apprentice ghost, the guide on the Apprentice website. The visitor pressed Kickstart.
+   The page now shows two options side by side: the web app on the left and the desktop app on the
+   right, which is recommended. Be warm and brief: two or three short sentences per turn.
 
-   What you know:
-   - The web recorder on this page records a window, keeps a screenshot whenever the screen changes,
-     writes down what the expert says and turns it into a step-by-step guide. It stays in the browser.
-   - A browser only sees pixels. The Windows desktop app reads every field through Windows
-     accessibility: field names, typed values (masked), button names; clicks and keys become steps.
-   - Privacy: password fields are never read. Card numbers, IBANs and API keys are masked on the
-     computer before anything is stored. Password managers, banking sites and private windows are
-     never watched. Ctrl+Shift+O goes off the record. Everything can be deleted in one click.
-   - While the expert works, the desktop app asks why at natural pauses, by voice, and turns the
-     answers into a Work Map of decisions and rules that the expert confirms.
-   - It keeps learning every app the team uses, as masked text only, so it knows the exceptions.
-   - For new hires, the ghost points at the right field and stops a mistake before it is saved.
-   - Download: Windows 10 or 11. Unzip and double-click start.bat. It needs Node.js 20+ and
+   Explain the two versions and recommend the desktop app:
+   - Web app: runs in the browser, nothing to install. It records the screen and the voice, takes a
+     screenshot whenever the screen changes and writes down what the expert says. It cannot see which
+     field changed or what was typed.
+   - Desktop app (Windows 10 or 11): sees what the expert does in real time through Windows
+     accessibility (field names, typed values masked, clicks and keys), asks why at natural pauses
+     by voice, builds a Work Map of the rules, keeps learning every app 24/7 and coaches new hires,
+     pointing at the right field and stopping mistakes before they are saved.
+   - Privacy: password fields are never read; cards, IBANs and keys are masked on the computer;
+     password managers, banking sites and private windows are never watched; Ctrl+Shift+O goes off
+     the record; everything can be deleted.
+   - Install: download the zip, unzip it, double-click start.bat. It needs Node.js 20+ and
      Python 3.11+ and installs the rest the first time.
 
    Tools:
-   - When you talk about part of the page, call show_section with one of:
-     how, desktop, compare, teach, privacy, download.
-   - When someone wants to download, call highlight_download and say the button is highlighted.
+   - show_options: bring the two options back on screen.
+   - highlight_download: highlight the desktop app (or its download button) when you recommend it.
+   - open_mode with mode "web" or "desktop": open that version when the visitor chooses.
 
+   Messages in [square brackets] come from the website, not the visitor: they say what the visitor
+   just clicked. Answer them out loud as asked.
    Never invent features or prices. If you don't know, say so. Never ask for personal data.
    ```
 
-4. **Tools → Add tool → Client tool**, twice. Tick *Wait for response* on both:
-   - `show_section`: "Scrolls the website to a section and highlights it." One parameter, `section` (string, required): `how`, `desktop`, `compare`, `teach`, `privacy` or `download`.
-   - `highlight_download`: "Scrolls to the download section and pulses the Download button." No parameters.
+4. **Tools → Add tool → Client tool**, three times. Tick *Wait for response* on each:
+   - `show_options`: "Shows the web app and desktop app options side by side." No parameters.
+   - `highlight_download`: "Highlights the recommended desktop app, or its download button." No parameters.
+   - `open_mode`: "Opens one version's overview." One parameter, `mode` (string, required): `web` or `desktop`.
 5. **Security:** leave authentication off (a static site can't sign requests), and add your website's domain to the allowlist so other sites can't use your agent.
 6. Copy the agent ID (Agent settings, or the end of the agent's URL) into `web/config.js` as `elevenLabsAgentId`, then commit and push.
 
