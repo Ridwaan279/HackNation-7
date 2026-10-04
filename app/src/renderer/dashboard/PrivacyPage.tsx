@@ -55,10 +55,9 @@ export function PrivacyPage({ bridge }: { bridge?: DashboardBridge }) {
         <div className="dash-actions">{[15, 60].map((m) => <button key={m} disabled={busy} onClick={() => void run(async () => accept(await bridge.invoke('privacy:pause', { minutes: m })), `Paused for ${m === 60 ? '1 hour' : `${m} minutes`}.`)}>{m === 60 ? '1 hour' : `${m} min`}</button>)}<button disabled={busy} onClick={() => void run(async () => accept(await bridge.invoke('privacy:pause', { minutes: 'tomorrow' })), 'Paused until tomorrow.')}>Until tomorrow</button>{state.paused_until && <button className="guide-primary" disabled={busy} onClick={() => void run(async () => accept(await bridge.invoke('privacy:resume', {})), 'Watching again.')}>Resume</button>}</div>
       </section>
       <section className="dash-card"><h3>About you</h3>
-        <form className="dash-form" onSubmit={(e) => { e.preventDefault(); void run(async () => setSettings(await bridge.invoke('settings:set', { role: settings.role, expert: settings.expert, onboarded: true })), 'Saved.') }}>
+        <form className="dash-form" onSubmit={(e) => { e.preventDefault(); void run(async () => setSettings(await bridge.invoke('settings:set', { role: settings.role, onboarded: true })), 'Saved.') }}>
           <label>Role being taught<input value={settings.role} maxLength={80} onChange={(e) => setSettings({ ...settings, role: e.target.value })} /></label>
-          <label>Expert’s name<input value={settings.expert} maxLength={60} onChange={(e) => setSettings({ ...settings, expert: e.target.value })} /></label>
-          <button disabled={busy || !settings.role.trim() || !settings.expert.trim()}>Save</button>
+          <button disabled={busy || !settings.role.trim()}>Save</button>
         </form>
       </section>
       <section className="dash-card"><h3>Mask in text</h3>{MASKS.map(([k, label, hint]) => <label key={k} className="dash-toggle"><input type="checkbox" checked={draft.mask[k]} onChange={(e) => set('mask', { ...draft.mask, [k]: e.target.checked })} /><span><strong>{label}</strong>{hint && <small>{hint}</small>}</span></label>)}</section>

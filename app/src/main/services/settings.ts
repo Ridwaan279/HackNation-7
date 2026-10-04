@@ -23,7 +23,8 @@ const patchSchema = schema.partial().strict()
 
 const defaults = (): Settings => ({
   role: process.env.APPRENTICE_ROLE || 'Accounts payable clerk',
-  expert: process.env.APPRENTICE_EXPERT || 'Sabine',
+  // Nobody is called by name in the app or by the voice agents.
+  expert: 'the expert',
   onboarded: false,
   mode: 'expert',
 })
@@ -38,12 +39,12 @@ export function getSettings(): Settings {
 export async function loadSettings(ctx: AppContext): Promise<Settings> {
   const saved = await getStore(ctx).read<unknown>(['settings.json']).catch(() => null)
   const parsed = schema.safeParse({ ...defaults(), ...(saved && typeof saved === 'object' ? saved : {}) })
-  current = parsed.success ? parsed.data : defaults()
+  current = parsed.success ? { ...parsed.data, expert: 'the expert' } : defaults()
   return getSettings()
 }
 
 export async function saveSettings(ctx: AppContext, patch: unknown): Promise<Settings> {
-  const next = schema.parse({ ...current, ...patchSchema.parse(patch) })
+  const next = { ...schema.parse({ ...current, ...patchSchema.parse(patch) }), expert: 'the expert' }
   await getStore(ctx).write(['settings.json'], next)
   current = next
   ctx.broadcast('settings:updated', getSettings())

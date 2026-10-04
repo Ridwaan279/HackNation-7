@@ -77,7 +77,7 @@ export function localCheck(map: WorkMap, guide: Guide, form: UiControl[], screen
       const rail = step.guardrails[0]
       return {
         step, guardrail_id: rail?.id ?? '', field: expert!.target,
-        why: `${expert!.target} is ${current}, but ${map.expert || 'the expert'} changed it to ${expert!.value} in this situation.`,
+        why: `${expert!.target} is ${current}, but the expert changed it to ${expert!.value} in this situation.`,
         quote: rail ? { text: rail.quote, t: rail.t, source: rail.source } : step.reason,
       }
     }

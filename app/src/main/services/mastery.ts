@@ -50,7 +50,7 @@ export function createMastery(ctx: AppContext, dependencies: { model?: ReturnTyp
       const written = await (dependencies.model ?? getLlm(ctx)).smart({
         appKeys: guide?.app_keys?.length ? guide.app_keys : guide ? [guide.app] : [],
         system: dependencies.prompt ?? await readPrompt('mastery_report'),
-        input: JSON.stringify({ role: map.role, expert: map.expert, steps: report.steps.map((s) => ({ ...s, guardrails: map.steps.find((m) => m.id === s.step_id)?.guardrails.map((g) => g.rule) ?? [] })) }),
+        input: JSON.stringify({ role: map.role, expert: 'the expert', steps: report.steps.map((s) => ({ ...s, guardrails: map.steps.find((m) => m.id === s.step_id)?.guardrails.map((g) => g.rule) ?? [] })) }),
         schema: summarySchema,
       })
       const redact = async (text: string) => { try { return (await ctx.bus.request('observer:redact', { text })).text } catch { return text } }

@@ -36,18 +36,16 @@ function parseHash(): { page: string; params: URLSearchParams } {
   return { page: LEGACY[name] ?? name, params: new URLSearchParams(query) }
 }
 
-/** First run (PLAN §5.1): who the apprentice learns from, and who is using it. */
+/** First run (PLAN §5.1): the role the apprentice is learning. Nobody is asked for or called by a name. */
 function Welcome({ bridge, settings, done }: { bridge: DashboardBridge; settings: Settings; done: (s: Settings) => void }) {
   const [role, setRole] = useState(settings.role)
-  const [expert, setExpert] = useState(settings.expert)
   const [error, setError] = useState('')
   return <section className="welcome" aria-label="Set up the apprentice">
     <h2>Set up the apprentice</h2>
     <p>The role goes into every question it asks. Password managers, banking sites and private windows are never watched.</p>
-    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role, expert, onboarded: true }).then(done).catch(() => setError('Could not save. Try again.')) }}>
+    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role, onboarded: true }).then(done).catch(() => setError('Could not save. Try again.')) }}>
       <label>Role<input value={role} maxLength={80} onChange={(e) => setRole(e.target.value)} placeholder="Accounts payable clerk" /></label>
-      <label>Expert’s name<input value={expert} maxLength={60} onChange={(e) => setExpert(e.target.value)} placeholder="Sabine" /></label>
-      <button className="primary" disabled={!role.trim() || !expert.trim()}>Save</button>
+      <button className="primary" disabled={!role.trim()}>Save</button>
     </form>
     {error && <p className="home-error" role="alert">{error}</p>}
   </section>
@@ -55,14 +53,12 @@ function Welcome({ bridge, settings, done }: { bridge: DashboardBridge; settings
 
 function You({ bridge, settings, done }: { bridge: DashboardBridge; settings: Settings; done: (s: Settings) => void }) {
   const [role, setRole] = useState(settings.role)
-  const [expert, setExpert] = useState(settings.expert)
   const [saved, setSaved] = useState(false)
   return <section className="settings-form">
     <h1>You</h1>
-    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role, expert }).then((s) => { done(s); setSaved(true) }) }}>
+    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role }).then((s) => { done(s); setSaved(true) }) }}>
       <label>Role<input value={role} maxLength={80} onChange={(e) => { setRole(e.target.value); setSaved(false) }} /></label>
-      <label>Expert’s name<input value={expert} maxLength={60} onChange={(e) => { setExpert(e.target.value); setSaved(false) }} /></label>
-      <button className="primary" disabled={!role.trim() || !expert.trim()}>Save</button>
+      <button className="primary" disabled={!role.trim()}>Save</button>
       {saved && <span className="home-meta" role="status">Saved.</span>}
     </form>
   </section>
@@ -113,7 +109,7 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
       </div>
       {recordingsView === 'workmaps' ? <WorkMapsPage bridge={bridge} /> : <GuidesPage bridge={bridge} />}
     </>; break
-    case 'learn': content = <LearnPage bridge={bridge} session={session} expert={settings?.expert ?? ''} openProgress={() => go('progress')} />; break
+    case 'learn': content = <LearnPage bridge={bridge} session={session} openProgress={() => go('progress')} />; break
     case 'progress': content = <LessonsPage bridge={bridge} params={route.params} />; break
     case 'privacy': content = <PrivacyPage bridge={bridge} />; break
     case 'memory': content = <MemoryPage bridge={bridge} />; break

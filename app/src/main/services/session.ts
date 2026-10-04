@@ -29,7 +29,11 @@ import { getSettings } from './settings'
 import { showPanel, toOverlayLocal } from './windows'
 
 const ROLE = () => getSettings().role
-const EXPERT = () => getSettings().expert
+/** Nobody is addressed or described by name: the agent talks to "you" and about "the expert". */
+const EXPERT = () => 'the expert'
+/** The Interviewer opens every recording by asking what is about to be shown. */
+const OVERVIEW_FIRST_MESSAGE =
+  "Hi, I'm ready. Before you start, could you give me a quick overview of what you're about to show me?"
 /** Give the agent time to finish its goodbye before hanging up. */
 const HANGUP_AFTER_MS = 8000
 const ALERT_MS = 8000
@@ -142,9 +146,9 @@ function baseVariables(): Record<string, string> {
   return { role: ROLE(), expert_name: EXPERT(), open_questions: '', draft_summary: '', workmap: '', guide: '' }
 }
 
-function startAgent(agent: AgentKind, session: string, vars: Record<string, string> = {}) {
+function startAgent(agent: AgentKind, session: string, vars: Record<string, string> = {}, firstMessage?: string) {
   state.agent = agent
-  send({ op: 'start', agent, session, dynamicVariables: { ...baseVariables(), ...vars } })
+  send({ op: 'start', agent, session, dynamicVariables: { ...baseVariables(), ...vars }, firstMessage })
 }
 
 function stopAgent() {
@@ -166,7 +170,7 @@ export async function startSession(kind: SessionKind, workmap_id?: string) {
   Object.assign(state, { id, kind, phase: 'live', started_at: now(), workmap_id, agent: null })
   await setObserverMode(kind === 'tutor' ? 'tutor' : 'session')
   ctx.bus.emit('session:started', { id, kind, workmap_id })
-  if (kind === 'teach') startAgent('interviewer', id)
+  if (kind === 'teach') startAgent('interviewer', id, {}, OVERVIEW_FIRST_MESSAGE)
   if (kind === 'tutor') startAgent('tutor', id, await tutorVariables(workmap_id))
   publish()
   return { ...state }
@@ -229,7 +233,7 @@ async function tutorVariables(workmap_id?: string): Promise<Record<string, strin
     const wm = await ctx.bus.request('brain:workmap', { id: workmap_id })
     if (!wm) return { workmap: '(Work Map not found)' }
     const guide = wm.guide ? await ctx.bus.request('brain:guide', { id: wm.guide }).catch(() => null) : null
-    return { workmap: workmapText(wm), guide: guideText(guide), expert_name: wm.expert || EXPERT(), role: wm.role || ROLE() }
+    return { workmap: workmapText(wm), guide: guideText(guide), role: wm.role || ROLE() }
   } catch (err) {
     console.warn('[session] could not load the Work Map for the tutor:', (err as Error).message)
     return { workmap: '(Work Map unavailable)' }
@@ -274,8 +278,8 @@ function onViolation(v: Violation) {
     op: 'nudge',
     text:
       `[intervene] The new hire just broke a guardrail: ${v.why} ` +
-      `${EXPERT()}'s words: "${v.quote.text}". Stop them before they post. ` +
-      `Say "${EXPERT()} would stop here. Why do you think?" and explain using ${EXPERT()}'s reasoning.`,
+      `The expert's words: "${v.quote.text}". Stop them before they post. ` +
+      `Say "The expert would stop here. Why do you think?" and explain using the expert's reasoning. Do not use anyone's name.`,
   })
   const field = v.rect ?? lastCommitRect
   if (field) void pointAtRect(field, 'Check this field', ALERT_MS)

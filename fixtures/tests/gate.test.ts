@@ -30,7 +30,8 @@ test('gate asks at idle moments, at most twice in a row, and again after activit
 
     await advance(3)
     assert.equal(nudges().length, 1, 'idle since the start: the ghost asks')
-    assert.match(nudges()[0].payload.text, /^\[pause\] The expert has paused/)
+    assert.match(nudges()[0].payload.text, /^\[pause\] Politely interject: start with "Excuse me, could I ask something about this\?"/)
+    assert.match(nudges()[0].payload.text, /ask ONE short question \(the user has paused\)/)
     assert.ok(picks >= 1, 'the picker is consulted first')
 
     await advance(21)
@@ -41,10 +42,14 @@ test('gate asks at idle moments, at most twice in a row, and again after activit
 
     h.emit('observer:event', { type: 'activity', t: 1, kind: 'mouse' })
     await advance(7)
+    assert.equal(nudges().length, 2, 'moving the mouse is not input: still no third idle question')
+
+    h.emit('observer:event', { type: 'activity', t: 1, kind: 'typing' })
+    await advance(7)
     assert.equal(nudges().length, 3, 'after activity and a quiet moment, it asks again')
 
     await h.invoke('agent:status', { mode: 'speaking' })
-    h.emit('observer:event', { type: 'activity', t: 2, kind: 'mouse' })
+    h.emit('observer:event', { type: 'activity', t: 2, kind: 'typing' })
     await advance(30)
     assert.equal(nudges().length, 3, 'never while the agent is speaking')
   } finally {

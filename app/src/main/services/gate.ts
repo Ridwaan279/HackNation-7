@@ -30,8 +30,13 @@ const FALLBACK_QUESTION =
   'Ask ONE short question about why the expert just did what they did on screen. ' +
   'If you have already asked about reasons twice, ask about a rule or limit they never break instead.'
 
+/** Every question opens politely, so it feels like a colleague leaning over, not a quiz. */
+const INTERJECT = 'Politely interject: start with "Excuse me, could I ask something about this?" and then, in the same turn, '
+/** How often the agent gets a quiet summary of the latest steps while recording. */
+const SUMMARY_EVERY_S = 30
+
 const IDLE_QUESTION =
-  'The expert has paused. Ask ONE short question about what is on screen right now or what they did last: ' +
+  'Ask ONE short question (the user has paused) about what is on screen right now or what they did last: ' +
   'why they do it that way, what they check before moving on, or a rule they never break. Do not repeat an earlier question.'
 
 let ctx: AppContext
@@ -48,6 +53,8 @@ let lastAgentSpeech = 0
 let lastNudge = 0
 /** Idle questions asked since the last input. */
 let idleAsks = 0
+let latestSteps: string[] = []
+let lastSummary = ''
 let lastActivitySent = 0
 let asked: number[] = []
 let lastWindow = ''
@@ -92,6 +99,8 @@ function describe(e: SidecarEvent): string | null {
       return `User is now in ${e.app}: "${e.title}".`
     case 'blocked':
       return 'User switched to a private window. Not watching it; do not ask about it.'
+    case 'selection':
+      return `User highlighted: "${e.text.slice(0, 200)}".`
     default:
       return null
   }
@@ -101,11 +110,13 @@ function onObserver(e: SidecarEvent) {
   const t = now()
   switch (e.type) {
     case 'activity':
-      busy(t)
+      // Typing keeps the ghost quiet; moving the mouse or scrolling does not (it may jump in then).
+      if (e.kind === 'typing') busy(t)
       return
     case 'click':
     case 'commit':
     case 'key':
+    case 'selection':
       busy(t)
       lastAction = t
       break
@@ -155,11 +166,11 @@ async function tick() {
       const q = await ctx.bus.request('brain:pickQuestion', { session: sessionId })
       if (q) {
         lastPicked = q
-        text = `Ask ONE short question: ${q.question}`
+        text = `${INTERJECT}ask ONE short question: ${q.question}`
       } else if (idle) {
         // Nothing specific to ask about, but the expert is idle: ask about the screen in general.
         lastPicked = null
-        text = IDLE_QUESTION
+        text = INTERJECT + IDLE_QUESTION.charAt(0).toLowerCase() + IDLE_QUESTION.slice(1)
       } else {
         lastNudge = t - MIN_GAP_S + RETRY_AFTER_NULL_S
         return
@@ -167,7 +178,7 @@ async function tick() {
     } catch {
       // Agent C's picker isn't loaded yet: let the agent pick from what it has seen.
       lastPicked = null
-      text = FALLBACK_QUESTION
+      text = INTERJECT + FALLBACK_QUESTION.charAt(0).toLowerCase() + FALLBACK_QUESTION.slice(1)
     }
     // Things may have changed while the picker was thinking.
     if (!session || session.id !== sessionId || lastInput > t || agent.mode === 'speaking' || !agentLive()) return
@@ -190,6 +201,8 @@ export const init: ServiceInit = (c) => {
     // Idle time counts from the start of the session.
     lastInput = now()
     idleAsks = 0
+    latestSteps = []
+    lastSummary = ''
     asked = []
     lastPicked = null
   })
@@ -205,5 +218,16 @@ export const init: ServiceInit = (c) => {
     if (agent.mode === 'speaking') lastAgentSpeech = now()
     if (s.userSpeaking) lastUserSpeech = now()
   })
+  // Keep the agent up to date on what is being shown, without making it speak.
+  c.bus.on('guide:updated', (g) => {
+    if (session && g.session === session.id) latestSteps = g.steps.slice(-5).map((st) => `${st.n}. ${st.title}`)
+  })
+  setInterval(() => {
+    if (!session || session.kind !== 'teach' || !agentLive() || !latestSteps.length) return
+    const summary = latestSteps.join('; ')
+    if (summary === lastSummary) return
+    lastSummary = summary
+    send({ op: 'context', text: `Latest steps the user has shown: ${summary}. If something does not add up, ask about it at the next [pause].` })
+  }, SUMMARY_EVERY_S * 1000)
   setInterval(() => void tick(), 500)
 }
