@@ -440,7 +440,7 @@ export type GhostState =
 /** Events on the in-process bus (main process). */
 export interface BusEvents {
   'observer:event': SidecarEvent
-  'session:started': { id: string; kind: 'teach' | 'quick_guide' | 'tutor'; workmap_id?: string }
+  'session:started': { id: string; kind: 'teach' | 'quick_guide' | 'tutor'; workmap_id?: string; task?: string }
   'session:stopped': { id: string }
   'transcript:line': TranscriptLine & { session: string }
   'agent:answer': Answer & { session: string }
