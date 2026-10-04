@@ -1,19 +1,78 @@
+/* Design tokens. The apprentice is a native Windows 11 companion: neutral, OS-matching surfaces that
+   follow the system light/dark theme. The ghost's gradient is the only decorative colour, and it is
+   spent in one place (the panel's step trail). Radii: controls 6px, media 6px, surfaces 8px,
+   speech bubbles 14px. */
 :root {
+  /* The ghost (fixed brand colours, PLAN §5.10). */
   --sky: #7cc7f4;
   --lavender: #b38de8;
   --pink: #f59fdf;
-  --ink: #0d0b1a;
-  --ink-2: #17142b;
-  --ink-3: #221e3d;
-  --line: #2f2a52;
-  --text: #ece9ff;
-  --muted: #9a94c4;
-  --rec: #ff4d6d;
-  --ok: #6ee7b7;
-  color-scheme: dark;
+  --ghost-trail: linear-gradient(180deg, var(--sky), var(--lavender) 55%, var(--pink));
+
+  /* Light theme (Windows "Mist"). */
+  --bg: #f3f3f6;
+  --layer: rgba(255, 255, 255, 0.72);
+  --layer-strong: #ffffff;
+  --layer-hover: rgba(0, 0, 0, 0.035);
+  --stroke: rgba(20, 16, 40, 0.09);
+  --stroke-strong: rgba(20, 16, 40, 0.16);
+  --text: #1c1b22;
+  --text-2: #5f5d6b;
+  --text-3: #8b8898;
+  --accent: #6e5ad6;
+  --accent-hover: #5f4bc7;
+  --on-accent: #ffffff;
+  --rec: #d92d4b;
+  --rec-soft: rgba(217, 45, 75, 0.1);
+  --focus: #6e5ad6;
+  --shadow: 0 8px 28px rgba(40, 30, 90, 0.14), 0 1px 3px rgba(40, 30, 90, 0.08);
+
+  /* Back-compat names used by the dev dashboard. */
+  --ink: var(--bg);
+  --ink-2: var(--layer-strong);
+  --ink-3: var(--layer);
+  --line: var(--stroke);
+  --muted: var(--text-2);
+
+  color-scheme: light dark;
   font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
   font-size: 14px;
+  line-height: 20px;
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f1e26;
+    --layer: rgba(255, 255, 255, 0.05);
+    --layer-strong: #2b2a33;
+    --layer-hover: rgba(255, 255, 255, 0.06);
+    --stroke: rgba(255, 255, 255, 0.08);
+    --stroke-strong: rgba(255, 255, 255, 0.16);
+    --text: #f2f1f7;
+    --text-2: #aeabbd;
+    --text-3: #807d90;
+    --accent: #b9a8ff;
+    --accent-hover: #c9bbff;
+    --on-accent: #1c1440;
+    --rec: #ff6b81;
+    --rec-soft: rgba(255, 107, 129, 0.14);
+    --focus: #b9a8ff;
+    --shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Fluent type ramp. */
+.t-caption {
+  font-size: 12px;
+  line-height: 16px;
+}
+.t-subtitle {
+  font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
 }
 
 * {
@@ -28,7 +87,13 @@ body,
 }
 
 body {
-  background: var(--ink);
+  background: var(--bg);
+}
+
+/* The panel sits on Windows 11 Mica, so its page is transparent. */
+html[data-route='panel'],
+html[data-route='panel'] body {
+  background: transparent;
 }
 
 html[data-route='overlay'],
@@ -42,4 +107,29 @@ button {
   font: inherit;
   color: inherit;
   cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+kbd {
+  font: inherit;
+  font-size: 12px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--stroke-strong);
+  border-bottom-width: 2px;
+  color: var(--text-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, screen, type BrowserWindowConstructorOptions } from 'electron'
+import { app, BrowserWindow, Menu, nativeTheme, screen, type BrowserWindowConstructorOptions } from 'electron'
 import { join } from 'node:path'
 import type { AppContext, Rect, ServiceInit } from '@shared/contracts'
 import type { OverlayGeometry } from '../../common/ipc'
@@ -79,6 +79,11 @@ function createOverlay() {
   screen.on('display-removed', refit)
 }
 
+/** Window controls drawn by Windows over the panel's custom title bar, matching the system theme. */
+function titleBarOverlay() {
+  return { color: '#00000000', symbolColor: nativeTheme.shouldUseDarkColors ? '#f2f1f7' : '#1c1b22', height: 40 }
+}
+
 function createPanel() {
   const { workArea } = screen.getPrimaryDisplay()
   const width = 400
@@ -93,10 +98,14 @@ function createPanel() {
     title: 'Apprentice',
     show: false,
     alwaysOnTop: true,
-    backgroundColor: '#0d0b1a',
+    // Native Windows 11 material; the page is transparent and draws its own title bar.
+    backgroundMaterial: 'mica',
+    titleBarStyle: 'hidden',
+    titleBarOverlay: titleBarOverlay(),
     autoHideMenuBar: true,
     webPreferences: webPreferences(),
   })
+  nativeTheme.on('updated', () => panel?.setTitleBarOverlay(titleBarOverlay()))
   hideOnClose(panel)
   panel.once('ready-to-show', () => panel?.show())
   load(panel, 'panel')

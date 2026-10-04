@@ -1,7 +1,7 @@
 // Shown at #/dashboard until Agent C adds src/renderer/dashboard/Dashboard.tsx.
 // Doubles as Agent B's test bench: ghost states, pop-ups, pointer, live event log.
 import { useState } from 'react'
-import type { GhostState, Popup, SidecarEvent } from '@shared/contracts'
+import type { GhostState, Guide, Popup, SidecarEvent } from '@shared/contracts'
 import { Ghost } from '../mascot/Ghost'
 import { tryInvoke, useChannel } from '../lib/api'
 import './dev.css'
@@ -32,6 +32,24 @@ const SAMPLE_POPUPS: Popup[] = [
     ],
   },
 ]
+
+// Screenshots live in %APPDATA%/apprentice/shots/demo/ (copied from Agent C's fixtures).
+const step = (n: number, kind: Guide['steps'][number]['kind'], title: string, shot: string | null, quote?: string) => ({
+  id: `demo-${n}`, n, t: n * 9, kind, title, note: '', target: '', shot, highlight: null, blur: [], screen_moment: title,
+  edited: false, ...(quote ? { quote: { text: quote, t: n * 9 } } : {}),
+})
+const SAMPLE_GUIDE: Guide = {
+  id: 'demo-guide',
+  title: 'Process a supplier invoice in MiniERP',
+  app: 'browser:minierp.local',
+  session: '',
+  steps: [
+    step(1, 'click', 'Open invoice 4471 from Müller GmbH', 'shots/demo/expert-capex.jpg'),
+    step(2, 'enter', 'Enter 0400 in Cost center', null, 'Equipment over €5,000 is always capex.'),
+    step(3, 'click', 'Click Hold', 'shots/demo/expert-hold.jpg', 'They double-bill every December, so I hold it until I check.'),
+    step(4, 'click', 'Click Send for approval', 'shots/demo/expert-approval.jpg'),
+  ],
+}
 
 export default function DevDashboard() {
   const [log, setLog] = useState<string[]>([])
@@ -81,7 +99,8 @@ export default function DevDashboard() {
               Pop-up: {p.kind}
             </button>
           ))}
-          <button onClick={pointAtCenter}>Pointer → screen centre</button>
+          <button onClick={pointAtCenter}>Pointer to screen centre</button>
+          <button onClick={() => void tryInvoke('dev:emit', { name: 'guide:updated', payload: SAMPLE_GUIDE })}>Sample guide in panel</button>
           <button onClick={() => void tryInvoke('dev:emit', { name: 'ghost:state', payload: { state: 'alert', badge: null } })}>Ghost alert</button>
           <button onClick={() => void tryInvoke('dev:emit', { name: 'ghost:state', payload: { state: 'not_watching', badge: null } })}>Not watching</button>
           <button onClick={() => void tryInvoke('dev:emit', { name: 'ghost:state', payload: { state: 'idle', badge: null } })}>Reset ghost</button>
