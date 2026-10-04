@@ -295,6 +295,15 @@ export interface Guide {
   app: string
   session: string
   steps: GuideStep[]
+  /** User-added, redacted text references used during training. Raw files are never stored. */
+  references?: GuideReference[]
+}
+
+export interface GuideReference {
+  id: string
+  name: string
+  characters: number
+  added_at: string
 }
 
 export interface Guardrail {
@@ -346,6 +355,8 @@ export interface AppProfile {
   today: string[]
   guides: string[]
   workmaps: string[]
+  /** Patterns derived from masked ambient clicks and field commits. */
+  habits?: { frequent_actions: { label: string; count: number }[]; frequent_fields: { label: string; count: number }[]; action_sequences: { from: string; to: string; count: number }[] }
 }
 
 export interface PrivacyConfig {
@@ -448,6 +459,7 @@ export interface BusEvents {
   'agent:teachback_confirmed': { session: string; t: number }
   'tutor:mark_step': { session: string; step_id: string; outcome: 'alone' | 'hint' | 'caught' }
   'guide:updated': Guide
+  'recording:deleted': { guide_id: string; session: string; workmap_ids: string[] }
   'workmap:updated': WorkMap
   'profile:updated': AppProfile
   'tutor:violation': Violation
@@ -519,6 +531,9 @@ export interface GuideBlurRequest extends GuideImageRequest {
 export interface GuideIpc {
   'guides:list': { req: Record<string, never>; res: Guide[] }
   'guide:get': { req: { id: string }; res: Guide | null }
+  'guide:delete': { req: { id: string }; res: { ok: boolean } }
+  'guide:referenceAdd': { req: { id: string; revision: number }; res: Guide | { canceled: true } }
+  'guide:referenceRemove': { req: { id: string; revision: number; reference_id: string }; res: Guide }
   'guide:save': { req: GuideSaveRequest; res: Guide }
   'guide:image': { req: GuideImageRequest; res: { data_url: string } | null }
   'guide:blur': { req: GuideBlurRequest; res: Guide }
