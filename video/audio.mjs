@@ -4,18 +4,21 @@
 //                             Needs ELEVENLABS_API_KEY (env or app/.env) and network access to api.elevenlabs.io.
 //                             Existing files are kept; pass --force to regenerate (it costs credits).
 //   node audio.mjs --local    Offline fallback: synthesised score and sound effects, no voices.
+//   --film walkthrough        another film: cues from video/walkthrough/cues.js, stems in audio/walkthrough/.
 //
 // Then run `node mix.mjs` to mix the stems and mux them onto out/silent.mp4.
 
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
-import { DURATION, OUTPUT, SCENES, LINES, SFX, MUSIC, VOICES } from './cues.js'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
-const DIR = path.join(HERE, 'audio')
 const has = (k) => process.argv.includes(`--${k}`)
+const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > -1 ? process.argv[i + 1] : d }
+const FILM = arg('film', '')
+const { DURATION, OUTPUT, SCENES, LINES, SFX, MUSIC, VOICES } = await import(pathToFileURL(path.join(HERE, FILM, 'cues.js')).href)
+const DIR = path.join(HERE, 'audio', FILM)
 fs.mkdirSync(path.join(DIR, 'voice'), { recursive: true })
 fs.mkdirSync(path.join(DIR, 'sfx'), { recursive: true })
 

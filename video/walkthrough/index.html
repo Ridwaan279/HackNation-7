@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Protégé technical walkthrough</title>
+<link rel="stylesheet" href="../film.css" />
+<link rel="stylesheet" href="walk.css" />
+<script type="importmap">
+{ "imports": {
+  "three": "../node_modules/three/build/three.module.js",
+  "three/addons/": "../node_modules/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"><div class="aura a1"></div><div class="aura a2"></div><div class="aura a3"></div></div>
+  <div id="ui"></div>
+  <canvas id="gl" width="1920" height="1080"></canvas>
+  <div id="fx"></div>
+  <div id="type"></div>
+  <div id="post">
+    <div id="leak1" class="leak"></div><div id="leak2" class="leak"></div>
+    <div id="flare"></div>
+    <div id="flash"></div>
+    <div id="vignette"></div>
+    <div id="grain"></div>
+    <div id="barTop" class="bar"></div><div id="barBot" class="bar"></div>
+    <div id="fade"></div>
+  </div>
+</div>
+<script type="module" src="scene.js"></script>
+</body>
+</html>

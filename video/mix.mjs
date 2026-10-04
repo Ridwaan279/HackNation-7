@@ -3,18 +3,21 @@
 //
 //   node mix.mjs                 -> out/protege-demo.mp4
 //   node mix.mjs --video protege-demo.mp4   reuse the committed 60 s film's picture (no re-render needed)
+//   node mix.mjs --film walkthrough         stems from audio/walkthrough/, picture out/walkthrough/silent.mp4 -> out/walkthrough/<NAME>.mp4
 
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
-import { DURATION, OUTPUT, LINES, SFX } from './cues.js'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
-const A = path.join(HERE, 'audio'), OUT = path.join(HERE, 'out')
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > -1 ? process.argv[i + 1] : d }
+const FILM = arg('film', '')
+const { DURATION, OUTPUT, FPS, LINES, SFX, NAME = 'protege-demo' } = await import(pathToFileURL(path.join(HERE, FILM, 'cues.js')).href)
+const A = path.join(HERE, 'audio', FILM), OUT = path.join(HERE, 'out', FILM)
 const stem = (base) => ['.mp3', '.wav'].map((e) => base + e).find((f) => fs.existsSync(f))
 const dur = (f) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString())
+const rate = (f) => { const [a, b] = execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'csv=p=0', f]).toString().trim().split('/').map(Number); return a / (b || 1) }
 
 const K = OUTPUT / DURATION // picture runs 1/K faster; every cue time scales by K
 const inputs = [], filters = [], voiceLabels = [], fxLabels = []
@@ -70,12 +73,13 @@ console.log(`mixed ${voiceLabels.length} voice clips, ${fxLabels.length} sound e
 
 const video = arg('video', path.join(OUT, 'silent.mp4'))
 if (fs.existsSync(video)) {
-  const out = path.join(OUT, 'protege-demo.mp4')
-  // A 66 s render is retimed to the delivered length and re-encoded; a video that is already 60 s
-  // (e.g. the committed video/protege-demo.mp4) keeps its picture and only gets the new audio.
-  const retime = dur(video) > OUTPUT + 1
+  const out = path.join(OUT, `${NAME}.mp4`)
+  // A render on the authored timeline (or at a lower frame rate, render.mjs --fps 15) is retimed to the delivered
+  // length and frame rate and re-encoded at ~9 Mbit/s, which keeps a 60 s film under GitHub's 100 MB file limit.
+  // A video that is already final (e.g. the committed video/protege-demo.mp4) keeps its picture and only gets the new audio.
+  const retime = dur(video) > OUTPUT + 1 || rate(video) < FPS - 0.5
   const vcodec = retime
-    ? ['-vf', `setpts=PTS*${K.toFixed(6)},fps=30`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p']
+    ? ['-vf', `setpts=PTS*${K.toFixed(6)},fps=${FPS}`, '-c:v', 'libx264', '-preset', 'medium', '-b:v', '9M', '-maxrate', '11M', '-bufsize', '18M', '-pix_fmt', 'yuv420p']
     : ['-c:v', 'copy']
   r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-i', wav, '-map', '0:v', '-map', '1:a', ...vcodec,
     '-c:a', 'aac', '-b:a', '256k', '-movflags', '+faststart', '-t', String(OUTPUT), out], { stdio: 'inherit' })

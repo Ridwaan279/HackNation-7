@@ -6,20 +6,22 @@
 //   node render.mjs --from 14 --to 29    a section (for quick checks) -> out/silent-14-29.mp4
 //   node render.mjs --workers 3          parallel browser pages (default 3)
 //   node render.mjs --fps 15             half the frames (about twice as fast); mix.mjs converts to 30 fps
+//   node render.mjs --film walkthrough   another film: video/walkthrough/{index.html,cues.js} -> out/walkthrough/
 
 import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
-import { DURATION, FPS } from './cues.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
-const OUT = path.join(HERE, 'out')
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > -1 ? process.argv[i + 1] : d }
 const has = (k) => process.argv.includes(`--${k}`)
+const FILM = arg('film', '')
+const OUT = path.join(HERE, 'out', FILM)
+const { DURATION, FPS } = await import(pathToFileURL(path.join(HERE, FILM, 'cues.js')).href)
 const RATE = Number(arg('fps', FPS)) // --fps 15 renders half the frames; mix.mjs retimes to 30 fps
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.woff': 'font/woff', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.json': 'application/json' }
@@ -30,7 +32,7 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(p).pipe(res)
 })
 await new Promise((r) => server.listen(0, '127.0.0.1', r))
-const URL_ = `http://127.0.0.1:${server.address().port}/video/index.html`
+const URL_ = `http://127.0.0.1:${server.address().port}/video/${FILM ? `${FILM}/` : ''}index.html`
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--font-render-hinting=none'] })
 async function openPage() {
