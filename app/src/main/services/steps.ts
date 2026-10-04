@@ -288,6 +288,12 @@ export function createStepsService(ctx: AppContext, dependencies: {
     }), 'answer')
   })
 
+  ctx.bus.on('data:cleared', (event) => {
+    if (event.scope !== 'all') return
+    for (const id of [...guides.keys()]) if (guides.get(id) !== active?.guide) guides.delete(id)
+    described.clear()
+  })
+
   ctx.bus.handle('brain:guide', async ({ id }) => clone(await load(id)))
   ctx.bus.handle('brain:pickQuestion', async ({ session }) => {
     const capture = active

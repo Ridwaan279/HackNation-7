@@ -368,6 +368,8 @@ export function createWorkmapService(ctx: AppContext, dependencies: {
   ctx.bus.on('agent:correction', (event) => { track(queue(() => correct(event.session, event.step_id, event.correction_quote))) })
   ctx.bus.on('agent:teachback_confirmed', (event) => { track(queue(() => confirm(event.session, event.t))) })
 
+  ctx.bus.on('data:cleared', (event) => { if (event.scope === 'all') maps.clear() })
+
   ctx.bus.handle('brain:workmap', async ({ id }) => clone(await load(id)))
   ctx.bus.handle('brain:stepsFor', async ({ workmap_id, step_id }) => {
     const map = await load(workmap_id)
