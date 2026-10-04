@@ -1,0 +1,36 @@
+# Protégé demo film
+
+A 66-second cinematic demo of Protégé, rendered from code. The page in this folder is a 1920×1080 stage with a Three.js layer (the 3D ghost, Sabine's knowledge orbs dissolving into particles, iridescent bubbles, the Work Map constellation and the privacy shield) and animated mock-ups of MiniERP and the Protégé workspace. Every frame is a pure function of time, so the render is deterministic.
+
+| Time | Beat | What you see |
+|---|---|---|
+| 0:00 | **The loss** | Sabine's 24 years of know-how as a constellation of orbs. "18 months until she retires": the orbs dissolve into particles |
+| 0:08 | **Reveal** | The particles swirl into the 3D ghost. Impact, flare, the Protégé wordmark |
+| 0:14 | **01 Capture** | MiniERP in 3D perspective: an accessibility scan tags every field, the cost center changes from 6100 to 0400, the IBAN is masked, and steps appear live in the panel. The ghost asks "You moved that one to capex. What made you do that?" and Sabine answers |
+| 0:29 | **02 Map** | The steps become a 3D Work Map (decision, guardrail ring, Sabine's quote), then the Work Map page gets stamped "Confirmed by Sabine" |
+| 0:40 | **03 Teach** | A new hire codes the €7,200 equipment invoice to opex and heads for Post. Time freezes, the ghost flies to the field ("Sabine would stop here. Why do you think?"), Sabine's step replays, the hire fixes it and the invoice posts, followed by the mastery report |
+| 0:54 | **Trust, always on** | A shield around the ghost with masked IBAN and card numbers, then App Profiles for every app |
+| 1:00 | **End card** | Protégé. Show it once. Protégé remembers. |
+
+## Build it
+
+```bash
+cd video
+npm install                      # three, fonts, playwright (uses the preinstalled Chromium)
+node render.mjs                  # frames -> out/silent.mp4 (about 10-20 min with SwiftShader)
+node audio.mjs                   # ElevenLabs voices, music and sound effects -> audio/
+node mix.mjs                     # mix + mux -> out/protege-demo.mp4
+```
+
+- `node render.mjs --preview 11.8,23,47.5` writes stills to `out/preview/` for quick checks. `--from 40 --to 54` renders one section.
+- `node audio.mjs` needs `ELEVENLABS_API_KEY` (in the environment or `app/.env`) and network access to `api.elevenlabs.io`. It makes:
+  - **Voices** (Text to Speech, `eleven_multilingual_v2`): a narrator (George), the ghost (Sarah, the same voice as the Protégé website) and Sabine (Lily). Override them with `NARRATOR_VOICE_ID`, `GHOST_VOICE_ID` and `SABINE_VOICE_ID`.
+  - **Music** (Music API, `music_v1`): a composition plan with one section per scene, so the score turns where the picture does.
+  - **Sound effects** (Text to Sound, `eleven_text_to_sound_v2`): whooshes, the reveal impact, UI clicks, the scan sweep, the time-freeze hit and chimes. Some prompts reuse the desktop app's own cue prompts from `app/src/main/services/tts.ts`.
+
+  Files that already exist are kept, so re-running costs nothing. Use `--force` to regenerate.
+- `node audio.mjs --local` synthesises an offline score and sound effects (no voices). It's a stand-in for when ElevenLabs can't be reached. `mix.mjs` uses ElevenLabs `.mp3` stems wherever they exist and falls back to the local `.wav` stems.
+
+All timing lives in `cues.js`: scene boundaries, the spoken lines (with their slots; a clip that runs long is sped up by at most 1.2× in the mix), sound-effect cue times and the music plan. Change the script there.
+
+`out/` and `audio/` are build output. The finished film is copied to `video/protege-demo.mp4`.

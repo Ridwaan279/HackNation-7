@@ -302,6 +302,10 @@ python -m pytest tests                      # all observer tests (any OS)
 cd web && python -m http.server 5173        # then open http://localhost:5173 in Chrome or Edge
 sh scripts/make-download.sh                 # rebuild web/downloads/Protege-Windows.zip (PowerShell: scripts\make-download.ps1)
 
+# demo film (video/, see video/README.md): frames from an HTML/Three.js scene, audio from ElevenLabs
+cd video && npm install && node render.mjs && node audio.mjs && node mix.mjs   # -> video/out/protege-demo.mp4
+node audio.mjs --local                      # offline score and sound effects (no voices) when ElevenLabs is unreachable
+
 # brain, dashboard and service tests (no API key needed; models are stubbed)
 cd fixtures && npm install && npm run typecheck && npm test
 cd app && npm run typecheck && npm run build

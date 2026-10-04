@@ -1,0 +1,19 @@
+{
+  "name": "protege-demo-video",
+  "private": true,
+  "type": "module",
+  "description": "Cinematic 60-second demo film for Protégé, rendered frame by frame from an HTML/Three.js scene.",
+  "scripts": {
+    "preview": "node render.mjs --preview",
+    "audio": "node audio.mjs",
+    "render": "node render.mjs",
+    "mix": "sh mix.sh"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.2.5",
+    "@fontsource-variable/geist-mono": "^5.2.5",
+    "@fontsource/instrument-serif": "^5.2.5",
+    "playwright": "1.56.1",
+    "three": "^0.170.0"
+  }
+}
