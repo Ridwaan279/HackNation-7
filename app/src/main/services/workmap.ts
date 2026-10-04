@@ -57,7 +57,8 @@ export function verifyQuote(text: string | null | undefined, evidence: Evidence[
   return best && score >= 0.6 ? { text: best.text, t: best.t, source: best.source } : null
 }
 
-function stepIndex(map: WorkMap, ref: string): number {
+/** A step by id ("s3"), index ("3") or title words: agents refer to steps loosely. */
+export function stepIndex(map: WorkMap, ref: string): number {
   const id = ref.trim()
   let index = map.steps.findIndex((step) => step.id === id)
   if (index < 0 && /^\d+$/.test(id)) index = map.steps.findIndex((step) => step.index === Number(id))

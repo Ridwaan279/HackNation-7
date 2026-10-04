@@ -273,7 +273,8 @@ function onViolation(v: Violation) {
       `${EXPERT()}'s words: "${v.quote.text}". Stop them before they post. ` +
       `Say "${EXPERT()} would stop here. Why do you think?" and explain using ${EXPERT()}'s reasoning.`,
   })
-  if (lastCommitRect) void pointAtRect(lastCommitRect, 'Check this field', ALERT_MS)
+  const field = v.rect ?? lastCommitRect
+  if (field) void pointAtRect(field, 'Check this field', ALERT_MS)
   void replay(v.step_id)
 }
 
