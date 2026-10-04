@@ -3,6 +3,9 @@
 
 export const DURATION = 66
 export const FPS = 30
+// The film is authored on a 66 s timeline and delivered at 60 s: mix.mjs plays the picture 1.1x faster
+// and scales every cue below by OUTPUT / DURATION.
+export const OUTPUT = 60
 
 // Scene boundaries (used by the scene and for the music's composition plan).
 export const SCENES = {
@@ -17,9 +20,9 @@ export const SCENES = {
 
 // ElevenLabs voices. Override with NARRATOR_VOICE_ID, GHOST_VOICE_ID, SABINE_VOICE_ID.
 export const VOICES = {
-  narrator: { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', stability: 0.55, similarity: 0.8, style: 0.35 },
-  ghost: { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah (the voice of the Protégé website)', stability: 0.45, similarity: 0.8, style: 0.4 },
-  sabine: { id: 'pFZP5JQG7iQjIQuC4Bku', name: 'Lily', stability: 0.6, similarity: 0.8, style: 0.25 },
+  narrator: { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', stability: 0.55, similarity: 0.8, style: 0.35, speed: 1.08 },
+  ghost: { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah (the voice of the Protégé website)', stability: 0.45, similarity: 0.8, style: 0.4, speed: 1.05 },
+  sabine: { id: 'pFZP5JQG7iQjIQuC4Bku', name: 'Lily', stability: 0.6, similarity: 0.8, style: 0.25, speed: 1.05 },
 }
 
 // Spoken lines. `max` is the slot length; audio.mjs speeds up a clip slightly if it overruns.

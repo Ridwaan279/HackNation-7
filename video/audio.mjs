@@ -11,7 +11,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { DURATION, SCENES, LINES, SFX, MUSIC, VOICES } from './cues.js'
+import { DURATION, OUTPUT, SCENES, LINES, SFX, MUSIC, VOICES } from './cues.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const DIR = path.join(HERE, 'audio')
@@ -55,7 +55,7 @@ async function fromElevenLabs() {
     await post(`/text-to-speech/${voiceId(l.voice)}?output_format=mp3_44100_192`, {
       text: l.text,
       model_id: process.env.ELEVENLABS_TTS_MODEL || 'eleven_multilingual_v2',
-      voice_settings: { stability: v.stability, similarity_boost: v.similarity, style: v.style, use_speaker_boost: true },
+      voice_settings: { stability: v.stability, similarity_boost: v.similarity, style: v.style, speed: v.speed, use_speaker_boost: true },
     }, path.join(DIR, 'voice', `${l.id}.mp3`))
   }
 
@@ -70,7 +70,7 @@ async function fromElevenLabs() {
   const out = path.join(DIR, 'music.mp3')
   const sections = MUSIC.sections.map((s) => {
     const [a, b] = SCENES[s.scene]
-    return { section_name: s.name, positive_local_styles: s.styles, negative_local_styles: [], duration_ms: Math.round((b - a) * 1000), lines: [] }
+    return { section_name: s.name, positive_local_styles: s.styles, negative_local_styles: [], duration_ms: Math.round((b - a) * (OUTPUT / DURATION) * 1000), lines: [] }
   })
   try {
     await post('/music?output_format=mp3_44100_192', {
@@ -79,8 +79,8 @@ async function fromElevenLabs() {
     }, out)
   } catch (e) {
     console.log('composition plan refused, retrying with a prompt:', e.message.slice(0, 200))
-    const prompt = `${MUSIC.global.join(', ')}. ` + MUSIC.sections.map((s) => `${s.name} (${(SCENES[s.scene][1] - SCENES[s.scene][0]).toFixed(1)}s): ${s.styles.join(', ')}`).join('. ')
-    await post('/music?output_format=mp3_44100_192', { model_id: 'music_v1', prompt, music_length_ms: DURATION * 1000, force_instrumental: true }, out)
+    const prompt = `${MUSIC.global.join(', ')}. ` + MUSIC.sections.map((s) => `${s.name} (${((SCENES[s.scene][1] - SCENES[s.scene][0]) * OUTPUT / DURATION).toFixed(1)}s): ${s.styles.join(', ')}`).join('. ')
+    await post('/music?output_format=mp3_44100_192', { model_id: 'music_v1', prompt, music_length_ms: OUTPUT * 1000, force_instrumental: true }, out)
   }
   report()
 }
@@ -90,7 +90,8 @@ function report() {
     const f = path.join(DIR, 'voice', `${l.id}.mp3`)
     if (!fs.existsSync(f)) continue
     const d = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString())
-    console.log(`${l.id.padEnd(4)} ${d.toFixed(2)}s / slot ${l.max}s ${d > l.max ? `-> sped up x${Math.min(1.2, d / l.max).toFixed(2)} in the mix` : ''}`)
+    const slot = l.max * OUTPUT / DURATION
+    console.log(`${l.id.padEnd(4)} ${d.toFixed(2)}s / slot ${slot.toFixed(2)}s ${d > slot ? `-> sped up x${Math.min(1.2, d / slot).toFixed(2)} in the mix` : ''}`)
   }
 }
 
