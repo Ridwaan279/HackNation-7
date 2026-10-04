@@ -194,6 +194,8 @@ def main(argv=None) -> int:
         from backend_windows import WindowsBackend
         backend = WindowsBackend(own_pids)
 
+    if args.print and sys.platform == "win32" and proto.isatty():
+        proto = sys.stderr  # same console; Python writes Unicode to it, raw UTF-8 bytes would show as "â‚¬"
     emitter = Emitter(proto, pretty=args.print)
     engine = Engine(backend, emitter, store, data_dir, own_pids=own_pids, mode=args.mode)
     log(f"started: backend={backend.name} mode={args.mode} data={data_dir}")
