@@ -125,7 +125,7 @@ export function localDraft(guide: Guide, answers: SourcedAnswer[]): z.infer<type
     if (open.length >= 4) break
     if (step.kind === 'enter' && !step.quote) open.push(`Why did you set ${step.target} to ${step.value || 'that value'}?`)
   }
-  if (!answers.some((answer) => answer.type === 'guardrail')) open.push('When would you stop and ask someone before posting an invoice like this?')
+  if (!answers.some((answer) => answer.type === 'guardrail')) open.push(`When would you stop and ask someone while doing ${guide.title}?`)
   if (!answers.some((answer) => answer.type === 'exception')) open.push('Which cases are handled differently from what you showed today?')
   return { steps: steps.length ? steps : [{ title: guide.title.slice(0, 160) || 'Workflow', guide_steps: [], decision: '', reason: null, guardrails: [], judgment_call: false }], open_questions: open.slice(0, 6) }
 }
