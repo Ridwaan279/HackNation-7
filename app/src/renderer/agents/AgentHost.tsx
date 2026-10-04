@@ -29,6 +29,11 @@ interface Props {
 const VAD_ON = 0.6
 const VAD_REPORT_MS = 400
 
+/** Expressive-mode audio tags ("[slow]", "[encouraging]", "[laughs softly]") steer the voice; they are not
+ *  meant to be read. Lowercase only, so masked values like "[CARD ••••4242]" are kept. */
+const withoutAudioTags = (text: string) =>
+  text.replace(/\[[a-z][a-z' -]{0,40}\]/g, '').replace(/\s{2,}/g, ' ').replace(/\s+([.,!?;:])/g, '$1').trim()
+
 export function AgentHost({ onUi, onVolume, onMicLevel, onMicName }: Props) {
   const agentRef = useRef<AgentKind | null>(null)
   const ui = useRef<AgentUi>({ agent: null, connected: false, speaking: false, userSpeaking: false, caption: null })
@@ -63,8 +68,10 @@ export function AgentHost({ onUi, onVolume, onMicLevel, onMicName }: Props) {
       update({ speaking: mode === 'speaking' })
     },
     onMessage: ({ role, message }) => {
-      void tryInvoke('agent:message', { role, text: message })
-      if (role === 'agent') update({ caption: message })
+      const text = role === 'agent' ? withoutAudioTags(message) : message
+      if (!text) return
+      void tryInvoke('agent:message', { role, text })
+      if (role === 'agent') update({ caption: text })
     },
     onVadScore: ({ vadScore }) => {
       const speaking = vadScore > VAD_ON

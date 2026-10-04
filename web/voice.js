@@ -215,7 +215,12 @@ export function createVoice(ui) {
         onDisconnect: () => { session = null; stopMeter(); set('idle') },
         onError: (message) => ui.error(typeof message === 'string' ? message : 'The voice agent had a problem.'),
         onModeChange: ({ mode }) => { if (session) set(mode === 'speaking' ? 'speaking' : 'listening') },
-        onMessage: ({ message, role, source }) => ui.caption((role ?? source) === 'user' ? 'you' : 'ghost', message),
+        onMessage: ({ message, role, source }) => {
+          const user = (role ?? source) === 'user'
+          // Expressive-mode audio tags ("[slow]", "[encouraging]") steer the voice; they are not meant to be read.
+          const text = user ? message : String(message).replace(/\[[a-z][a-z' -]{0,40}\]/g, '').replace(/\s{2,}/g, ' ').replace(/\s+([.,!?;:])/g, '$1').trim()
+          if (text) ui.caption(user ? 'you' : 'ghost', text)
+        },
       })
       meter(() => { try { return session ? session.getOutputVolume() * 1.6 : 0 } catch { return 0 } })
     } catch (failure) {
