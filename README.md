@@ -208,7 +208,7 @@ Every push to `main` redeploys automatically. All three serve HTTPS, which scree
 **Protégé's voice.** On Vercel, the site speaks with a natural ElevenLabs voice through [`web/api/tts.js`](web/api/tts.js), a small serverless function that keeps the key on the server:
 
 1. In Vercel, open the project → **Settings → Environment Variables**.
-2. Add `ELEVENLABS_API_KEY` (the key needs the **Text to Speech** permission). Optionally add `ELEVENLABS_VOICE_ID` to pick another voice; the default is *Sarah*, calm and natural. Optionally add `ELEVENLABS_TTS_MODEL` (default `eleven_multilingual_v2`).
+2. Add `ELEVENLABS_API_KEY` (the key needs the **Text to Speech** permission). Optionally add `ELEVENLABS_VOICE_ID` to pick another voice; the default is *Sarah*, calm and natural. Optionally add `ELEVENLABS_TTS_MODEL` (default `eleven_flash_v2_5`, about half the credits of `eleven_multilingual_v2`). If a key has a credit limit (ElevenLabs → API keys), make it big enough for the tour, or the voice switches to the browser's partway through.
 3. Redeploy. Each spoken line is cached by Vercel, so a repeated line costs nothing.
 
 Without the function (another host, or running it locally), the site uses the most natural voice the browser has, and says so in small print.

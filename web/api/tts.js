@@ -22,7 +22,8 @@ module.exports = async (req, res) => {
     headers: { 'xi-api-key': key, 'content-type': 'application/json', accept: 'audio/mpeg' },
     body: JSON.stringify({
       text,
-      model_id: process.env.ELEVENLABS_TTS_MODEL || 'eleven_multilingual_v2',
+      // Flash: about half the credits per character and a faster start. Set ELEVENLABS_TTS_MODEL to change it.
+      model_id: process.env.ELEVENLABS_TTS_MODEL || 'eleven_flash_v2_5',
       voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.25, use_speaker_boost: true },
     }),
   }).catch((e) => ({ ok: false, status: 502, text: async () => String(e) }))

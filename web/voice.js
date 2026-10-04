@@ -40,16 +40,25 @@ const audioCache = new Map()
 let audio = null
 let analyser = null
 
+/** One line of ElevenLabs speech, or null (the browser's voice says it instead).
+ *  501 means no key on the server: use the browser's voice for the rest of the visit. Any other failure
+ *  (out of credits, a timeout) is retried once and only affects that line. */
+async function requestSpeech(text) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await fetch(`${TTS}?text=${encodeURIComponent(text)}`)
+      if (r.ok && (r.headers.get('content-type') ?? '').includes('audio')) { tts = true; return await r.blob() }
+      if (r.status === 501) { tts = false; return null }
+      if (r.status === 400 || r.status === 403) return null // not worth retrying
+    } catch { /* network: retry once */ }
+  }
+  return null
+}
+
 function fetchSpeech(text) {
   if (tts === false) return Promise.resolve(null)
   if (!audioCache.has(text)) {
-    audioCache.set(text, fetch(`${TTS}?text=${encodeURIComponent(text)}`)
-      .then((r) => {
-        if (!r.ok || !(r.headers.get('content-type') ?? '').includes('audio')) throw new Error(String(r.status))
-        tts = true
-        return r.blob()
-      })
-      .catch(() => { tts = false; audioCache.delete(text); return null }))
+    audioCache.set(text, requestSpeech(text).then((blob) => { if (!blob) audioCache.delete(text); return blob }))
   }
   return audioCache.get(text)
 }
