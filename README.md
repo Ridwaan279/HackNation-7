@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="web/assets/hero.webp" width="190" alt="The Apprentice ghost" />
+<img src="web/assets/hero.webp" width="190" alt="The Protégé ghost" />
 
-# Apprentice
+# Protégé
 
-**Show it once. The apprentice remembers.**
+**Show it once. Protégé remembers.**
 
-An AI apprentice for Windows. It learns how your best people work, asks *why* at the right moments,<br />
+AI onboarding that learns from your experts. It learns how your best people work, asks *why* at the right moments,<br />
 and coaches new hires on their own screen, without ever reading a password.
 
 [Website](#the-website) · [Download](#make-the-download-button-work) · [Quick start](#quick-start-windows) · [How it works](#how-it-works) · [Privacy](#privacy)
@@ -21,7 +21,7 @@ and coaches new hires on their own screen, without ever reading a password.
 
 <br />
 
-<img src="docs/images/website-hero.webp" alt="The Apprentice website" width="100%" />
+<img src="docs/images/website-hero.webp" alt="The Protégé website" width="100%" />
 
 </div>
 
@@ -29,7 +29,7 @@ and coaches new hires on their own screen, without ever reading a password.
 
 ## What it does
 
-When an expert leaves, what they knew leaves with them. Apprentice sits next to them while they do their normal work, writes the steps down, asks about the reasons behind them, and then passes all of it on to the next person.
+When an expert leaves, what they knew leaves with them. Protégé sits next to them while they do their normal work, writes the steps down, asks about the reasons behind them, and then passes all of it on to the next person.
 
 <table>
   <tr>
@@ -55,16 +55,19 @@ And it keeps learning: in the background it builds an **App Profile** for every 
 
 ## Web or desktop
 
-There are two ways in. The **website** works in any Chrome or Edge, with nothing to install. The **desktop app** is the full apprentice.
+There are two ways in. The **website** works in any Chrome or Edge, with nothing to install. The **desktop app** is the full Protégé.
+
+- **Web app: traditional onboarding.** You record a task. Protégé asks a question out loud whenever something needs explaining, and at the end it sums up what it saw and asks a few last questions.
+- **Desktop app: onboarding that never stops.** It runs all the time, reads every task through Windows accessibility, and keeps training itself, so it catches what an expert forgets to explain. This is where we pushed the idea to its limit, and it's only possible because it runs on the computer, not in a browser.
 
 | | Website | Desktop app |
 |---|:---:|:---:|
 | A screenshot every time the screen changes | ✓ | ✓ |
+| Asks questions out loud while you record, then an overview and last questions | ✓ | ✓ |
 | Video with your voice, your words next to each step | ✓ | ✓ |
-| Field names and the values you typed | | ✓ |
-| Clicks and keys as named steps | | ✓ |
+| Runs all the time, not only while you record | | ✓ |
+| Field names, typed values, clicks and keys through Windows accessibility | | ✓ |
 | Passwords never read; cards, IBANs and keys masked | | ✓ |
-| Asks *why* at natural pauses, by voice | | ✓ |
 | Work Map of decisions and rules | | ✓ |
 | Learns every app 24/7 and coaches new hires | | ✓ |
 
@@ -85,7 +88,7 @@ A web page only gets the pixels of the screen you share. It can't see into other
 
 You need **Windows 10 or 11**, **[Node.js 20+](https://nodejs.org/en/download)** and **[Python 3.11+](https://www.python.org/downloads/windows/)** (tick *Add python.exe to PATH* when installing).
 
-1. **Get the files.** Download `Apprentice-Windows.zip` from the website and unzip it, or clone this repository.
+1. **Get the files.** Download `Protege-Windows.zip` from the website and unzip it, or clone this repository.
 2. **Double-click `start.bat`.** The first run installs the app's parts (a few minutes). After that it starts straight away.
 3. **Add your keys.** Notepad opens `app\.env` the first time. Fill it in, save, close Notepad, and the ghost appears.
 
@@ -103,7 +106,7 @@ You need **Windows 10 or 11**, **[Node.js 20+](https://nodejs.org/en/download)**
 cd sidecar; python -m pip install -r requirements.txt     # once
 cd ..\app; npm install                                     # once
 copy .env.example .env; notepad .env                       # once: add your keys
-npm run dev                                                # start Apprentice
+npm run dev                                                # start Protégé
 ```
 
 Replay a recorded session instead of watching the screen: `$env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev`.
@@ -116,7 +119,7 @@ The website's **Download for Windows** button links to whatever `downloadUrl` sa
 
 ### A. Serve the zip from the website (works with a private repository)
 
-The button already points at `downloads/Apprentice-Windows.zip`, a file next to the website. Build that file, commit it, and every deploy includes it.
+The button already points at `downloads/Protege-Windows.zip`, a file next to the website. Build that file, commit it, and every deploy includes it.
 
 1. Build the zip from the last commit (it contains `app`, `sidecar`, `config`, `shared`, `start.bat` and this README):
 
@@ -130,7 +133,7 @@ The button already points at `downloads/Apprentice-Windows.zip`, a file next to 
 2. Commit and push it:
 
    ```bash
-   git add web/downloads/Apprentice-Windows.zip
+   git add web/downloads/Protege-Windows.zip
    git commit -m "web: refresh the download"
    git push
    ```
@@ -141,11 +144,11 @@ The button already points at `downloads/Apprentice-Windows.zip`, a file next to 
 
 1. Make the repository public: **Settings → General → Danger Zone → Change visibility**. Links into a private repository show visitors a 404 page.
 2. Build the zip with the script above (you don't need to commit it this time).
-3. On the repository page, open **Releases → Draft a new release**. Create a tag such as `v1.0.0`, give it a title, and drag `web/downloads/Apprentice-Windows.zip` into the assets box. Click **Publish release**.
+3. On the repository page, open **Releases → Draft a new release**. Create a tag such as `v1.0.0`, give it a title, and drag `web/downloads/Protege-Windows.zip` into the assets box. Click **Publish release**.
 4. Point the button at the newest release. In `web/config.js`:
 
    ```js
-   downloadUrl: 'https://github.com/Ridwaan279/HackNation-7/releases/latest/download/Apprentice-Windows.zip',
+   downloadUrl: 'https://github.com/Ridwaan279/HackNation-7/releases/latest/download/Protege-Windows.zip',
    ```
 
    `releases/latest/download/<file>` always serves the newest release, so the link never needs changing again. Keep the file name the same in every release.
@@ -159,14 +162,14 @@ The button already points at `downloads/Apprentice-Windows.zip`, a file next to 
 
 [`web/`](web) is a static site: plain HTML, CSS and JavaScript with no build step.
 
-1. **Kickstart.** The front page is the ghost and one button. Press **Kickstart** and the ghost starts talking.
+1. **Kickstart.** The front page is the ghost and one button. Press **Kickstart** and Protégé starts talking.
 2. **Choose.** It explains the two versions side by side and recommends the desktop app, which has the glowing border:
-   - **Web app:** records your screen and voice, takes a screenshot whenever the screen changes, and writes down what you say.
-   - **Desktop app:** sees what you're doing in real time (every field, click and typed value, masked), asks why at the pauses, and keeps learning.
-3. **Overview.** Whichever you pick, the ghost gives a short overview of that version.
+   - **Web app:** traditional onboarding. You record, it asks questions, then sums up and asks what's missing.
+   - **Desktop app:** always on. It reads every task through Windows accessibility and keeps training itself.
+3. **Overview.** Whichever you pick, Protégé explains that version. Switch between them and it starts that explanation again. The desktop page ends with the moonshot: why the idea only reaches its limit as an app.
 4. **Then:**
-   - **Web app:** the dashboard opens. Start a recording, then open, edit, download or delete your guides.
-   - **Desktop app:** the page shows the download button and the three install steps.
+   - **Web app:** a short onboarding (company, your role, what you're teaching, who it's for), then the dashboard. While you record, Protégé asks out loud at natural pauses and writes your answers next to the step. When you stop, it gives an overview and asks a few last questions, then opens the guide.
+   - **Desktop app:** the download button and the three install steps. The app asks the same onboarding questions on first start.
 
 <table>
   <tr>
@@ -197,6 +200,14 @@ cd web && python -m http.server 5173     # open http://localhost:5173 in Chrome 
 
 Every push to `main` redeploys automatically. All three serve HTTPS, which screen sharing requires.
 
+**Protégé's voice.** On Vercel, the site speaks with a natural ElevenLabs voice through [`web/api/tts.js`](web/api/tts.js), a small serverless function that keeps the key on the server:
+
+1. In Vercel, open the project → **Settings → Environment Variables**.
+2. Add `ELEVENLABS_API_KEY` (the key needs the **Text to Speech** permission). Optionally add `ELEVENLABS_VOICE_ID` to pick another voice; the default is *Sarah*, calm and natural. Optionally add `ELEVENLABS_TTS_MODEL` (default `eleven_multilingual_v2`).
+3. Redeploy. Each spoken line is cached by Vercel, so a repeated line costs nothing.
+
+Without the function (another host, or running it locally), the site uses the most natural voice the browser has, and says so in small print.
+
 **Settings** live in [`web/config.js`](web/config.js): `downloadUrl` (above), `githubUrl`, and `elevenLabsAgentId` (below).
 
 ## Voice agents
@@ -206,25 +217,28 @@ The desktop app uses three ElevenLabs agents (Interviewer, Debrief, Tutor). Thei
 <details>
 <summary><b>The website agent (Kickstart and "Ask the ghost")</b></summary>
 
-Without an agent, Kickstart plays a short tour in the browser's own voice: it highlights the two versions while it talks, and narrates whichever one you pick. To put the real ElevenLabs agent there:
+Without an agent, Kickstart plays a spoken tour (the ElevenLabs voice on Vercel, otherwise the browser's): it highlights the two versions while it talks, and narrates whichever one you pick. To put the real ElevenLabs agent there:
 
-1. In the ElevenLabs dashboard, open **Agents → Create agent → Blank agent**. Name it *Apprentice website*.
-2. **First message:** `Hi, I'm the apprentice. I learn how your experts work and teach it to whoever comes next. You can use me online, or download me for Windows. Want me to explain the difference?`
-3. **System prompt:**
+1. In the ElevenLabs dashboard, open **Agents → Create agent → Blank agent**. Name it *Protégé website*.
+2. **Voice:** pick a natural one in the agent's **Voice** tab (for example *Sarah*), the same as the website's.
+3. **First message:** `Hi, I'm Protégé. I learn how your experts work and teach it to whoever comes next. You can use me online, or download me for Windows. Want me to explain the difference?`
+4. **System prompt:**
 
    ```text
-   You are the Apprentice ghost, the guide on the Apprentice website. The visitor pressed Kickstart.
-   The page now shows two options side by side: the web app on the left and the desktop app on the
-   right, which is recommended. Be warm and brief: two or three short sentences per turn.
+   You are Protégé, the guide on the Protégé website. The visitor pressed Kickstart. The page shows
+   two options side by side: the web app on the left and the desktop app on the right, which is
+   recommended. Be warm and brief: two or three short sentences per turn.
 
    Explain the two versions and recommend the desktop app:
-   - Web app: runs in the browser, nothing to install. It records the screen and the voice, takes a
-     screenshot whenever the screen changes and writes down what the expert says. It cannot see which
-     field changed or what was typed.
-   - Desktop app (Windows 10 or 11): sees what the expert does in real time through Windows
-     accessibility (field names, typed values masked, clicks and keys), asks why at natural pauses
-     by voice, builds a Work Map of the rules, keeps learning every app 24/7 and coaches new hires,
-     pointing at the right field and stopping mistakes before they are saved.
+   - Web app: traditional onboarding, in the browser, nothing to install. The expert records a task;
+     Protégé asks questions out loud whenever something needs explaining; at the end it sums up what it
+     saw and asks a few last questions. It only learns while recording, and only sees pixels.
+   - Desktop app (Windows 10 or 11): onboarding that never stops. It runs all the time, reads every
+     task through Windows accessibility (field names, typed values masked, clicks and keys), keeps
+     training itself and catches what the expert forgot to explain. It builds a Work Map of the rules
+     and coaches new hires on their own screen, stopping mistakes before they are saved.
+   - The moonshot: we pushed this idea to its limit, and that was only possible as an app, not in a
+     browser. The browser sees pixels; the app sees the work.
    - Privacy: password fields are never read; cards, IBANs and keys are masked on the computer;
      password managers, banking sites and private windows are never watched; Ctrl+Shift+O goes off
      the record; everything can be deleted.
@@ -237,16 +251,16 @@ Without an agent, Kickstart plays a short tour in the browser's own voice: it hi
    - open_mode with mode "web" or "desktop": open that version when the visitor chooses.
 
    Messages in [square brackets] come from the website, not the visitor: they say what the visitor
-   just clicked. Answer them out loud as asked.
+   just opened. Answer them out loud as asked.
    Never invent features or prices. If you don't know, say so. Never ask for personal data.
    ```
 
-4. **Tools → Add tool → Client tool**, three times. Tick *Wait for response* on each:
+5. **Tools → Add tool → Client tool**, three times. Tick *Wait for response* on each:
    - `show_options`: "Shows the web app and desktop app options side by side." No parameters.
    - `highlight_download`: "Highlights the recommended desktop app, or its download button." No parameters.
    - `open_mode`: "Opens one version's overview." One parameter, `mode` (string, required): `web` or `desktop`.
-5. **Security:** leave authentication off (a static site can't sign requests), and add your website's domain to the allowlist so other sites can't use your agent.
-6. Copy the agent ID (Agent settings, or the end of the agent's URL) into `web/config.js` as `elevenLabsAgentId`, then commit and push.
+6. **Security:** leave authentication off (a static site can't sign requests), and add your website's domain to the allowlist so other sites can't use your agent.
+7. Copy the agent ID (Agent settings, or the end of the agent's URL) into `web/config.js` as `elevenLabsAgentId`, then commit and push.
 
 </details>
 
