@@ -400,6 +400,8 @@ export interface Violation {
   guardrail_id: string
   why: string
   quote: Quote
+  /** The field that breaks the rule (physical px), so the ghost can fly there. */
+  rect?: Rect
 }
 
 export interface Popup {
