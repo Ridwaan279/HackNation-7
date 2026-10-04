@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useConversation } from '@elevenlabs/react'
 import { invoke, tryInvoke, useChannel } from '../lib/api'
 import type { AgentAuth, AgentCommand, AgentKind, AgentStatus } from '../../common/ipc'
+import { getMic, micLabel, onMicChange } from '../lib/mic'
 import { clientTools } from './tools'
 
 export interface AgentUi {
@@ -19,12 +20,16 @@ interface Props {
   onUi: (ui: AgentUi) => void
   /** Called ~15×/s while the agent speaks. */
   onVolume: (v: number) => void
+  /** Mic input level 0..1, ~15×/s while connected; 0 when disconnected. */
+  onMicLevel: (v: number) => void
+  /** Name of the microphone in use, once connected. */
+  onMicName: (name: string) => void
 }
 
 const VAD_ON = 0.6
 const VAD_REPORT_MS = 400
 
-export function AgentHost({ onUi, onVolume }: Props) {
+export function AgentHost({ onUi, onVolume, onMicLevel, onMicName }: Props) {
   const agentRef = useRef<AgentKind | null>(null)
   const ui = useRef<AgentUi>({ agent: null, connected: false, speaking: false, userSpeaking: false, caption: null })
   const lastVad = useRef(0)
@@ -35,6 +40,8 @@ export function AgentHost({ onUi, onVolume }: Props) {
     onUi(ui.current)
   }
   const report = (s: Partial<AgentStatus>) => void tryInvoke('agent:status', { agent: agentRef.current, ...s })
+  /** Shows up in the terminal running `npm run dev`. */
+  const log = (message: string) => void tryInvoke('agent:log', { message })
 
   const conv = useConversation({
     onStatusChange: ({ status }) => {
@@ -64,8 +71,17 @@ export function AgentHost({ onUi, onVolume }: Props) {
         if (speaking !== ui.current.userSpeaking) update({ userSpeaking: speaking })
       }
     },
-    onError: (message, context) => console.error('[agent] error', message, context),
-    onDisconnect: (details) => console.log('[agent] disconnected', details),
+    onConnect: () => {
+      void micLabel().then((name) => {
+        onMicName(name)
+        log(`connected (${agentRef.current}); microphone: ${name}`)
+      })
+    },
+    onError: (message, context) => {
+      console.error('[agent] error', message, context)
+      log(`error: ${message}`)
+    },
+    onDisconnect: (details) => log(`disconnected: ${details.reason}${'message' in details ? ` (${details.message})` : ''}`),
   })
 
   // Keep a stable handle so command handlers always see the latest controls.
@@ -80,7 +96,9 @@ export function AgentHost({ onUi, onVolume }: Props) {
     }
     agentRef.current = cmd.agent
     update({ agent: cmd.agent, caption: null })
+    const mic = getMic()
     const common = {
+      ...(mic ? { inputDeviceId: mic } : {}),
       dynamicVariables: cmd.dynamicVariables,
       clientTools: clientTools(cmd.agent),
       ...(cmd.firstMessage ? { overrides: { agent: { firstMessage: cmd.firstMessage } } } : {}),
@@ -121,7 +139,25 @@ export function AgentHost({ onUi, onVolume }: Props) {
     }
   })
 
-  // Output volume -> ghost glow.
+  // Switch microphones live when the panel picks another one.
+  useEffect(
+    () =>
+      onMicChange((deviceId) => {
+        const c = convRef.current
+        if (c.status !== 'connected') return
+        void c
+          .changeInputDevice({ inputDeviceId: deviceId || 'default' })
+          .then(() => micLabel(deviceId))
+          .then((name) => {
+            onMicName(name)
+            log(`microphone switched to: ${name}`)
+          })
+          .catch((err) => log(`could not switch microphone: ${String(err)}`))
+      }),
+    [onMicName]
+  )
+
+  // Output volume -> ghost glow; input volume -> mic meter.
   useEffect(() => {
     let raf = 0
     let last = 0
@@ -130,11 +166,13 @@ export function AgentHost({ onUi, onVolume }: Props) {
       if (t - last < 66) return
       last = t
       const c = convRef.current
-      onVolume(c.status === 'connected' && c.isSpeaking ? c.getOutputVolume() : 0)
+      const connected = c.status === 'connected'
+      onVolume(connected && c.isSpeaking ? c.getOutputVolume() : 0)
+      onMicLevel(connected ? c.getInputVolume() : 0)
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [onVolume])
+  }, [onVolume, onMicLevel])
 
   return null
 }

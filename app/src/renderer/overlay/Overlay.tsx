@@ -3,6 +3,7 @@
 import { animate, motion, useMotionValue } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConversationProvider } from '@elevenlabs/react'
+import { MicrophoneIcon, MicrophoneSlashIcon } from '@phosphor-icons/react'
 import type { BusEvents, GhostState, Popup, Rect, SidecarEvent } from '@shared/contracts'
 import type { GhostPoint, OverlayGeometry } from '../../common/ipc'
 import { AgentHost, type AgentUi } from '../agents/AgentHost'
@@ -59,6 +60,8 @@ function OverlayInner() {
   const [geo, setGeo] = useState<OverlayGeometry | null>(null)
   const [agent, setAgent] = useState<AgentUi>({ agent: null, connected: false, speaking: false, userSpeaking: false, caption: null })
   const [volume, setVolume] = useState(0)
+  const [micLevel, setMicLevel] = useState(0)
+  const [micName, setMicName] = useState('')
   const [main, setMain] = useState<BusEvents['ghost:state']>({ state: 'idle', badge: null })
   const [blockReason, setBlockReason] = useState<string | null>(null)
   const [popup, setPopup] = useState<Popup | null>(null)
@@ -156,6 +159,7 @@ function OverlayInner() {
 
   const onUi = useCallback((u: AgentUi) => setAgent(u), [])
   const onVolume = useCallback((v: number) => setVolume((cur) => (Math.abs(cur - v) > 0.02 ? v : cur)), [])
+  const onMicLevel = useCallback((v: number) => setMicLevel((cur) => (Math.abs(cur - v) > 0.01 ? v : cur)), [])
 
   // ------------------------------------------------------------ ghost state
 
@@ -219,7 +223,7 @@ function OverlayInner() {
 
   return (
     <div className="overlay">
-      <AgentHost onUi={onUi} onVolume={onVolume} />
+      <AgentHost onUi={onUi} onVolume={onVolume} onMicLevel={onMicLevel} onMicName={setMicName} />
       {target && <Highlight rect={target.rect} label={target.label} />}
       <motion.div className="ghost-anchor" style={{ x, y }}>
         {bubble && <div className="bubble-wrap">{bubble}</div>}
@@ -234,10 +238,39 @@ function OverlayInner() {
           }}
           title="Click: panel · Drag: move · Right-click: menu"
         />
-        {state === 'not_watching' && (
-          <div className="status-pill">Not watching{blockReason ? `: ${BLOCK_LABEL[blockReason] ?? blockReason}` : ''}</div>
-        )}
+        <div className="pills">
+          {state === 'not_watching' && (
+            <div className="status-pill">Not watching{blockReason ? `: ${BLOCK_LABEL[blockReason] ?? blockReason}` : ''}</div>
+          )}
+          {agent.connected && <MicMeter level={micLevel} name={micName} />}
+        </div>
       </motion.div>
+    </div>
+  )
+}
+
+const QUIET_AFTER_MS = 8000
+
+/** Live mic level while the voice agent is connected, so you can see it hears you. */
+function MicMeter({ level, name }: { level: number; name: string }) {
+  const lastSound = useRef(Date.now())
+  const [quiet, setQuiet] = useState(false)
+  if (level > 0.02) lastSound.current = Date.now()
+  useEffect(() => {
+    const t = setInterval(() => setQuiet(Date.now() - lastSound.current > QUIET_AFTER_MS), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const lit = Math.min(5, Math.round(Math.sqrt(level) * 9))
+  const short = name.replace(/\s*\(.*\)\s*$/, '') || 'Microphone'
+  return (
+    <div className={`status-pill mic ${quiet ? 'quiet' : ''}`} title={quiet ? `No sound from ${name || 'the microphone'}. Pick another mic in the panel.` : name}>
+      {quiet ? <MicrophoneSlashIcon size={14} /> : <MicrophoneIcon size={14} />}
+      <span className="bars" aria-hidden>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <i key={i} className={i < lit ? 'on' : ''} />
+        ))}
+      </span>
+      <span>{quiet ? "Can't hear your mic" : short}</span>
     </div>
   )
 }

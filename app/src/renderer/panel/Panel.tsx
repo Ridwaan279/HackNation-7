@@ -6,6 +6,7 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
   ListNumbersIcon,
+  MicrophoneIcon,
   MicrophoneSlashIcon,
   PowerIcon,
   RecordIcon,
@@ -16,6 +17,7 @@ import {
 import type { BusEvents, Guide, GuideStep, SidecarEvent, WorkMap } from '@shared/contracts'
 import type { ReplayCommand, SessionState } from '../../common/ipc'
 import { invoke, shotUrl, tryInvoke, useChannel } from '../lib/api'
+import { getMic, setMic, useMics } from '../lib/mic'
 import { Ghost } from '../mascot/Ghost'
 import './panel.css'
 
@@ -82,6 +84,7 @@ export default function Panel() {
       </header>
 
       <Controls session={session} workmaps={workmaps} />
+      <MicPicker />
 
       {replay ? <Replay cmd={replay} onClose={() => setReplay(null)} /> : <StepTrail guide={guide} live={live} />}
 
@@ -186,6 +189,34 @@ function Controls({ session, workmaps }: { session: SessionState; workmaps: Work
         <MicrophoneSlashIcon size={16} />
       </button>
     </section>
+  )
+}
+
+/** Which microphone the voice agent listens to. Applies immediately, also mid-conversation. */
+function MicPicker() {
+  const mics = useMics()
+  const [mic, setChoice] = useState(getMic)
+  if (mics.length < 2) return null
+  const known = !mic || mics.some((m) => m.deviceId === mic)
+  return (
+    <label className="mic-picker">
+      <MicrophoneIcon size={16} aria-hidden />
+      <span>Microphone</span>
+      <select
+        value={known ? mic : ''}
+        onChange={(e) => {
+          setMic(e.target.value)
+          setChoice(e.target.value)
+        }}
+      >
+        <option value="">Windows default</option>
+        {mics.map((m) => (
+          <option key={m.deviceId} value={m.deviceId}>
+            {m.label}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 

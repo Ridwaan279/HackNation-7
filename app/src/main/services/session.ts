@@ -363,6 +363,8 @@ export const init: ServiceInit = (c) => {
   })
   c.handle('agent:tool', (call: AgentToolCall) => onTool(call))
   c.handle('agent:message', (m: AgentMessage) => onMessage(m))
+  // Voice-agent diagnostics (which mic, connection errors) in the `npm run dev` terminal.
+  c.handle('agent:log', (p: { message: string }) => console.log(`[agent] ${String(p?.message).slice(0, 300)}`))
   c.handle('popup:answer', (a: { id: string; choice: string }) => c.bus.emit('popup:answer', a))
 
   // Dev bench (DevDashboard): emit any bus event, point at a physical rect.

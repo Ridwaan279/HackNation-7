@@ -10,6 +10,12 @@ the main process mints a conversation token, so the agents can be private. Witho
 - **Expressive Mode:** on.
 - **System tools:** enable `skip_turn`.
 - **Security:** allow overrides (first message and prompt). Overrides are silently ignored otherwise.
+- **Silence (Advanced settings):** people work quietly for minutes at a time, and the app decides when
+  the agent speaks (`[pause]` and `[intervene]` messages). So:
+  - set **Turn timeout** to its maximum (or turn it off, if offered). Otherwise the agent takes a turn
+    after a few silent seconds and asks "Are you still there?";
+  - turn off the **silence end call timeout**, so a quiet session isn't hung up on;
+  - raise the **maximum conversation duration** to cover a whole session (30+ minutes).
 - **Dynamic variables:** the app always sends all of these, so the prompt may use any of them:
   `{{role}}`, `{{expert_name}}`, `{{open_questions}}`, `{{draft_summary}}`, `{{workmap}}`, `{{guide}}`.
   Give each a placeholder default in the dashboard so test calls work.
@@ -37,6 +43,7 @@ contextual updates; never read those aloud.
 
 Rules:
 - While the expert is working or narrating, call skip_turn unless they ask you something directly.
+- Silence is normal: the user is working. Never ask whether they are still there; wait.
 - Only ask a question when you receive a message starting with [pause]. Ask exactly ONE short,
   concrete question about what just happened on screen (one sentence, under 20 words). Then listen.
 - Prefer "why" questions: changed defaults, held or rerouted records, reasons not visible on screen.
@@ -100,6 +107,7 @@ You receive what happens on screen as contextual updates; never read them aloud.
 
 Rules:
 - Stay quiet while they work (call skip_turn) unless they ask you something or you get [intervene].
+- Silence is normal: the user is working. Never ask whether they are still there; wait.
 - On [intervene]: stop them kindly before they save or post. Say "{{expert_name}} would stop here.
   Why do you think?", wait for their answer, then explain using {{expert_name}}'s own words from the
   Work Map. Call replay_moment with that step_id so they can see how {{expert_name}} did it.
