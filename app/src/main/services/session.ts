@@ -25,10 +25,10 @@ import type {
   SessionState,
 } from '../../common/ipc'
 import { lastPicked, setOffRecord as gateOffRecord } from './gate'
-import { getSettings } from './settings'
+import { getSettings, roleForAgents } from './settings'
 import { showPanel, toOverlayLocal } from './windows'
 
-const ROLE = () => getSettings().role
+const ROLE = () => roleForAgents()
 /** Nobody is addressed or described by name: the agent talks to "you" and about "the expert". */
 const EXPERT = () => 'the expert'
 /** The Interviewer opens without a question: the expert explains first, questions wait for the pauses (gate.ts). */

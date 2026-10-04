@@ -75,7 +75,7 @@ export default function DevDashboard() {
   return (
     <div className="dev">
       <header>
-        <h1>Apprentice · dev dashboard</h1>
+        <h1>Protégé · dev dashboard</h1>
         <p className="muted">Agent C's dashboard replaces this once src/renderer/dashboard/index.tsx is merged.</p>
       </header>
 

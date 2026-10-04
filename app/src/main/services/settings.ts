@@ -1,13 +1,15 @@
-// User settings from the first-run wizard (PLAN §5.1): the role ({{role}} in every prompt) and the
-// expert's name. Stored in %APPDATA%/apprentice/settings.json.
+// User settings from the first-run onboarding: company, the expert's role and what they are teaching
+// (all feed the voice agents' {{role}}). Nothing is pre-filled: each team describes its own work. Stored in %APPDATA%/apprentice/settings.json.
 import { z } from 'zod'
 import type { AppContext, ServiceInit } from '@shared/contracts'
 import { getStore } from './store'
 
 export interface Settings {
   role: string
-  /** Shown on the Company profile page. */
+  /** Shown on the Company profile page and given to the agents. */
   company: string
+  /** What the expert is teaching, e.g. "How we handle a refund request". */
+  teaching: string
   expert: string
   /** The first-run wizard has been completed. */
   onboarded: boolean
@@ -16,8 +18,9 @@ export interface Settings {
 }
 
 const schema = z.object({
-  role: z.string().trim().min(1).max(80),
+  role: z.string().trim().max(80),
   company: z.string().trim().max(80),
+  teaching: z.string().trim().max(120),
   expert: z.string().trim().min(1).max(60),
   onboarded: z.boolean(),
   mode: z.enum(['expert', 'newhire']),
@@ -25,8 +28,9 @@ const schema = z.object({
 const patchSchema = schema.partial().strict()
 
 const defaults = (): Settings => ({
-  role: process.env.APPRENTICE_ROLE || 'Accounts payable clerk',
+  role: process.env.APPRENTICE_ROLE || '',
   company: '',
+  teaching: '',
   // Nobody is called by name in the app or by the voice agents.
   expert: 'the expert',
   onboarded: false,
@@ -34,6 +38,11 @@ const defaults = (): Settings => ({
 })
 
 let current: Settings = defaults()
+
+/** The role as the agents hear it: "Head of support at Northwind", or "expert" before onboarding. */
+export function roleForAgents(s: Settings = current): string {
+  return `${s.role || 'expert'}${s.company ? ` at ${s.company}` : ''}`
+}
 
 /** Synchronous: other services read it while building prompts. */
 export function getSettings(): Settings {

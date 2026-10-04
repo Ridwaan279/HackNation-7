@@ -1,0 +1,161 @@
+/* Protégé theme: the website's look for the desktop app (dark glass, brand aura, Geist and Instrument
+   Serif, pill buttons, double-bezel cards). Selectors start with :root so they win over each page's own
+   stylesheet, whatever order the bundler loads them in. */
+:root:root {
+  --bg: #050505;
+  --layer: rgba(255, 255, 255, 0.035);
+  --layer-strong: #0f0e15;
+  --layer-hover: rgba(255, 255, 255, 0.06);
+  --stroke: rgba(255, 255, 255, 0.08);
+  --stroke-strong: rgba(255, 255, 255, 0.15);
+  --text: #f5f3fb;
+  --text-2: rgba(245, 243, 251, 0.66);
+  --text-3: rgba(245, 243, 251, 0.42);
+  --accent: #b9a8ff;
+  --accent-hover: #cfc3ff;
+  --on-accent: #12101c;
+  --rec: #ff5c7a;
+  --rec-soft: rgba(255, 92, 122, 0.14);
+  --focus: #b38de8;
+  --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --brand: linear-gradient(100deg, var(--sky), var(--lavender) 50%, var(--pink));
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --glass: rgba(255, 255, 255, 0.028);
+  --core: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012) 40%), #0c0b11;
+  --ring: 0 0 0 1px rgba(255, 255, 255, 0.075);
+  --inner: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+  font-family: 'Geist', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: -0.005em;
+}
+
+html[data-route='panel'],
+html[data-route='panel'] body {
+  background: radial-gradient(120% 60% at 0% 0%, rgba(124, 199, 244, 0.12), transparent 60%), radial-gradient(120% 70% at 100% 100%, rgba(179, 141, 232, 0.14), transparent 60%), #08070c;
+}
+
+:root 
+.shell {
+  background:
+    radial-gradient(40vw 40vw at 10% 0%, rgba(124, 199, 244, 0.12), transparent 70%),
+    radial-gradient(45vw 45vw at 95% 10%, rgba(179, 141, 232, 0.14), transparent 70%),
+    radial-gradient(50vw 40vw at 60% 110%, rgba(245, 159, 223, 0.08), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+}
+:root .shell .shell-bar {
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 16px auto 8px;
+  padding: 6px 6px 6px 18px;
+  gap: 18px;
+  border-radius: 999px;
+  background: rgba(14, 13, 20, 0.62);
+  box-shadow: inset 0 0 0 1px var(--stroke-strong), 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(22px) saturate(150%);
+}
+:root .shell .shell-name { font-family: 'Geist', sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 16px; }
+:root .shell .shell-title { font-weight: 500; }
+:root .shell .icon-button { border-radius: 999px; height: 34px; padding: 0 14px; }
+:root .shell .profile-button { border: 0; box-shadow: inset 0 0 0 1px var(--stroke-strong); background: rgba(255, 255, 255, 0.04); }
+:root .shell .profile-button:hover { box-shadow: inset 0 0 0 1px var(--lavender); }
+:root .shell .shell-tabs { border-bottom: 0; gap: 6px; margin: 6px auto 0; padding: 4px; width: max-content; border-radius: 999px; background: rgba(255, 255, 255, 0.03); box-shadow: inset 0 0 0 1px var(--stroke); }
+:root .shell .shell-tabs button { border-radius: 999px; padding: 8px 18px; color: var(--text-2); transition: background-color 0.5s var(--ease), color 0.5s var(--ease); }
+:root .shell .shell-tabs button::after { display: none; }
+:root .shell .shell-tabs button[aria-current='page'] { background: var(--text); color: #0b0a10; }
+:root .shell .shell-main { padding-top: 40px; }
+
+:root 
+.shell button.primary, :root .shell .guide-primary, :root .panel button.primary {
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: #0b0a10;
+  font-weight: 500;
+  box-shadow: 0 10px 40px -12px rgba(179, 141, 232, 0.55);
+  transition: transform 0.6s var(--ease), box-shadow 0.6s var(--ease);
+}
+:root .shell button.primary:hover:not(:disabled), :root .shell .guide-primary:hover:not(:disabled), :root .panel button.primary:hover { background: var(--text); box-shadow: 0 16px 50px -12px rgba(179, 141, 232, 0.85); }
+:root .shell button.quiet, :root .shell .dash-actions button, :root .shell .guide-page-heading > button, :root .shell .dash-card button:not(.guide-primary):not(.guide-danger), :root .panel button.secondary {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px var(--stroke-strong);
+  color: var(--text);
+  transition: background-color 0.5s var(--ease), box-shadow 0.5s var(--ease);
+}
+:root .shell button.quiet:hover, :root .shell .dash-actions button:hover, :root .shell .dash-card button:not(.guide-primary):not(.guide-danger):hover { background: rgba(255, 255, 255, 0.09); }
+:root .shell .guide-danger { border-radius: 999px; }
+:root .shell button:active:not(:disabled), :root .panel button:active { transform: scale(0.98); }
+
+@property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes protege-turn { to { --angle: 360deg; } }
+:root .shell .big-action {
+  border: 2.5px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(var(--text), var(--text)) padding-box, conic-gradient(from var(--angle), var(--sky), var(--lavender), var(--pink), var(--lavender), var(--sky)) border-box;
+  color: #0b0a10;
+  font-family: 'Geist', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  box-shadow: 0 0 60px -10px rgba(179, 141, 232, 0.7);
+  animation: protege-turn 5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+:root .shell .big-action:hover { box-shadow: 0 0 80px -6px rgba(179, 141, 232, 0.9); }
+:root .shell .big-action.stop { background: linear-gradient(var(--rec), var(--rec)) padding-box, conic-gradient(from var(--angle), var(--pink), var(--rec), var(--pink)) border-box; color: #1a0710; box-shadow: 0 0 60px -10px rgba(255, 92, 122, 0.75); }
+
+:root 
+.shell .home h1, :root .shell .guide-page-heading h1, :root .shell .settings-form h1 { font-family: 'Geist', sans-serif; font-weight: 500; letter-spacing: -0.045em; line-height: 1; }
+:root .shell .home h1 { font-size: clamp(40px, 6vw, 72px); }
+:root .shell .guide-page-heading h1 { font-size: clamp(32px, 4vw, 52px); }
+:root .shell .home > p, :root .shell .guide-page-heading p { color: var(--text-2); font-weight: 300; }
+:root .shell em { font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; background: var(--brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+:root .shell .guide-eyebrow, :root .welcome-eyebrow {
+  display: inline-flex;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px var(--stroke);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+:root 
+.shell .dash-card, :root .shell .wm-step, :root .shell .profile-section, :root .shell .profile-questions, :root .shell .mastery-steps li, :root .shell .welcome, :root .shell .guide-library, :root .shell .guide-document, :root .shell .company-stat, :root .shell .task-list, :root .shell .memory-log {
+  border: 0;
+  border-radius: 26px;
+  background: var(--core);
+  box-shadow: var(--ring), var(--inner), 0 40px 100px -60px rgba(150, 110, 240, 0.45);
+}
+:root .shell .dash-card { padding: 24px 26px; }
+:root .shell .company-stat { border-radius: 18px; }
+:root .shell .welcome { padding: 28px 30px; }
+:root .shell .welcome h2 { font-family: 'Geist', sans-serif; font-weight: 500; font-size: 30px; letter-spacing: -0.035em; margin: 12px 0 6px; }
+:root .shell .dash-chip { border-radius: 999px; }
+
+:root 
+.shell input:not([type='checkbox']):not([type='radio']), :root .shell textarea, :root .shell select, :root .panel select {
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px var(--stroke-strong);
+  color: var(--text);
+}
+:root .shell input:focus, :root .shell textarea:focus, :root .shell select:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--lavender); }
+
+:root 
+.mode-switch { border-radius: 999px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--stroke); border: 0; }
+:root .mode-switch button { border-radius: 999px; }
+:root .mode-switch button.on, :root .mode-switch button.on .mode-hint { color: #0b0a10; }
+:root .mode-thumb { background: var(--text); border-radius: 999px; box-shadow: 0 8px 30px -10px rgba(179, 141, 232, 0.7); }
+:root .mode-switch.large .mode-label { font-family: 'Geist', sans-serif; font-weight: 500; letter-spacing: -0.02em; }
+
+:root 
+.panel .titlebar { color: var(--text-3); font-weight: 500; letter-spacing: 0.04em; }
+:root .panel button { border-radius: 999px; }
+:root .panel button.record { border: 0; border-radius: 999px; background: var(--text); color: #0b0a10; box-shadow: 0 0 40px -10px rgba(179, 141, 232, 0.8); }
+:root .panel button.stop { border-radius: 999px; }
+:root .panel .notice, :root .panel blockquote, :root .panel .replay { border-radius: 20px; }

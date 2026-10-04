@@ -13,6 +13,7 @@ import { LessonsPage } from './LessonsPage'
 import { CompanyPage } from './CompanyPage'
 import './dashboard.css'
 import './shell.css'
+import '../protege.css'
 
 /** Two tabs per mode; the details live on the Company profile (a labelled button in the header). */
 const TABS: Record<Mode, { id: string; label: string }[]> = {
@@ -37,18 +38,22 @@ function parseHash(): { page: string; params: URLSearchParams } {
   return { page: LEGACY[name] ?? name, params: new URLSearchParams(query) }
 }
 
-/** First run (PLAN §5.1): the role the apprentice is learning. Nobody is asked for or called by a name. */
+/** First run: who Protégé is learning from and what for. Nothing is pre-filled; every team describes its own work. */
 function Welcome({ bridge, settings, done }: { bridge: DashboardBridge; settings: Settings; done: (s: Settings) => void }) {
-  const [role, setRole] = useState(settings.role)
   const [company, setCompany] = useState(settings.company)
+  const [role, setRole] = useState(settings.role)
+  const [teaching, setTeaching] = useState(settings.teaching)
   const [error, setError] = useState('')
-  return <section className="welcome" aria-label="Set up the apprentice">
-    <h2>Set up the apprentice</h2>
-    <p>The role goes into every question it asks. Password managers, banking sites and private windows are never watched. You can change this later on the Company profile.</p>
-    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role, company, onboarded: true }).then(done).catch(() => setError('Could not save. Try again.')) }}>
-      <label>Company<input value={company} maxLength={80} onChange={(e) => setCompany(e.target.value)} placeholder="Acme GmbH" /></label>
-      <label>Role<input value={role} maxLength={80} onChange={(e) => setRole(e.target.value)} placeholder="Accounts payable clerk" /></label>
-      <button className="primary" disabled={!role.trim()}>Save</button>
+  const ready = role.trim() && teaching.trim()
+  return <section className="welcome" aria-label="Set up Protégé">
+    <span className="welcome-eyebrow">Welcome</span>
+    <h2>Tell Protégé about you</h2>
+    <p>So its questions, Work Maps and lessons fit your work. Password managers, banking sites and private windows are never watched. You can change this later on the Company profile.</p>
+    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { company, role, teaching, onboarded: true }).then(done).catch(() => setError('Could not save. Try again.')) }}>
+      <label>Company<input value={company} maxLength={80} onChange={(e) => setCompany(e.target.value)} placeholder="Northwind" /></label>
+      <label>Your role<input value={role} maxLength={80} onChange={(e) => setRole(e.target.value)} placeholder="Head of customer support" required /></label>
+      <label>What are you teaching?<input value={teaching} maxLength={120} onChange={(e) => setTeaching(e.target.value)} placeholder="How we handle a refund request" required /></label>
+      <button className="primary" disabled={!ready}>Save and start</button>
     </form>
     {error && <p className="home-error" role="alert">{error}</p>}
   </section>
@@ -87,7 +92,7 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
     void bridge.invoke('settings:set', { mode: next }).then((s) => { setSettings(s); go(TABS[next][0].id) })
   }
 
-  if (!bridge) return <div className="shell"><main><section className="home"><h1>Open this in Apprentice</h1></section></main></div>
+  if (!bridge) return <div className="shell"><main><section className="home"><h1>Open this in Protégé</h1></section></main></div>
 
   let content: ReactNode
   switch (page) {
@@ -110,7 +115,7 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
   const busy = session.phase !== 'idle'
   return <div className="shell">
     <header className="shell-bar">
-      <span className="shell-name">Apprentice</span>
+      <span className="shell-name">Protégé</span>
       {inSettings
         ? <span className="shell-title">Company profile</span>
         : <ModeSwitch mode={mode} onChange={switchMode} disabled={busy} />}

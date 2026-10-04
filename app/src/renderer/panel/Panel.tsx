@@ -21,10 +21,11 @@ import { getMic, setMic, useMics } from '../lib/mic'
 import { ModeSwitch, type Mode } from '../lib/ModeSwitch'
 import { Ghost } from '../mascot/Ghost'
 import './panel.css'
+import '../protege.css'
 
 type Watch = { watching: boolean; detail: string }
 
-/** Why the apprentice isn't watching, as the end of a sentence. */
+/** Why Protégé isn't watching, as the end of a sentence. */
 const BLOCK_DETAIL: Record<string, string> = {
   password_manager: 'Password managers are always private.',
   banking: 'Banking sites are always private.',
@@ -33,7 +34,7 @@ const BLOCK_DETAIL: Record<string, string> = {
   user_blocked: "You've blocked this app.",
   paused: 'Watching is paused.',
   off_record: "You're off the record.",
-  self: "That's the Apprentice's own window.",
+  self: "That's Protégé's own window.",
 }
 
 const EMPTY: SessionState = { id: null, kind: null, phase: 'idle', started_at: null, offRecord: false, agent: null }
@@ -76,7 +77,7 @@ export default function Panel() {
 
   return (
     <div className="panel">
-      <div className="titlebar">Apprentice</div>
+      <div className="titlebar">Protégé</div>
 
       <header className="status">
         <div className="status-ghost" aria-hidden>
@@ -136,7 +137,7 @@ function Controls({ session, workmaps, mode }: { session: SessionState; workmaps
           <StopIcon size={16} weight="fill" /> Stop <Timer since={session.started_at} />
         </button>
         <span className="session-kind">
-          {session.kind === 'tutor' ? 'Lesson in progress' : session.kind === 'quick_guide' ? 'Recording steps' : 'Teaching the apprentice'}
+          {session.kind === 'tutor' ? 'Lesson in progress' : session.kind === 'quick_guide' ? 'Recording steps' : 'Teaching Protégé'}
         </span>
         <button className="quiet push" onClick={offRecord} title="Ctrl+Shift+O">
           <MicrophoneSlashIcon size={16} /> Off the record
@@ -272,7 +273,7 @@ function StepTrail({ guide, live }: { guide: Guide | null; live: boolean }) {
         <p>
           {live
             ? 'Work as you normally do. Each click and each field you fill in becomes a step here.'
-            : 'Press Record and do the task once. The apprentice writes the guide as you go, and asks why at natural pauses.'}
+            : 'Press Record and do the task once. Protégé writes the guide as you go, and asks why at natural pauses.'}
         </p>
         {!live && (
           <p className="hint">

@@ -1,4 +1,4 @@
-// Company profile: who the apprentice works for, what it has learned so far, and how it treats privacy.
+// Company profile: who Protégé works for, what it has learned so far, and how it treats privacy.
 // The detailed pages (Privacy, Memory, App profiles) sit next to it as tabs.
 import { useEffect, useState } from 'react'
 import { appLabel, errorText, type DashboardBridge, type PrivacyState, type Settings } from './bridge'
@@ -15,6 +15,7 @@ export function CompanyPage({ bridge, settings, saved, open }: {
 }) {
   const [company, setCompany] = useState(settings.company)
   const [role, setRole] = useState(settings.role)
+  const [teaching, setTeaching] = useState(settings.teaching)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [knows, setKnows] = useState<Knows | null>(null)
@@ -55,7 +56,7 @@ export function CompanyPage({ bridge, settings, saved, open }: {
     e.preventDefault()
     setNotice(''); setError('')
     try {
-      saved(await bridge.invoke('settings:set', { company, role, onboarded: true }))
+      saved(await bridge.invoke('settings:set', { company, role, teaching, onboarded: true }))
       setNotice('Saved. New questions use this role.')
     } catch (failure) { setError(errorText(failure, 'Could not save. Try again.')) }
   }
@@ -68,21 +69,22 @@ export function CompanyPage({ bridge, settings, saved, open }: {
     <div className="guide-page-heading"><div>
       <p className="guide-eyebrow">Company profile</p>
       <h1>{settings.company.trim() || 'Your company'}</h1>
-      <p>Who the apprentice is learning for, what it knows so far, and what it never looks at.</p>
+      <p>Who Protégé is learning for, what it knows so far, and what it never looks at.</p>
     </div></div>
     {error && <div className="guide-error" role="alert">{error}</div>}
     {notice && <div className="guide-notice" role="status">{notice}</div>}
     <div className="privacy-grid">
       <section className="dash-card"><h3>Company and role</h3>
         <form className="dash-form" onSubmit={(e) => void save(e)}>
-          <label>Company name<input value={company} maxLength={80} placeholder="Acme GmbH" onChange={(e) => setCompany(e.target.value)} /></label>
-          <label>Role being taught<input value={role} maxLength={80} placeholder="Accounts payable clerk" onChange={(e) => setRole(e.target.value)} /></label>
+          <label>Company name<input value={company} maxLength={80} placeholder="Northwind" onChange={(e) => setCompany(e.target.value)} /></label>
+          <label>Your role<input value={role} maxLength={80} placeholder="Head of customer support" onChange={(e) => setRole(e.target.value)} /></label>
+          <label>What you are teaching<input value={teaching} maxLength={120} placeholder="How we handle a refund request" onChange={(e) => setTeaching(e.target.value)} /></label>
           <p className="dash-muted">The role goes into every question the ghost asks and every lesson it gives. Nobody is called by name.</p>
           <button className="guide-primary" disabled={!role.trim()}>Save</button>
         </form>
       </section>
 
-      <section className="dash-card"><h3>What the apprentice knows</h3>
+      <section className="dash-card"><h3>What Protégé knows</h3>
         <div className="company-stats">
           {stat(knows?.recordings, 'Work Maps', knows ? `${knows.confirmed} confirmed by the expert` : undefined)}
           {stat(knows?.guides, 'Step guides')}
@@ -108,7 +110,7 @@ export function CompanyPage({ bridge, settings, saved, open }: {
         <ol className="company-list numbered">
           <li><strong>The expert records</strong> a task once, explaining it as they go. The ghost listens first and asks why at the pauses.</li>
           <li><strong>A Work Map is drafted</strong> on Stop. The expert answers a few questions and confirms it.</li>
-          <li><strong>Always on:</strong> the apprentice keeps learning each app as masked text, so it knows the exceptions too.</li>
+          <li><strong>Always on:</strong> Protégé keeps learning each app as masked text, so it knows the exceptions too.</li>
           <li><strong>The new hire learns</strong> on their own screen. The ghost points at the right field and stops a mistake before it is saved.</li>
         </ol>
       </section>

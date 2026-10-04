@@ -15,10 +15,10 @@ const routes: Record<string, Page> = {
 }
 
 // One renderer, hash routes: #/overlay, #/panel, #/dashboard[/anything]
-const TITLES: Record<string, string> = { overlay: 'Apprentice overlay', panel: 'Apprentice', dashboard: 'Apprentice Dashboard' }
+const TITLES: Record<string, string> = { overlay: 'Protégé overlay', panel: 'Protégé', dashboard: 'Protégé Dashboard' }
 const route = location.hash.replace(/^#\/?/, '').split(/[/?]/)[0] || 'dashboard'
 document.documentElement.dataset.route = route
-document.title = TITLES[route] ?? 'Apprentice'
+document.title = TITLES[route] ?? 'Protégé'
 const Page = lazy(routes[route] ?? routes.dashboard)
 
 createRoot(document.getElementById('root')!).render(

@@ -53,7 +53,7 @@ export function ProfilesPage({ bridge, params }: { bridge?: DashboardBridge; par
   return <>
     <div className="guide-page-heading"><div><p className="guide-eyebrow">Always on / App Profiles</p><h1>What it learned about each app.</h1><p>Built from masked text only. Screenshots are described, then deleted.</p></div><button onClick={() => void reload()}>Reload</button></div>
     {error && <div className="guide-error" role="alert">{error}</div>}
-    {!bridge ? <div className="guide-empty"><h2>Open this workspace in Apprentice</h2></div> : loading ? <div className="guide-empty" role="status">Loading…</div> : !profiles.length && !unprofiled.length ? <div className="guide-empty"><h2>Nothing learned yet.</h2><p>Use your apps as usual. A profile appears after about 10 minutes of activity in an app.</p></div> :
+    {!bridge ? <div className="guide-empty"><h2>Open this workspace in Protégé</h2></div> : loading ? <div className="guide-empty" role="status">Loading…</div> : !profiles.length && !unprofiled.length ? <div className="guide-empty"><h2>Nothing learned yet.</h2><p>Use your apps as usual. A profile appears after about 10 minutes of activity in an app.</p></div> :
       <div className="guide-workspace">
         <aside className="guide-library" aria-label="Apps"><h2>Apps <span>{profiles.length}</span></h2>
           {profiles.map((p) => <button key={p.key} className={p.key === selected ? 'is-current' : ''} aria-pressed={p.key === selected} onClick={() => setSelected(p.key)}><strong>{p.name || appLabel(p.key)}</strong><span>{p.minutes} min · {when(p.last_seen)}</span></button>)}
@@ -69,7 +69,7 @@ export function ProfilesPage({ bridge, params }: { bridge?: DashboardBridge; par
             <List title="Exceptions seen" items={profile.exceptions} />
             {(profile.guides.length > 0 || profile.workmaps.length > 0) && <div className="profile-section"><h4>Linked</h4><p>{profile.guides.length} guide(s), {profile.workmaps.length} Work Map(s)</p></div>}
           </div>
-          <div className="profile-questions"><h3>The apprentice is curious</h3>
+          <div className="profile-questions"><h3>Protégé is curious</h3>
             {profile.open_questions.length ? <ul>{profile.open_questions.map((q) => <li key={q}><span>{q}</span>{asking !== q && <button className="guide-text-button" onClick={() => { setAsking(q); setAnswer('') }}>Answer</button>}</li>)}</ul> : <p className="dash-muted">No open questions right now.</p>}
             {asking && <form className="profile-answer" onSubmit={(e) => { e.preventDefault(); void submit() }}><label>{asking}<textarea autoFocus rows={3} maxLength={2000} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Answer in your own words. Card numbers, IBANs and keys are masked before saving." /></label><div className="dash-actions"><button className="guide-primary" disabled={!answer.trim() || busy === 'answer'}>Save answer</button><button type="button" onClick={() => setAsking('')}>Cancel</button></div></form>}
           </div>

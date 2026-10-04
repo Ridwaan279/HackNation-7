@@ -10,6 +10,7 @@ import { AgentHost, type AgentUi } from '../agents/AgentHost'
 import { Ghost, type GhostBadge, type GhostPose } from '../mascot/Ghost'
 import { invoke, tryInvoke, useChannel } from '../lib/api'
 import './overlay.css'
+import '../protege.css'
 
 const SIZE = 150
 const GHOST_H = (SIZE * 165) / 220
@@ -28,7 +29,7 @@ const BLOCK_LABEL: Record<string, string> = {
   user_blocked: 'blocked app',
   paused: 'paused',
   off_record: 'off the record',
-  self: 'Apprentice',
+  self: 'Protégé',
 }
 
 type Pt = { x: number; y: number }

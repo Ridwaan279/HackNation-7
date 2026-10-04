@@ -37,7 +37,7 @@ export function PrivacyPage({ bridge }: { bridge?: DashboardBridge }) {
     setBusy(true); setError(''); setNotice('')
     try { await operation(); setNotice(done) } catch (failure) { setError(errorText(failure)) } finally { setBusy(false) }
   }
-  if (!bridge) return <div className="guide-empty"><h2>Open this workspace in Apprentice</h2></div>
+  if (!bridge) return <div className="guide-empty"><h2>Open this workspace in Protégé</h2></div>
   if (!draft || !state || !settings) return <>{error ? <div className="guide-error" role="alert">{error}</div> : <div className="guide-empty" role="status">Loading…</div>}</>
   const allowOnly = draft.allow_only !== null
   const save = () => run(async () => accept(await bridge.invoke('privacy:set', {
@@ -71,7 +71,7 @@ export function PrivacyPage({ bridge }: { bridge?: DashboardBridge }) {
         {modes.length ? <ul className="capture-list">{modes.map(([key, mode]) => <li key={key}><span><strong>{appLabel(key)}</strong><small>{key}{mode.rect_scale ? ` · scaling corrected ×${mode.rect_scale}` : ''}</small></span><span className="capture-mode"><span className="dash-chip">{mode.capture === 'vision' ? 'Screen recording' : 'Accessibility'}</span><button disabled={busy} onClick={() => void run(async () => accept(await bridge.invoke('privacy:setCapture', { key, value: mode.capture === 'vision' ? 'uia' : 'vision' })), 'Capture mode changed.')}>{mode.capture === 'vision' ? 'Use accessibility' : 'Use screen recording'}</button></span></li>)}</ul> : <p className="dash-muted">Every app is read through accessibility. Apps that can’t be read are offered screen recording when you use them.</p>}
       </section>
       <section className="dash-card danger-zone"><h3>Delete everything</h3><p className="dash-muted">Ambient memory, App Profiles, guides, Work Maps, sessions, lessons and screenshots. Privacy settings stay.</p>
-        <button className="guide-danger" disabled={busy} onClick={() => { if (window.confirm('Delete everything the apprentice has stored on this computer? This cannot be undone.')) void run(async () => { await bridge.invoke('data:deleteAll', {}) }, 'Everything was deleted.') }}>Delete everything</button>
+        <button className="guide-danger" disabled={busy} onClick={() => { if (window.confirm('Delete everything Protégé has stored on this computer? This cannot be undone.')) void run(async () => { await bridge.invoke('data:deleteAll', {}) }, 'Everything was deleted.') }}>Delete everything</button>
       </section>
     </div>
   </>

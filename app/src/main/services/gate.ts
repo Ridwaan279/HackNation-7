@@ -2,6 +2,7 @@
 // expert is busy, and feeds meaningful screen events to the agent as contextual updates.
 import type { AppContext, PickedQuestion, ServiceInit, SidecarEvent } from '@shared/contracts'
 import type { AgentCommand, AgentStatus } from '../../common/ipc'
+import { getSettings } from './settings'
 
 const envNum = (name: string, dflt: number) => {
   const v = Number(process.env[name])
@@ -245,7 +246,8 @@ export const init: ServiceInit = (c) => {
     }
     if (session?.kind === 'teach' && !toldToListen && agentLive()) {
       toldToListen = true
-      send({ op: 'context', text: LISTEN_FIRST })
+      const teaching = getSettings().teaching
+      send({ op: 'context', text: teaching ? `${LISTEN_FIRST} Today they are teaching: ${teaching}.` : LISTEN_FIRST })
     }
   })
   // Keep the agent up to date on what is being shown, without making it speak.

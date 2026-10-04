@@ -32,7 +32,7 @@ export function LessonsPage({ bridge, params }: { bridge?: DashboardBridge; para
   return <>
     <div className="guide-page-heading"><div><p className="guide-eyebrow">Teach / Lessons</p><h1>Did the new hire learn it?</h1><p>Each step of the Work Map: done alone, after a hint, or caught by a guardrail before it was saved.</p></div><button onClick={() => void reload()}>Reload</button></div>
     {error && <div className="guide-error" role="alert">{error}</div>}
-    {!bridge ? <div className="guide-empty"><h2>Open this workspace in Apprentice</h2></div> : loading ? <div className="guide-empty" role="status">Loading…</div> : !report ? <div className="guide-empty"><h2>No lessons yet.</h2><p>Start a lesson from a Work Map. The mastery report appears here when the lesson ends.</p></div> :
+    {!bridge ? <div className="guide-empty"><h2>Open this workspace in Protégé</h2></div> : loading ? <div className="guide-empty" role="status">Loading…</div> : !report ? <div className="guide-empty"><h2>No lessons yet.</h2><p>Start a lesson from a Work Map. The mastery report appears here when the lesson ends.</p></div> :
       <div className="guide-workspace">
         <aside className="guide-library" aria-label="Lessons"><h2>Lessons <span>{reports.length}</span></h2>{reports.map((r) => <button key={r.session} className={r.session === selected ? 'is-current' : ''} aria-pressed={r.session === selected} onClick={() => setSelected(r.session)}><strong>{when(r.t)}</strong><span>{r.steps.filter((s) => s.outcome === 'alone').length}/{r.steps.filter((s) => s.outcome !== 'not_reached').length} alone · {r.steps.filter((s) => s.outcome === 'caught').length} caught</span></button>)}</aside>
         <section className="guide-document">

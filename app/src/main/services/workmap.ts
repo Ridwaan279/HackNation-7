@@ -5,7 +5,7 @@ import { z } from 'zod'
 import type { Answer, AppContext, Guardrail, Guide, GuideStep, Quote, ServiceInit, TranscriptLine, WorkMap, WorkMapStep } from '@shared/contracts'
 import { getStore } from './store'
 import { getLlm, readPrompt } from './llm'
-import { getSettings } from './settings'
+import { getSettings, roleForAgents } from './settings'
 
 const idSchema = z.string().min(1).max(160).regex(/^[a-zA-Z0-9_-]+$/)
 const quoteIn = z.object({ text: z.string().max(600), t: z.number() }).strict()
@@ -227,7 +227,7 @@ export function createWorkmapService(ctx: AppContext, dependencies: {
     })
     const settings = getSettings()
     return {
-      id: `wm-${session}`, role: settings.role, expert: settings.expert, status: 'draft', guide: guide.id,
+      id: `wm-${session}`, role: roleForAgents(settings), expert: settings.expert, status: 'draft', guide: guide.id,
       steps, open_questions: draft.open_questions, teachback: { confirmed: false, corrections: [] },
     }
   }
@@ -255,7 +255,7 @@ export function createWorkmapService(ctx: AppContext, dependencies: {
         appKeys: guide.app_keys?.length ? guide.app_keys : [guide.app],
         system: dependencies.draftPrompt ?? await readPrompt('workmap_draft'),
         input: JSON.stringify({
-          role: settings.role, expert: settings.expert, guide_title: guide.title,
+          role: roleForAgents(settings), expert: settings.expert, guide_title: guide.title,
           guide_steps: guide.steps.map((s) => ({ id: s.id, n: s.n, t: s.t, kind: s.kind, title: s.title, target: s.target, value: s.value, old_value: s.old_value, screen_moment: s.screen_moment, quote: s.quote?.text })),
           answers: answers.map((a) => ({ t: a.t, question: a.question, answer_quote: a.answer_quote, type: a.type, related_event_t: a.related_event_t })),
           transcript: transcript.filter((line) => line.role !== 'nudge').slice(-120).map((line) => ({ t: line.t, role: line.role, text: line.text.slice(0, 500) })),

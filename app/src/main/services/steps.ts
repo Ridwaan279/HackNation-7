@@ -462,7 +462,7 @@ export function createStepsService(ctx: AppContext, dependencies: {
     const html = await guideHtml(ctx, snapshot)
     if (dependencies.exportPdf) return dependencies.exportPdf(html, snapshot.title)
     const { dialog } = await import('electron')
-    const result = await dialog.showSaveDialog({ title: 'Export guide as PDF', defaultPath: 'apprentice-guide.pdf', filters: [{ name: 'PDF', extensions: ['pdf'] }] })
+    const result = await dialog.showSaveDialog({ title: 'Export guide as PDF', defaultPath: 'protege-guide.pdf', filters: [{ name: 'PDF', extensions: ['pdf'] }] })
     if (result.canceled || !result.filePath) return { canceled: true }
     await writeFile(result.filePath, await printGuidePdf(html))
     return { canceled: false, path: result.filePath }
@@ -509,7 +509,7 @@ export function createStepsService(ctx: AppContext, dependencies: {
     if (guide.recording) throw new Error('Stop recording before exporting.')
     return clone(guide)
   }
-  const fileName = (title: string) => title.replace(/[<>:"/\\|?*\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'apprentice-guide'
+  const fileName = (title: string) => title.replace(/[<>:"/\\|?*\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'protege-guide'
   async function saveFile(defaultName: string, extension: string): Promise<string | null> {
     if (dependencies.saveFile) return dependencies.saveFile(defaultName, extension)
     const { dialog } = await import('electron')

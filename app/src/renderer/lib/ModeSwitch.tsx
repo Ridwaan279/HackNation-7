@@ -7,7 +7,7 @@ import './mode-switch.css'
 export type Mode = 'expert' | 'newhire'
 
 const OPTIONS: { id: Mode; label: string; hint: string }[] = [
-  { id: 'expert', label: 'Expert', hint: 'Teach the apprentice' },
+  { id: 'expert', label: 'Expert', hint: 'Teach Protégé' },
   { id: 'newhire', label: 'New hire', hint: 'Learn a task' },
 ]
 
@@ -28,7 +28,7 @@ export function ModeSwitch({
     <div
       className={`mode-switch ${size}`}
       role="radiogroup"
-      aria-label="Who is using the apprentice"
+      aria-label="Who is using Protégé"
       aria-disabled={disabled || undefined}
       title={disabled ? 'Stop the current session to switch.' : undefined}
     >

@@ -81,6 +81,8 @@ function createOverlay() {
 
 /** Window controls drawn by Windows over the panel's custom title bar, matching the system theme. */
 function titleBarOverlay() {
+  // Protégé uses one dark look everywhere (it matches the website), so Mica and the title bar are dark too.
+  nativeTheme.themeSource = 'dark'
   return { color: '#00000000', symbolColor: nativeTheme.shouldUseDarkColors ? '#f2f1f7' : '#1c1b22', height: 40 }
 }
 
@@ -95,7 +97,7 @@ function createPanel() {
     width,
     height,
     minWidth: 320,
-    title: 'Apprentice',
+    title: 'Protégé',
     show: false,
     alwaysOnTop: true,
     // Native Windows 11 material; the page is transparent and draws its own title bar.
@@ -115,9 +117,9 @@ function createDashboard() {
   dashboard = new BrowserWindow({
     width: 1280,
     height: 820,
-    title: 'Apprentice Dashboard',
+    title: 'Protégé Dashboard',
     show: false,
-    backgroundColor: '#0d0b1a',
+    backgroundColor: '#050505',
     autoHideMenuBar: true,
     webPreferences: webPreferences(),
   })
@@ -174,7 +176,7 @@ export const init: ServiceInit = (c) => {
       { label: 'Open panel', click: () => panel?.show() },
       { label: 'Open dashboard', click: () => openDashboard() },
       { type: 'separator' },
-      { label: 'Quit Apprentice', click: () => quit() },
+      { label: 'Quit Protégé', click: () => quit() },
     ]).popup({ window: overlay ?? undefined })
   })
 }

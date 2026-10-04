@@ -43,7 +43,7 @@ export function RecordPage({ bridge, session, openRecordings }: {
     return <section className="home">
       <h1>{waiting ? 'Building the Work Map' : 'Debrief in progress'}</h1>
       <p>{waiting
-        ? 'The apprentice is turning what you did into a Work Map. Then it asks you a few questions about what it could not see.'
+        ? 'Protégé is turning what you did into a Work Map. Then it asks you a few questions about what it could not see.'
         : 'Answer the ghost’s questions out loud. It ends by explaining the task back to you to check it understood.'}</p>
       {waiting && <div className="home-progress" aria-hidden />}
       <div className="home-actions">
@@ -76,7 +76,7 @@ export function RecordPage({ bridge, session, openRecordings }: {
   }
 
   return <section className="home">
-    <h1>Teach the apprentice a task</h1>
+    <h1>Teach Protégé a task</h1>
     <p>Press Record, say in a sentence or two what you are going to show, then do the task the way you always do. The ghost writes the steps and saves its questions for your pauses.</p>
     <button className="big-action" onClick={() => start('teach')}>
       <RecordIcon size={22} weight="fill" /> Record

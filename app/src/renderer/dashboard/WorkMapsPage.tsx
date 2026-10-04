@@ -75,7 +75,7 @@ export function WorkMapsPage({ bridge }: { bridge?: DashboardBridge }) {
     <div className="guide-page-heading"><div><p className="guide-eyebrow">Map / Work Maps</p><h1>The why behind the work.</h1><p>Each step links to the screen it happened on and to the expert’s own words.</p></div><button onClick={() => void reload()}>Reload</button></div>
     {error && <div className="guide-error" role="alert">{error}</div>}
     {notice && <div className="guide-notice" role="status">{notice}</div>}
-    {!bridge ? <div className="guide-empty"><h2>Open this workspace in Apprentice</h2></div> : loading ? <div className="guide-empty" role="status">Loading…</div> : !map ? <div className="guide-empty"><h2>No Work Maps yet.</h2><p>Teach a task, press Stop, and answer the debrief. The draft appears here and is confirmed after the teach-back.</p></div> :
+    {!bridge ? <div className="guide-empty"><h2>Open this workspace in Protégé</h2></div> : loading ? <div className="guide-empty" role="status">Loading…</div> : !map ? <div className="guide-empty"><h2>No Work Maps yet.</h2><p>Teach a task, press Stop, and answer the debrief. The draft appears here and is confirmed after the teach-back.</p></div> :
       <div className="guide-workspace">
         <aside className="guide-library" aria-label="Work Maps"><h2>Work Maps <span>{maps.length}</span></h2>{maps.map((m) => <button key={m.id} className={m.id === selected ? 'is-current' : ''} aria-pressed={m.id === selected} onClick={() => setSelected(m.id)}><strong>{title(m)}</strong><span>{m.status === 'confirmed' ? 'Confirmed' : 'Draft'} · {m.steps.length} steps{sessionDate(m.id) ? ` · ${sessionDate(m.id)}` : ''}</span></button>)}</aside>
         <section className="guide-document">
