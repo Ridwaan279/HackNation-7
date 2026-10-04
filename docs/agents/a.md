@@ -33,7 +33,7 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 
 ## Verification so far (Linux)
 
-- **211 Python tests** (`cd sidecar && pytest tests`), covering:
+- **211 Python tests** (`cd sidecar`, then `python -m pytest tests`), covering:
   - masking vectors and near-misses, the privacy gate, the protocol and config;
   - engine scenarios: password manager never read, a tab navigating to a bank blocked even on an immediate click, password fields never emitted, pause drops pending typing, a blind app prompts once then switches to vision mode, scaling correction saved and applied, heartbeats only on change, a first click in a new window already blurs masked fields;
   - adapters against fakes that mirror the real `uiautomation` 2.0.29 and `pynput` 1.8.2 APIs (checked against their source);
@@ -44,10 +44,10 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 
 ```powershell
 cd sidecar
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python spike.py                            # guided; paste the summary below
 python observer.py --print --mode session  # click around MiniERP: context, click (with shot), commit, text
-pytest tests                               # should also pass on Windows
+python -m pytest tests                     # should also pass on Windows
 ```
 
 The spike has exercised `winapi.py`, the Windows branch of `display.py`, `uia.py` against Edge, `hooks.py` with real pynput, mss capture and the UIA timeouts. Not yet run on Windows: `observer.py` end-to-end (threads, engine, screenshots with blur), `pytest tests`, apps other than Edge, a second monitor, other scaling levels. If web content ever shows as empty, start Edge with `--force-renderer-accessibility` (not needed so far).
