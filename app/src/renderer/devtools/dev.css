@@ -1,0 +1,62 @@
+.dev {
+  padding: 20px 28px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.dev h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.dev h2 {
+  font-size: 15px;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 24px 0 10px;
+}
+
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #07060f;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.gallery figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gallery figcaption {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dev .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dev button {
+  border: 1px solid var(--line);
+  background: var(--ink-3);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
+.dev .log {
+  background: #07060f;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 12px;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
