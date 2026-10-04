@@ -6,6 +6,8 @@ import { getStore } from './store'
 
 export interface Settings {
   role: string
+  /** Shown on the Company profile page. */
+  company: string
   expert: string
   /** The first-run wizard has been completed. */
   onboarded: boolean
@@ -15,6 +17,7 @@ export interface Settings {
 
 const schema = z.object({
   role: z.string().trim().min(1).max(80),
+  company: z.string().trim().max(80),
   expert: z.string().trim().min(1).max(60),
   onboarded: z.boolean(),
   mode: z.enum(['expert', 'newhire']),
@@ -23,6 +26,7 @@ const patchSchema = schema.partial().strict()
 
 const defaults = (): Settings => ({
   role: process.env.APPRENTICE_ROLE || 'Accounts payable clerk',
+  company: '',
   // Nobody is called by name in the app or by the voice agents.
   expert: 'the expert',
   onboarded: false,

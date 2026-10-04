@@ -1,7 +1,7 @@
 import type { AppModes, AppProfile, CaptureMode, GuideIpc, MasteryReport, MemoryApp, MemoryEntry, PrivacyConfig, WorkMap } from '@shared/contracts'
 
 export type Mode = 'expert' | 'newhire'
-export interface Settings { role: string; expert: string; onboarded: boolean; mode: Mode }
+export interface Settings { role: string; company: string; expert: string; onboarded: boolean; mode: Mode }
 /** The shell's session state (app/src/common/ipc.ts SessionState). */
 export interface SessionInfo {
   id: string | null

@@ -61,7 +61,7 @@ export function RecordPage({ bridge, session, openRecordings }: {
         ? 'Nothing is captured until you resume. The gap is marked in the recording.'
         : session.kind === 'quick_guide'
           ? 'Do the task as usual. Every click and field you fill in becomes a step.'
-          : 'Do the task as usual and talk if you like. The ghost asks why when you pause.'}</p>
+          : 'Start by saying what you are going to show, then do the task as usual. The ghost listens first and asks why when you pause.'}</p>
       <button className="big-action stop" onClick={() => run(bridge.invoke('session:stop', {}))}>
         <StopIcon size={22} weight="fill" /> Stop <span className="clock">{clock}</span>
       </button>
@@ -77,7 +77,7 @@ export function RecordPage({ bridge, session, openRecordings }: {
 
   return <section className="home">
     <h1>Teach the apprentice a task</h1>
-    <p>Press Record and do the task the way you always do. The ghost watches, writes the steps, and asks you why when you pause.</p>
+    <p>Press Record, say in a sentence or two what you are going to show, then do the task the way you always do. The ghost writes the steps and saves its questions for your pauses.</p>
     <button className="big-action" onClick={() => start('teach')}>
       <RecordIcon size={22} weight="fill" /> Record
     </button>

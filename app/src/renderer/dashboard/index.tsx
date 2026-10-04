@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { ArrowLeftIcon, GearSixIcon } from '@phosphor-icons/react'
+import { ArrowLeftIcon, BuildingsIcon } from '@phosphor-icons/react'
 import { ModeSwitch } from '../lib/ModeSwitch'
 import { desktopBridge, type DashboardBridge, type Mode, type SessionInfo, type Settings } from './bridge'
 import { RecordPage } from './RecordPage'
@@ -10,22 +10,23 @@ import { ProfilesPage } from './ProfilesPage'
 import { MemoryPage } from './MemoryPage'
 import { PrivacyPage } from './PrivacyPage'
 import { LessonsPage } from './LessonsPage'
+import { CompanyPage } from './CompanyPage'
 import './dashboard.css'
 import './shell.css'
 
-/** Two tabs per mode; everything else lives behind Settings. */
+/** Two tabs per mode; the details live on the Company profile (a labelled button in the header). */
 const TABS: Record<Mode, { id: string; label: string }[]> = {
   expert: [{ id: 'record', label: 'Record' }, { id: 'recordings', label: 'Recordings' }],
   newhire: [{ id: 'learn', label: 'Learn' }, { id: 'progress', label: 'Progress' }],
 }
-const SETTINGS = [
+const PROFILE = [
+  { id: 'company', label: 'Company' },
   { id: 'privacy', label: 'Privacy' },
   { id: 'memory', label: 'Memory' },
   { id: 'profiles', label: 'App profiles' },
-  { id: 'you', label: 'You' },
 ]
 /** Older links (the main process opens e.g. "lessons?session=…" or "profiles?key=…"). */
-const LEGACY: Record<string, string> = { guides: 'recordings', workmaps: 'recordings', lessons: 'progress' }
+const LEGACY: Record<string, string> = { guides: 'recordings', workmaps: 'recordings', lessons: 'progress', you: 'company', settings: 'company' }
 
 const IDLE: SessionInfo = { id: null, kind: null, phase: 'idle', started_at: null, offRecord: false }
 
@@ -39,28 +40,17 @@ function parseHash(): { page: string; params: URLSearchParams } {
 /** First run (PLAN §5.1): the role the apprentice is learning. Nobody is asked for or called by a name. */
 function Welcome({ bridge, settings, done }: { bridge: DashboardBridge; settings: Settings; done: (s: Settings) => void }) {
   const [role, setRole] = useState(settings.role)
+  const [company, setCompany] = useState(settings.company)
   const [error, setError] = useState('')
   return <section className="welcome" aria-label="Set up the apprentice">
     <h2>Set up the apprentice</h2>
-    <p>The role goes into every question it asks. Password managers, banking sites and private windows are never watched.</p>
-    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role, onboarded: true }).then(done).catch(() => setError('Could not save. Try again.')) }}>
+    <p>The role goes into every question it asks. Password managers, banking sites and private windows are never watched. You can change this later on the Company profile.</p>
+    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role, company, onboarded: true }).then(done).catch(() => setError('Could not save. Try again.')) }}>
+      <label>Company<input value={company} maxLength={80} onChange={(e) => setCompany(e.target.value)} placeholder="Acme GmbH" /></label>
       <label>Role<input value={role} maxLength={80} onChange={(e) => setRole(e.target.value)} placeholder="Accounts payable clerk" /></label>
       <button className="primary" disabled={!role.trim()}>Save</button>
     </form>
     {error && <p className="home-error" role="alert">{error}</p>}
-  </section>
-}
-
-function You({ bridge, settings, done }: { bridge: DashboardBridge; settings: Settings; done: (s: Settings) => void }) {
-  const [role, setRole] = useState(settings.role)
-  const [saved, setSaved] = useState(false)
-  return <section className="settings-form">
-    <h1>You</h1>
-    <form onSubmit={(e) => { e.preventDefault(); void bridge.invoke('settings:set', { role }).then((s) => { done(s); setSaved(true) }) }}>
-      <label>Role<input value={role} maxLength={80} onChange={(e) => { setRole(e.target.value); setSaved(false) }} /></label>
-      <button className="primary" disabled={!role.trim()}>Save</button>
-      {saved && <span className="home-meta" role="status">Saved.</span>}
-    </form>
   </section>
 }
 
@@ -85,7 +75,7 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
   }, [bridge])
 
   const mode: Mode = settings?.mode ?? 'expert'
-  const inSettings = SETTINGS.some((s) => s.id === route.page)
+  const inSettings = PROFILE.some((s) => s.id === route.page)
   const page = inSettings || TABS[mode].some((t) => t.id === route.page) ? route.page : TABS[mode][0].id
 
   function go(next: string) {
@@ -114,7 +104,7 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
     case 'privacy': content = <PrivacyPage bridge={bridge} />; break
     case 'memory': content = <MemoryPage bridge={bridge} />; break
     case 'profiles': content = <ProfilesPage bridge={bridge} params={route.params} />; break
-    case 'you': content = settings ? <You bridge={bridge} settings={settings} done={setSettings} /> : null; break
+    case 'company': content = settings ? <CompanyPage bridge={bridge} settings={settings} saved={setSettings} open={go} /> : null; break
   }
 
   const busy = session.phase !== 'idle'
@@ -122,14 +112,14 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
     <header className="shell-bar">
       <span className="shell-name">Apprentice</span>
       {inSettings
-        ? <span className="shell-title">Settings</span>
+        ? <span className="shell-title">Company profile</span>
         : <ModeSwitch mode={mode} onChange={switchMode} disabled={busy} />}
       {inSettings
         ? <button className="icon-button" onClick={() => go(TABS[mode][0].id)}><ArrowLeftIcon size={18} /> Done</button>
-        : <button className="icon-button" aria-label="Settings" title="Privacy, memory, app profiles" onClick={() => go('privacy')}><GearSixIcon size={20} /></button>}
+        : <button className="icon-button profile-button" title="Company, privacy, memory and app profiles" onClick={() => go('company')}><BuildingsIcon size={18} /> {settings?.company.trim() || 'Company profile'}</button>}
     </header>
     <nav className="shell-tabs" aria-label={inSettings ? 'Settings' : 'Sections'}>
-      {(inSettings ? SETTINGS : TABS[mode]).map((t) => (
+      {(inSettings ? PROFILE : TABS[mode]).map((t) => (
         <button key={t.id} aria-current={page === t.id ? 'page' : undefined} onClick={() => go(t.id)}>{t.label}</button>
       ))}
     </nav>
