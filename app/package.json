@@ -17,6 +17,7 @@
     "dotenv": "^18.0.5",
     "framer-motion": "^14.0.0",
     "openai": "^7.27.0",
+    "pdfjs-dist": "^6.4.299",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.6.5"
