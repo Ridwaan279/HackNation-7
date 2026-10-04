@@ -280,11 +280,17 @@ Read the other two status files right after each `git merge main`.
 cd app && npm install && npm run dev        # Electron in dev mode
 OBSERVER_FAKE=../fixtures/expert-session.jsonl npm run dev      # bash
 $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # PowerShell
+# replays keep the fixture's timing; OBSERVER_FAKE_SPEED=4 plays 4x faster, OBSERVER_FAKE_MAX_GAP=3 caps pauses at 3 s
 
 # sidecar (Agent A)
-cd sidecar && pip install -r requirements.txt
-python observer.py --print                  # stream events to the terminal
-pytest tests                                # redaction tests (run in any OS)
+cd sidecar
+python -m pip install -r requirements.txt
+python spike.py                             # Phase 1: guided 2-minute capability check (Windows)
+python observer.py --print                  # stream events to the terminal (Windows)
+python observer.py --print --mode session   # ...including click screenshots
+python observer.py --fake --print           # built-in demo scene (any OS)
+python observer.py --redact-only            # masking only, no screen access (Electron starts it in fake mode)
+python -m pytest tests                      # all observer tests (any OS)
 
 # MiniERP (Agent C)
 cd sandbox-erp && npm install && npm run dev

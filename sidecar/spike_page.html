@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spike test page - MiniERP stand-in</title>
+<style>
+  body { font-family: "Segoe UI", system-ui, sans-serif; margin: 40px; background: #f5f6fa; color: #1b1b1f; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  .card { background: #fff; border-radius: 10px; padding: 24px; max-width: 620px; box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+  label { display: block; margin: 14px 0 4px; font-weight: 600; }
+  input, textarea { font: inherit; font-size: 15px; padding: 8px; width: 100%; box-sizing: border-box; }
+  button { margin-top: 18px; font: inherit; font-size: 15px; padding: 10px 22px; background: #3d5ad1; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  #status { margin-top: 12px; color: #3d5ad1; min-height: 1.2em; }
+</style>
+</head>
+<body>
+  <h1>Invoice 4471</h1>
+  <div class="card">
+    <p>Supplier: Müller GmbH · Amount: €7,200.00 · Equipment</p>
+    <label for="cost">Cost center</label>
+    <input id="cost" value="4711">
+    <label for="notes">Notes</label>
+    <textarea id="notes" rows="2">Pay to DE89 3704 0044 0532 0130 00</textarea>
+    <label for="pw">Password</label>
+    <input id="pw" type="password" value="hunter2">
+    <button id="post" type="button" onclick="document.getElementById('status').textContent = 'Posted (test page only)'">Post</button>
+    <div id="status" role="status"></div>
+  </div>
+</body>
+</html>
