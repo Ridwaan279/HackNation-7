@@ -265,6 +265,8 @@ export interface GuideStep {
   note: string
   target: string
   value?: string
+  /** For enter steps: the field's value before the expert changed it (masked). */
+  old_value?: string
   shot: string | null
   highlight: Rect | null
   blur: Rect[]
