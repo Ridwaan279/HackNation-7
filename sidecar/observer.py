@@ -7,6 +7,7 @@ events and replies on stdout, commands on stdin (shapes in shared/contracts.ts).
     python observer.py --print                 # human-readable events in the terminal (Windows)
     python observer.py --print --mode session  # also take click screenshots
     python observer.py --fake --print          # demo scene, any OS
+    python observer.py --redact-only           # only answers `redact` (Electron's OBSERVER_FAKE mode)
 
 Options: --data-dir (default %APPDATA%/apprentice), --config-dir (default <data-dir>/config),
 --defaults-dir (default <repo>/config), --parent-pid (Electron's pid, so its windows are ignored).
@@ -35,6 +36,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="AI Apprentice observer sidecar")
     p.add_argument("--print", action="store_true", help="human-readable events instead of JSON lines")
     p.add_argument("--fake", action="store_true", help="use the in-memory demo backend (any OS)")
+    p.add_argument("--redact-only", action="store_true",
+                   help="no screen access: only answer redact / reload_config (fixture replay in Electron)")
     p.add_argument("--mode", choices=("ambient", "session", "tutor", "paused"), default="ambient")
     p.add_argument("--data-dir")
     p.add_argument("--config-dir")
@@ -166,9 +169,44 @@ class Runner:
                     self._error("slow")
 
 
+def run_redact_only(store, emitter, log) -> int:
+    """Electron replays a fixture (OBSERVER_FAKE) but still needs real masking: answer
+    `redact` and `reload_config` only. Never touches the screen, the keyboard or the mouse."""
+    from engine import VERSION
+    from protocol import parse_command, reply_error, reply_ok
+    from redact import MaskOptions, Redactor
+
+    redactor = Redactor(MaskOptions.from_config(store.privacy.get("mask")))
+    emitter.emit({"type": "ready", "t": time.time(), "version": VERSION, "platform": sys.platform,
+                  "backend": "fake", "dpi_awareness": "unknown"})
+    log("started: redact-only (no screen access)")
+    try:
+        for line in sys.stdin:
+            if emitter.closed:
+                break
+            if not line.strip():
+                continue
+            cmd, err = parse_command(line.strip())
+            if err is not None:
+                emitter.emit(err)
+            elif cmd is None:
+                log("ignoring an unreadable command line")
+            elif cmd["cmd"] == "redact":
+                emitter.emit(reply_ok(cmd["id"], text=redactor.redact(cmd["text"])))
+            elif cmd["cmd"] == "reload_config":
+                store.load()
+                redactor = Redactor(MaskOptions.from_config(store.privacy.get("mask")))
+                emitter.emit(reply_ok(cmd["id"]))
+            else:
+                emitter.emit(reply_error(cmd["id"], f"{cmd['cmd']} is not available in redact-only mode"))
+    except KeyboardInterrupt:
+        pass
+    return 0
+
+
 def main(argv=None) -> int:
     args = parse_args(argv)
-    if not args.fake:
+    if not args.fake and not args.redact_only:
         display.set_dpi_awareness()  # before anything imports uiautomation or mss
     proto = isolate_stdout()
     configure_stdin()
@@ -183,6 +221,9 @@ def main(argv=None) -> int:
     store = ConfigStore(config_dir, defaults_dir)
     store.load()
     own_pids = {os.getpid()} | ({args.parent_pid} if args.parent_pid > 0 else set())
+
+    if args.redact_only:
+        return run_redact_only(store, Emitter(proto, pretty=args.print), log)
 
     if args.fake:
         from backend_fake import FakeBackend

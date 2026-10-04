@@ -97,3 +97,26 @@ def test_real_backend_refuses_to_start_off_windows(tmp_path):
     out = subprocess.run([sys.executable, str(OBSERVER), "--data-dir", str(tmp_path)], capture_output=True,
                          text=True, timeout=20, stdin=subprocess.DEVNULL)
     assert out.returncode == 2 and "needs Windows" in out.stderr and out.stdout == ""
+
+
+def test_redact_only_answers_redact_and_nothing_else(tmp_path):
+    # Electron's OBSERVER_FAKE mode: fixture replay with real masking, no screen access.
+    proc = subprocess.run(
+        [sys.executable, str(OBSERVER), "--redact-only", "--data-dir", str(tmp_path / "data"),
+         "--config-dir", str(tmp_path / "config"), "--mode", "ambient"],
+        input="\n".join(json.dumps(c) for c in [
+            {"id": 1, "cmd": "redact", "text": "Pay to DE89 3704 0044 0532 0130 ff00"},
+            {"id": 2, "cmd": "tree"},
+            {"id": 3, "cmd": "shot", "reason": "on_demand"},
+            {"id": 4, "cmd": "reload_config"},
+        ]) + "\n",
+        capture_output=True, text=True, encoding="utf-8", timeout=20)
+    assert proc.returncode == 0, proc.stderr
+    lines = [json.loads(line) for line in proc.stdout.splitlines()]
+    assert lines[0]["type"] == "ready" and lines[0]["backend"] == "fake"
+    replies = {r["id"]: r for r in lines[1:]}
+    assert replies[1] == {"id": 1, "ok": True, "text": "Pay to [IBAN]"}
+    assert replies[2]["ok"] is False and replies[3]["ok"] is False
+    assert replies[4] == {"id": 4, "ok": True}
+    assert len(lines) == 5  # no context, click or shot events
+    assert (tmp_path / "config" / "privacy.json").exists()
