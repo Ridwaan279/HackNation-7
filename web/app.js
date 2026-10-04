@@ -741,10 +741,11 @@ function readOptions() {
 
 function init() {
   document.documentElement.classList.remove('no-js')
+  // The HTML already links to the zip, so the button works without JavaScript; config.js can point it elsewhere.
   for (const a of document.querySelectorAll('[data-download]')) {
     a.href = config.downloadUrl
     if (/\.(zip|exe|msi)$/i.test(config.downloadUrl) && !/^https?:/i.test(config.downloadUrl)) a.setAttribute('download', '')
-    else { a.target = '_blank'; a.rel = 'noopener' }
+    else { a.removeAttribute('download'); a.target = '_blank'; a.rel = 'noopener' }
   }
   for (const a of document.querySelectorAll('[data-github]')) a.href = config.githubUrl
 
