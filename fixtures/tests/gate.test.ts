@@ -4,7 +4,7 @@ import { init } from '../../app/src/main/services/gate'
 import { harness } from './harness'
 
 // One session played through on a fake clock (the gate keeps module state, so this is one test).
-test('gate asks at idle moments, at most twice in a row, and again after activity', async () => {
+test('gate waits for the introduction, asks at idle moments, at most twice in a row, and again after activity', async () => {
   mock.timers.enable({ apis: ['setInterval', 'Date'], now: 1_000_000 })
   try {
     const h = await harness()
@@ -25,11 +25,21 @@ test('gate asks at idle moments, at most twice in a row, and again after activit
     h.emit('session:started', { id: 's-1', kind: 'teach' })
     await h.invoke('agent:status', { status: 'connected', mode: 'listening', agent: 'interviewer' })
 
+    const contexts = () => h.broadcasts.filter((b) => b.channel === 'agent:command' && b.payload.op === 'context')
+    assert.match(contexts()[0]?.payload.text ?? '', /begin by explaining what they are going to show/, 'told to listen to the introduction')
+
     await advance(9)
     assert.equal(nudges().length, 0, 'nothing in the first seconds of a session')
 
+    await advance(10)
+    assert.equal(nudges().length, 0, 'the expert has not started yet: no question, however long it is quiet')
+
+    h.emit('transcript:line', { session: 's-1', t: 0, role: 'expert', text: 'Today I will show you how I post an invoice.' })
+    await advance(8)
+    assert.equal(nudges().length, 0, 'the expert is introducing the task: the first 10 s are theirs')
+
     await advance(3)
-    assert.equal(nudges().length, 1, 'idle since the start: the ghost asks')
+    assert.equal(nudges().length, 1, 'after the introduction and a quiet moment, the ghost asks')
     assert.match(nudges()[0].payload.text, /^\[pause\] Politely interject: start with "Excuse me, could I ask something about this\?"/)
     assert.match(nudges()[0].payload.text, /ask ONE short question \(the user has paused\)/)
     assert.ok(picks >= 1, 'the picker is consulted first')

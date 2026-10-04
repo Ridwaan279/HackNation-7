@@ -31,9 +31,9 @@ import { showPanel, toOverlayLocal } from './windows'
 const ROLE = () => getSettings().role
 /** Nobody is addressed or described by name: the agent talks to "you" and about "the expert". */
 const EXPERT = () => 'the expert'
-/** The Interviewer opens every recording by asking what is about to be shown. */
+/** The Interviewer opens without a question: the expert explains first, questions wait for the pauses (gate.ts). */
 const OVERVIEW_FIRST_MESSAGE =
-  "Hi, I'm ready. Before you start, could you give me a quick overview of what you're about to show me?"
+  "I'm ready when you are. Start whenever you like and talk me through it. I'll save my questions for the pauses."
 /** Give the agent time to finish its goodbye before hanging up. */
 const HANGUP_AFTER_MS = 8000
 const ALERT_MS = 8000

@@ -19,6 +19,12 @@ const MAX_IDLE_QUESTIONS = 2
 /** After a new screen opens the expert is probably reading. */
 const READING_IDLE_S = 8
 const FIRST_QUESTION_AFTER_S = 10
+/** Let the expert introduce the task first: no question until they have been talking or working this long. */
+const WARMUP_S = envNum('GATE_WARMUP_S', 10)
+/** Sent once when the Interviewer connects, so it listens to the introduction instead of interrupting it. */
+const LISTEN_FIRST =
+  'The expert is about to start. They will usually begin by explaining what they are going to show. ' +
+  'Listen and call skip_turn; do not ask anything until you receive a [pause] message.'
 /** The pause must follow an action that finished recently. */
 const ACTION_FRESH_S = 30
 const SPEECH_GRACE_S = 2.5
@@ -58,6 +64,9 @@ let lastSummary = ''
 let lastActivitySent = 0
 let asked: number[] = []
 let lastWindow = ''
+/** When the expert first spoke or did something in this session (0 = not yet). */
+let firstActivity = 0
+let toldToListen = false
 
 /** The question most recently put to the agent; used to fill related_event_t on answers. */
 export let lastPicked: PickedQuestion | null = null
@@ -74,8 +83,13 @@ function feed(text: string) {
   if (agentLive()) send({ op: 'context', text })
 }
 
+function started(t: number) {
+  if (session && !firstActivity) firstActivity = t
+}
+
 function busy(t: number) {
   lastInput = t
+  started(t)
   idleAsks = 0
   if (agentLive() && t - lastActivitySent >= ACTIVITY_EVERY_S) {
     lastActivitySent = t
@@ -142,9 +156,14 @@ async function tick() {
   if (!session || session.kind !== 'teach' || picking || !agentLive()) return
   const t = now()
   if (agent.mode === 'speaking') lastAgentSpeech = t
-  if (agent.userSpeaking) lastUserSpeech = t
+  if (agent.userSpeaking) {
+    lastUserSpeech = t
+    started(t)
+  }
 
   if (t - session.startedAt < FIRST_QUESTION_AFTER_S) return
+  // Wait for the expert to start explaining, then give the introduction time before the first question.
+  if (!firstActivity || (!asked.length && t - firstActivity < WARMUP_S)) return
   if (t - lastAgentSpeech < SPEECH_GRACE_S || t - lastUserSpeech < SPEECH_GRACE_S) return
   if (t - lastNudge < MIN_GAP_S) return
   asked = asked.filter((x) => t - x < 600)
@@ -201,6 +220,8 @@ export const init: ServiceInit = (c) => {
     // Idle time counts from the start of the session.
     lastInput = now()
     idleAsks = 0
+    firstActivity = 0
+    toldToListen = false
     latestSteps = []
     lastSummary = ''
     asked = []
@@ -211,12 +232,21 @@ export const init: ServiceInit = (c) => {
   })
   c.bus.on('observer:event', onObserver)
   c.bus.on('transcript:line', (l) => {
-    if (l.role === 'expert' || l.role === 'newhire') lastUserSpeech = now()
+    if (l.role !== 'expert' && l.role !== 'newhire') return
+    lastUserSpeech = now()
+    started(lastUserSpeech)
   })
   c.handle('agent:status', (s: Partial<AgentStatus>) => {
     agent = { ...agent, ...s }
     if (agent.mode === 'speaking') lastAgentSpeech = now()
-    if (s.userSpeaking) lastUserSpeech = now()
+    if (s.userSpeaking) {
+      lastUserSpeech = now()
+      started(lastUserSpeech)
+    }
+    if (session?.kind === 'teach' && !toldToListen && agentLive()) {
+      toldToListen = true
+      send({ op: 'context', text: LISTEN_FIRST })
+    }
   })
   // Keep the agent up to date on what is being shown, without making it speak.
   c.bus.on('guide:updated', (g) => {
