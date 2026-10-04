@@ -89,7 +89,9 @@ export function getLlm(ctx: AppContext): ReturnType<typeof createLlm> {
 export const init: ServiceInit = (ctx) => { getLlm(ctx) }
 
 /** B should package app/prompts in resources/prompts for production. */
-export async function readPrompt(name: 'question_picker' | 'step_vision'): Promise<string> {
+export type PromptName = 'question_picker' | 'step_vision' | 'workmap_draft' | 'workmap_correction' | 'guardrail_checker'
+  | 'locate_vision' | 'app_profile' | 'mastery_report' | 'guide_polish'
+export async function readPrompt(name: PromptName): Promise<string> {
   const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
   const candidates = [
     ...(resources ? [path.join(resources, 'prompts', `${name}.md`)] : []),

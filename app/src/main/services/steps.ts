@@ -88,6 +88,7 @@ export class CaptureSession {
         step = { ...newStep(event.t, 'enter', '', event.field), app_key: this.context.key }
         this.add(step)
       }
+      if (step.old_value === undefined) step.old_value = event.old // first commit of this visit: the value before the change
       step.kind = 'enter'; step.value = event.new; step.title = `Enter ${event.new || '(empty)'} in ${event.field}`
       step.highlight = event.rect
       this.eventSteps.set(event.t, step.id)

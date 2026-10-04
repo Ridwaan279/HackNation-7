@@ -25,10 +25,11 @@ import type {
   SessionState,
 } from '../../common/ipc'
 import { lastPicked, setOffRecord as gateOffRecord } from './gate'
+import { getSettings } from './settings'
 import { showPanel, toOverlayLocal } from './windows'
 
-const ROLE = () => process.env.APPRENTICE_ROLE || 'Accounts payable clerk'
-const EXPERT = () => process.env.APPRENTICE_EXPERT || 'Sabine'
+const ROLE = () => getSettings().role
+const EXPERT = () => getSettings().expert
 /** Give the agent time to finish its goodbye before hanging up. */
 const HANGUP_AFTER_MS = 8000
 const ALERT_MS = 8000
