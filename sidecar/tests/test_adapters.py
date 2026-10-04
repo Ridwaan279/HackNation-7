@@ -241,6 +241,32 @@ def test_element_at_and_overlay_fallback(fake_uia):
     assert uia.element_at(5, 5, {4242}, 77) is None
 
 
+def test_element_at_looks_inside_a_page_hit(fake_uia):
+    # Seen on Windows: Edge answered a click inside a field with the whole page.
+    uia, state = fake_uia
+    root, parts = chromium_window()
+    state.roots[1] = root
+    state.at_point[(650, 310)] = parts["doc"]
+    el = uia.element_at(650, 310, {4242}, 1)
+    assert (el.name, el.control_type) == ("Cost center", "Edit")
+    state.at_point[(1000, 700)] = parts["doc"]  # empty page space: the page itself
+    assert uia.element_at(1000, 700, {4242}, 1).control_type == "Document"
+    parts["doc"].hidden_from_walker = True  # children only reachable through FindAll
+    assert uia.element_at(650, 310, {4242}, 1).name == "Cost center"
+
+
+def test_text_walk_skips_window_chrome(fake_uia):
+    uia, state = fake_uia
+    bar = FakeControl("ScrollBar", name="Vertical", rect=(990, 0, 1000, 500),
+                      children=[FakeControl("Button", name="Vertical Small Decrease", rect=(990, 0, 1000, 10))])
+    state.roots[6] = FakeControl("Window", name="Notes app", rect=(0, 0, 1000, 500), children=[
+        FakeControl("Pane", name="DesktopWindowXamlSource", rect=(0, 0, 990, 500),
+                    children=[FakeControl("Text", name="Quarterly accruals", rect=(10, 10, 200, 30))]),
+        bar])
+    names = [i.name for i in uia.walk_text(6, "native", 10, 50, 1.5).items]
+    assert names == ["Notes app", "Quarterly accruals"]
+
+
 def test_tree_lists_named_pointable_elements(fake_uia):
     uia, state = fake_uia
     root, _ = chromium_window()

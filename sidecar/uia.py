@@ -31,6 +31,8 @@ PID_LEGACY = auto.PatternId.LegacyIAccessiblePattern
 
 VALUE_TYPES = frozenset({"Edit", "ComboBox", "Spinner"})
 SKIP_TEXT_TYPES = frozenset({"ScrollBar", "Thumb", "Separator", "TitleBar", "MenuBar", "ToolTip"})
+PRUNE_TEXT_TYPES = frozenset({"ScrollBar", "TitleBar"})  # window chrome: nothing below them is content
+NOISE_NAMES = frozenset({"Chrome Legacy Window", "DesktopWindowXamlSource"})  # wrapper elements, not text
 POINTABLE_TYPES = frozenset({"Button", "Edit", "ComboBox", "CheckBox", "RadioButton", "Hyperlink", "MenuItem",
                              "TabItem", "ListItem", "TreeItem", "DataItem", "Text", "SplitButton", "Spinner",
                              "Slider", "HeaderItem", "Image"})
@@ -195,8 +197,11 @@ def _info(c) -> ElementInfo:
 # --------------------------------------------------------------------- clicks
 
 def element_at(x: int, y: int, own_pids: Set[int], root_hwnd: int) -> Optional[ElementInfo]:
-    """The element under a screen point. If UIA returns our own (click-through) overlay,
-    search the clicked app window for the smallest element containing the point."""
+    """The element under a screen point, with two corrections to ControlFromPoint:
+    - it returns our own (click-through) overlay: search the clicked app window instead;
+    - it returns a whole web page (Document) although a field is there, which Edge does
+      now and then (seen on Windows, right after focus changes): look inside the page.
+    Both searches pick the smallest element containing the point."""
     c = _safe(lambda: auto.ControlFromPoint(int(x), int(y)))
     pid = int(_safe(lambda: c.ProcessId, 0) or 0) if c is not None else 0
     if c is None or pid in own_pids:
@@ -204,15 +209,22 @@ def element_at(x: int, y: int, own_pids: Set[int], root_hwnd: int) -> Optional[E
         c = _deepest_at(root, x, y) if root is not None else None
         if c is None:
             return None
+    elif _ctype(c) == "Document":
+        c = _deepest_at(c, x, y)  # the page itself when nothing smaller is there
     return _info(c)
 
 
 def _deepest_at(root, x: int, y: int, budget_s: float = 0.3):
     deadline = time.monotonic() + budget_s
     node = root
-    for _ in range(40):
+    for depth in range(40):
         best = None
-        for k in _children(node, _CHILD_LIMIT, deadline):
+        kids = list(_children(node, _CHILD_LIMIT, deadline))
+        if not kids and depth <= 2:
+            kids = _find_all_children(node, _CHILD_LIMIT)  # web pages sometimes answer only FindAll
+        for k in kids:
+            if time.monotonic() >= deadline:
+                break
             r = _rect(k)
             if r and r[0] <= x <= r[2] and r[1] <= y <= r[3]:
                 area = (r[2] - r[0]) * (r[3] - r[1])
@@ -470,7 +482,8 @@ def walk_text(hwnd: int, mode: str, max_depth: int, max_elements: int, budget_s:
 def _walk_text_from(root, root_is_doc: bool, max_depth: int, max_elements: int, deadline: float) -> WalkResult:
     res = WalkResult()
     first_doc = root if root_is_doc else None
-    for c, _, ct in _walk(root, max_depth, max_elements, deadline, findall_depth=2 if root_is_doc else -1):
+    for c, _, ct in _walk(root, max_depth, max_elements, deadline, prune=lambda c, ct: ct in PRUNE_TEXT_TYPES,
+                          findall_depth=2 if root_is_doc else -1):
         res.visited += 1
         if ct in SKIP_TEXT_TYPES:
             continue
@@ -479,7 +492,7 @@ def _walk_text_from(root, root_is_doc: bool, max_depth: int, max_elements: int, 
         if _safe(lambda: c.IsOffscreen, False):
             continue
         name = _safe(lambda: c.Name, "") or ""
-        if name == "Chrome Legacy Window":  # Chromium's wrapper element, not page text
+        if name in NOISE_NAMES:
             name = ""
         is_pw = False
         value = None
