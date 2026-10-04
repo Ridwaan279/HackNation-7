@@ -360,6 +360,32 @@ export interface AppModes {
   }
 }
 
+/** One line of an app's daily memory log (memory/<app>/<date>.jsonl). Text is already masked. */
+export type MemoryEntry =
+  | { type: 'context'; t: number; key: string; title: string }
+  | { type: 'text'; t: number; key: string; title: string; lines: string[] }
+  | { type: 'commit'; t: number; key: string; field: string; old: string; new: string; masked: boolean }
+  | { type: 'click'; t: number; key: string; target: string; control_type: string }
+  | { type: 'description'; t: number; key: string; text: string }
+
+export interface MemoryApp {
+  key: string
+  minutes: number
+  last_seen: string
+  bytes: number
+  days: string[]
+}
+
+/** Lesson outcome per Work Map step (PLAN §5.6). */
+export interface MasteryReport {
+  session: string
+  workmap_id: string
+  t: number
+  steps: { step_id: string; title: string; outcome: 'alone' | 'hint' | 'caught' | 'not_reached'; note: string }[]
+  summary: string
+  practise_next: string[]
+}
+
 // ------------------------------------------------------------- agent & tutor
 
 export interface PickedQuestion {
@@ -415,6 +441,8 @@ export interface BusEvents {
   'popup:show': Popup
   'popup:answer': { id: string; choice: string }
   'ghost:state': { state: GhostState; badge?: 'recording' | 'vision' | null }
+  /** Stored data was deleted (Memory / Privacy page). Services drop their caches. */
+  'data:cleared': { scope: 'memory' | 'all'; key?: string }
 }
 
 /** Request/response handlers on the bus. Owner in brackets. */
