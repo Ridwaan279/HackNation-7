@@ -236,6 +236,10 @@ async function tutorVariables(workmap_id?: string): Promise<Record<string, strin
   }
 }
 
+export function isOffRecord() {
+  return state.offRecord
+}
+
 export async function toggleOffRecord() {
   state.offRecord = !state.offRecord
   gateOffRecord(state.offRecord)
