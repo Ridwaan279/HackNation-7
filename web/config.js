@@ -5,7 +5,7 @@ export default {
   downloadUrl: 'downloads/Protege-Windows.zip',
   /** "View the code". */
   githubUrl: 'https://github.com/Ridwaan279/HackNation-7',
-  /** Public ElevenLabs agent id for "Ask the ghost" (README: "Website voice agent").
-   *  Leave empty and a browser voice reads a short explanation instead. */
+  /** Public ElevenLabs agent id for the voice button, so visitors can ask questions (README: "Website voice agent").
+   *  The Kickstart tour is always the written script in voice.js. Leave empty and the voice button replays it. */
   elevenLabsAgentId: 'agent_4401m42tr8pzfd7vksmmsns1wr0p',
 }

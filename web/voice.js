@@ -1,7 +1,9 @@
 // Protégé's voice on the website.
 // Speech: ElevenLabs text-to-speech through api/tts (a Vercel function that keeps the API key on the server);
-// where that isn't deployed, the most natural voice the browser has. With an ElevenLabs agent id (config.js),
-// Kickstart becomes a live conversation that can move the page with client tools.
+// where that isn't deployed, the most natural voice the browser has.
+// The explanations (Kickstart, opening the web or desktop version) are always the written script, read
+// word for word and never waiting for an answer. With an ElevenLabs agent id (config.js), the voice button
+// starts a live conversation for questions, which can move the page with client tools.
 import config from './config.js'
 
 const SDK = 'https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.26.0/dist/lib.iife.js'
@@ -29,12 +31,6 @@ const SCRIPTS = {
     ["This is where we pushed the idea to its limit, and it's only possible because I run on your computer, not in a browser.", 'moonshot'],
     ["Download the zip, unzip it, and double-click start dot bat. That's all.", 'download'],
   ],
-}
-
-/** What the live agent hears when the visitor moves on. Its prompt says to answer these out loud. */
-const AGENT_NOTES = {
-  web: '[Website: the visitor opened the web app. In two or three short sentences: it is traditional onboarding. They record a task, you ask questions while they work, and at the end you sum it up and ask a few more questions. Then tell them to open the dashboard.]',
-  desktop: '[Website: the visitor opened the desktop app. In two or three short sentences: unlike the web app it runs all the time, reads every task through Windows accessibility, keeps training itself and catches what the expert forgot to explain. It is where the idea is pushed to its limit. Then say how to install it: download, unzip, double-click start.bat.]',
 }
 
 // ------------------------------------------------------------------ speaking one line
@@ -237,21 +233,18 @@ export function createVoice(ui) {
   return {
     get active() { return state !== 'idle' },
     get narrating() { return narrating },
-    /** Kickstart: Protégé introduces the two versions. */
-    kickstart() {
+    /** Kickstart: Protégé introduces the two versions, exactly as written. */
+    async kickstart() {
       narrating = true
       ui.clearCaptions()
-      if (config.elevenLabsAgentId) return session ? undefined : startAgent()
+      if (session) await stop() // a live chat would talk over the tour
       return run(SCRIPTS.intro)
     },
-    /** A version page opened: explain it again from the start, if the visitor wanted the voice. */
-    narrate(name) {
-      if (!narrating) return
-      if (config.elevenLabsAgentId) {
-        if (session && AGENT_NOTES[name]) { try { session.sendUserMessage(AGENT_NOTES[name]) } catch { /* closed */ } }
-        return
-      }
-      if (SCRIPTS[name]) void run(SCRIPTS[name])
+    /** A version page opened: explain it from the start, exactly as written, if the visitor wanted the voice. */
+    async narrate(name) {
+      if (!narrating || !SCRIPTS[name]) return
+      if (session) await stop()
+      return run(SCRIPTS[name])
     },
     /** The voice button: stop, or start again for the step on screen. */
     toggle(name) {

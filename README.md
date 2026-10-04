@@ -215,9 +215,9 @@ Without the function (another host, or running it locally), the site uses the mo
 The desktop app uses three ElevenLabs agents (Interviewer, Debrief, Tutor). Their prompts, first messages and tools are in [`app/src/renderer/agents/README.md`](app/src/renderer/agents/README.md).
 
 <details>
-<summary><b>The website agent (Kickstart and "Ask the ghost")</b></summary>
+<summary><b>The website agent ("Ask the ghost")</b></summary>
 
-Without an agent, Kickstart plays a spoken tour (the ElevenLabs voice on Vercel, otherwise the browser's): it highlights the two versions while it talks, and narrates whichever one you pick. To put the real ElevenLabs agent there:
+Kickstart, and opening the web or desktop version, always play the written tour in [`web/voice.js`](web/voice.js) (`SCRIPTS`): read word for word with the ElevenLabs voice on Vercel (otherwise the browser's), moving the page as it goes, and never waiting for an answer. To change what it says, edit those lines. The live agent below is only for the **voice button**, when a visitor wants to ask questions. To set it up:
 
 1. In the ElevenLabs dashboard, open **Agents → Create agent → Blank agent**. Name it *Protégé website*.
 2. **Voice:** pick a natural one in the agent's **Voice** tab (for example *Sarah*), the same as the website's.
