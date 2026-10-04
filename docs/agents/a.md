@@ -1,6 +1,6 @@
 # Agent A status: Observer
 
-Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. On Windows, the Phase 1 spike passes 19/19 on one laptop (Edge, 150% scaling). The full observer (`observer.py --print --mode session`) has run once end-to-end on Windows; see "Observer on Windows" below.
+Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. On Windows, the Phase 1 spike passes 19/19 on one laptop (Edge, 150% scaling). The full observer (`observer.py --print --mode session`) has run end-to-end on Windows twice; see "Observer on Windows" below. A trial merge A → C → B (2026-10-04) has no conflicts, and B's `npm run typecheck` and `npm run build` pass on the merged tree.
 
 **Phase 1 go/no-go: all GO.** Per-monitor-v2 DPI awareness takes effect. A pynput click → `ControlFromPoint` gives Button 'Post' with the right rect at 150%. `IsPassword` is read and the password value never is. The Edge URL comes from the address bar (48 ms, then cached). `mss` grabs only the window. Edge's page content is visible without `--force-renderer-accessibility`.
 
@@ -28,12 +28,17 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 | Phase 1 spike | Guided 2-minute check of every OS capability; opens its own test page (`spike_page.html`) | `spike.py`, `spike_page.html` |
 
 **Electron** (`app/src/main/services/`):
-- `observer.ts`: spawns the sidecar, bridges every `observer:*` request, re-emits events as `observer:event`, and restarts after a crash (also when Python is missing) while keeping the mode. `OBSERVER_FAKE` replays a fixture.
+- `observer.ts`: spawns the sidecar, bridges every `observer:*` request, re-emits events as `observer:event`, and restarts after a crash (also when Python is missing) while keeping the mode.
+- `OBSERVER_FAKE=<fixture>` replays a fixture instead of watching the screen:
+  - **Masking:** `redact` is answered by the sidecar started as `observer.py --redact-only`, which has no screen access. If Python is missing, `observer:redact` rejects (fail closed).
+  - **Screenshots:** fixture screenshots are copied to `<root>/shots/fixture/` and their paths rewritten.
+  - **Config:** the runtime `privacy.json` and `app_modes.json` are created from `config/` if missing.
+  - **Timing:** the fixture's own timing is kept. `OBSERVER_FAKE_SPEED=4` plays 4x faster; `OBSERVER_FAKE_MAX_GAP=3` brings back the old 3 s cap on pauses.
 - `displays.ts`: `displays:toDip` via `screen.screenToDipRect`, plus the debounced `display_mismatch` check.
 
 ## Verification so far (Linux)
 
-- **226 Python tests** (`cd sidecar`, then `python -m pytest tests`), covering:
+- **227 Python tests** (`cd sidecar`, then `python -m pytest tests`), covering:
   - masking vectors and near-misses, the privacy gate, the protocol and config;
   - engine scenarios: password manager never read, a tab navigating to a bank blocked even on an immediate click, password fields never emitted, pause drops pending typing, a blind app prompts once then switches to vision mode, scaling correction saved and applied, heartbeats only on change, a first click in a new window already blurs masked fields;
   - adapters against fakes that mirror the real `uiautomation` 2.0.29 and `pynput` 1.8.2 APIs (checked against their source);
@@ -89,14 +94,21 @@ Found and fixed after run 1:
 - **Clicks inside a field reported as the whole page:** this happened twice on Cost center, and on Notes in spike run 4. When `ControlFromPoint` returns a web Document, the smallest element under the point is now looked up inside the page.
 - **Window chrome in text snapshots:** scrollbar buttons and `DesktopWindowXamlSource` showed up as text. Scrollbar and title-bar subtrees are now skipped.
 
+**Run 2** (same setup, after the fixes):
+- A click inside Cost center now resolves to Edit 'Cost center'.
+- The edited IBAN shows as `Pay to [IBAN]` in `text` and `commit`, and no raw digits appear anywhere.
+- Typing in the Password box emitted nothing.
+- The Windows Snap layout popup (`explorer.exe`, "PopupHost") and a claude.ai page were read normally, as any allowed app would be.
+
 ## Stubbed / faked
 
 - **Vision-mode value changes:** the sidecar only provides screenshots for vision-mode apps. Turning them into `commit` events (`source: "vision"`) is Agent C's `describe.ts` job, emitted on the bus as `observer:event`.
-- **Fake mode:** `python observer.py --fake` has a built-in MiniERP demo scene. `OBSERVER_FAKE=<file>` in Electron replays Agent C's fixtures.
+- **Fake mode:** `python observer.py --fake` has a built-in MiniERP demo scene. `OBSERVER_FAKE=<file>` in Electron replays Agent C's fixtures with real masking (see Electron above). In that mode `observer:tree` returns `[]` and `observer:shot` fails.
 
 ## Needs from others (integration notes)
 
 **Agent B:**
+- **Fake mode now keeps the fixture's timing** (the expert fixture takes about 3 minutes). Set `OBSERVER_FAKE_SPEED=4` for quick UI work. `redact` now masks for real in fake mode, so your regex fallback only runs if Python is missing.
 - **Service loader:** load `observer.ts` and `displays.ts` like any service. `--data-dir` is `ctx.paths.root` and `--config-dir` is `ctx.paths.config`.
 - **Python:** `APPRENTICE_PYTHON` overrides the Python executable, `APPRENTICE_SIDECAR` the script path. The defaults are `python` on Windows and `../sidecar/observer.py` from `app/`.
 - **Off the record:** send `observer:mode` with `paused`, and remember the previous mode to restore it. The sidecar emits `blocked {reason: "paused"}` and discards un-committed typing.
@@ -110,6 +122,8 @@ Found and fixed after run 1:
 - **Pointing:** all rects are physical pixels, so convert them with `displays:toDip` before drawing.
 
 **Agent C:**
+- **Your fake-mode asks are done:** the runtime config is created, fixture screenshots are copied to `shots/fixture/` with rewritten paths, timing is uncapped by default, and redaction is real.
+- **Masked commits can look unchanged:** for example `old: "Pay to [IBAN]"` → `new: "Pay to [IBAN]"` with `masked: true`. The masked part changed, so the user did edit a bank detail. `steps.ts` currently drops commits where `old === new`; consider keeping them when `masked` is true, because that edit is exactly a "bank details changed" signal.
 - **Screenshot paths:** relative to `ctx.paths.root`. Kept shots are `shots/YYYY-MM-DD/<ms>.jpg`, ephemeral ones `shots/tmp/<ms>.jpg`. Delete ephemeral files after describing them; the sidecar removes leftovers after 10 minutes.
 - **`ShotMeta`:** `screen_px = origin_px + image_px / scale`. `size_px` is the captured screen region in physical pixels. `auto_blur: false` means sensitive fields were *not* blurred (vision mode), so offer the manual blur.
 - **Commits:** an idle commit (`final: false`) can be followed by more commits for the same field, so coalesce them. Values are masked and capped at 1000 characters. `masked: true` tells you a value was masked.
