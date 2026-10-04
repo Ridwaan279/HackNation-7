@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-label="Apprentice ghost">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7cc7f4"/>
+      <stop offset="0.55" stop-color="#b38de8"/>
+      <stop offset="1" stop-color="#f59fdf"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.35" cy="0.25" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path d="M60 6C30 6 12 28 12 58v64c0 6 7 9 11 4l9-10 10 11c3 3 7 3 10 0l8-10 8 10c3 3 7 3 10 0l10-11 9 10c4 5 11 2 11-4V58C108 28 90 6 60 6z" fill="url(#body)"/>
+  <path d="M60 6C30 6 12 28 12 58v64c0 6 7 9 11 4l9-10 10 11c3 3 7 3 10 0l8-10 8 10c3 3 7 3 10 0l10-11 9 10c4 5 11 2 11-4V58C108 28 90 6 60 6z" fill="url(#shine)"/>
+  <ellipse cx="44" cy="60" rx="8" ry="11" fill="#1c1b22"/>
+  <ellipse cx="76" cy="60" rx="8" ry="11" fill="#1c1b22"/>
+  <circle cx="47" cy="56" r="3" fill="#fff"/>
+  <circle cx="79" cy="56" r="3" fill="#fff"/>
+  <ellipse cx="34" cy="76" rx="6" ry="3.5" fill="#f59fdf" opacity="0.7"/>
+  <ellipse cx="86" cy="76" rx="6" ry="3.5" fill="#f59fdf" opacity="0.7"/>
+</svg>

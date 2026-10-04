@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Apprentice Recorder</title>
+  <meta name="description" content="Record how you do a task once. Apprentice turns it into a step-by-step guide your new hire can follow." />
+  <meta name="theme-color" content="#6e5ad6" />
+  <link rel="icon" href="ghost.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="banner" id="desktop-banner" role="region" aria-label="Desktop app">
+    <p><strong>You're using the web recorder.</strong> It records your screen, takes screenshots and writes down what you say. The desktop app also reads field names and typed values (masked), works 24/7 and coaches new hires on their own screen.</p>
+    <a class="banner-cta" href="#/desktop">Compare</a>
+    <a class="banner-cta strong" data-download href="#">Download the app</a>
+    <button class="banner-close" type="button" aria-label="Hide this message" id="banner-close">×</button>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#/"><img src="ghost.svg" alt="" width="34" height="34" /><span>Apprentice</span></a>
+    <nav class="topnav" aria-label="Main">
+      <a href="#/" data-nav="home">Home</a>
+      <a href="#/record" data-nav="record">Record</a>
+      <a href="#/review" data-nav="review">Guide</a>
+      <a href="#/desktop" data-nav="desktop">Desktop app</a>
+    </nav>
+    <a class="button small" data-download href="#">Download</a>
+  </header>
+
+  <main>
+    <!-- Home -->
+    <section class="view" id="view-home" data-view="home">
+      <div class="hero">
+        <div class="hero-text">
+          <p class="eyebrow">Onboarding that learns from your best people</p>
+          <h1>Show it once. Your new hire learns it for good.</h1>
+          <p class="lead">Record yourself doing a task and talk it through. Apprentice keeps a screenshot every time the screen changes, writes down what you say, and turns it into a step-by-step guide you can edit and share.</p>
+          <div class="hero-actions">
+            <a class="button" href="#/record">Start a recording</a>
+            <a class="button ghost-button" href="#/desktop">What the desktop app adds</a>
+          </div>
+          <p class="fine">Recordings stay in this browser. Nothing is uploaded.</p>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="halo"></div>
+          <img src="ghost.svg" alt="" class="hero-ghost" />
+          <div class="bubble">Start whenever you like and talk me through it. I'll save my questions for the pauses.</div>
+        </div>
+      </div>
+
+      <ol class="steps-row">
+        <li><span class="num">1</span><h3>Record</h3><p>Share the window you work in and talk through what you do. Start with a sentence or two about what you're going to show.</p></li>
+        <li><span class="num">2</span><h3>Review</h3><p>Each screen change becomes a step, with your words next to it. Edit titles, add notes, reorder or remove steps.</p></li>
+        <li><span class="num">3</span><h3>Share</h3><p>Download the guide as a single web page or a PDF, plus the video. New hires follow it at their own pace.</p></li>
+      </ol>
+
+      <section class="onboarding">
+        <div class="section-head">
+          <p class="eyebrow">How onboarding works</p>
+          <h2>One recording is a start. Always on is a teammate.</h2>
+          <p class="lead small">A recording captures the task you showed on the day you showed it. The desktop app keeps learning in the background, so the guide covers the exceptions too.</p>
+        </div>
+        <div class="compare-cards">
+          <article class="card">
+            <h3>One recording <span class="tag">Web and desktop</span></h3>
+            <ul class="timeline">
+              <li><strong>Day 1</strong> The expert records the task once and explains it.</li>
+              <li><strong>Day 1</strong> The guide is ready: screenshots, steps and the expert's words.</li>
+              <li><strong>Week 1</strong> The new hire follows the guide on their own.</li>
+              <li class="gap"><strong>Later</strong> Exceptions nobody showed (a held invoice, a new supplier) still need the expert.</li>
+            </ul>
+          </article>
+          <article class="card featured">
+            <h3>Always on <span class="tag accent">Desktop app</span></h3>
+            <ul class="timeline">
+              <li><strong>Every day</strong> It learns each app the team uses, as masked text only, and builds an App Profile.</li>
+              <li><strong>While recording</strong> It reads field names and values, and asks why at natural pauses, by voice.</li>
+              <li><strong>After recording</strong> It drafts a Work Map of decisions and rules, and the expert confirms it.</li>
+              <li><strong>Week 1</strong> A ghost sits beside the new hire, points at the right field and stops a mistake before it's saved.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <!-- Setup -->
+    <section class="view" id="view-record" data-view="record" hidden>
+      <div class="panel narrow">
+        <p class="eyebrow">New recording</p>
+        <h1>What are you going to show?</h1>
+        <form id="setup-form" class="form">
+          <label>Name of the task
+            <input id="f-title" required maxlength="120" placeholder="Posting a supplier invoice" autocomplete="off" />
+          </label>
+          <label>Who is it for?
+            <input id="f-role" maxlength="80" placeholder="New accounts payable clerk" autocomplete="off" />
+          </label>
+          <fieldset class="options">
+            <legend>While recording</legend>
+            <label class="toggle"><input type="checkbox" id="f-mic" checked /><span><strong>Record my voice</strong><small>Talk through what you do and why. It goes into the video.</small></span></label>
+            <label class="toggle" id="row-transcript"><input type="checkbox" id="f-transcript" checked /><span><strong>Write down what I say</strong><small id="transcript-hint">Uses your browser's speech service. Your words appear next to each step.</small></span></label>
+            <label class="toggle"><input type="checkbox" id="f-video" checked /><span><strong>Keep a video</strong><small>Saved in this browser with the guide, so you can download it.</small></span></label>
+            <label class="select-row">Screenshot when the screen changes, at most every
+              <select id="f-interval">
+                <option value="3">3 seconds</option>
+                <option value="5" selected>5 seconds</option>
+                <option value="10">10 seconds</option>
+              </select>
+            </label>
+          </fieldset>
+          <div class="note">
+            <strong>Next:</strong> your browser asks which window, tab or screen to share. Pick the window you work in. For the first 10 seconds, say what you're going to show; that becomes the guide's introduction.
+          </div>
+          <p class="form-error" id="setup-error" role="alert" hidden></p>
+          <button class="button wide" type="submit" id="start-btn">Choose a window and start</button>
+        </form>
+        <p class="fine center">Works in Chrome and Edge on a computer. Screen sharing isn't available on phones.</p>
+      </div>
+    </section>
+
+    <!-- Live -->
+    <section class="view" id="view-live" data-view="live" hidden>
+      <div class="live-head">
+        <div class="rec-state"><span class="rec-dot" id="rec-dot"></span><span id="rec-label">Recording</span><span class="timer" id="rec-timer">0:00</span></div>
+        <div class="live-actions">
+          <button class="button secondary" type="button" id="shot-btn">Take a screenshot</button>
+          <button class="button secondary" type="button" id="pause-btn">Pause</button>
+          <button class="button danger" type="button" id="stop-btn">Stop and review</button>
+        </div>
+      </div>
+      <div class="intro-card" id="intro-card">
+        <div class="intro-ring" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" class="track" /><circle cx="20" cy="20" r="17" class="fill" id="intro-fill" /></svg><span id="intro-count">10</span></div>
+        <div><strong>Introduce it first.</strong> Say what you're going to show and who it's for. Screenshots start after this.</div>
+      </div>
+      <div class="live-grid">
+        <div class="card preview-card">
+          <video id="preview" muted playsinline autoplay></video>
+          <p class="fine">You can switch to the window you're sharing. Recording continues in the background; come back here to stop.</p>
+        </div>
+        <div class="card side-card">
+          <div class="stat-row">
+            <div><span class="stat" id="stat-shots">0</span><span class="stat-label">screenshots</span></div>
+            <div><span class="stat" id="stat-words">0</span><span class="stat-label">words heard</span></div>
+          </div>
+          <h3>What you said</h3>
+          <div class="transcript" id="live-transcript" aria-live="polite"><p class="muted">Your words appear here as you speak.</p></div>
+          <p class="fine" id="mic-status"></p>
+        </div>
+      </div>
+      <h3 class="strip-title">Steps so far</h3>
+      <div class="strip" id="live-strip"></div>
+    </section>
+
+    <!-- Review -->
+    <section class="view" id="view-review" data-view="review" hidden>
+      <div id="review-empty" class="panel narrow center" hidden>
+        <img src="ghost.svg" alt="" width="96" height="96" />
+        <h1>No guide yet</h1>
+        <p class="lead small">Record a task and it shows up here as a step-by-step guide.</p>
+        <a class="button" href="#/record">Start a recording</a>
+      </div>
+      <div id="review-body" hidden>
+        <div class="review-head">
+          <div>
+            <p class="eyebrow" id="review-meta"></p>
+            <h1 contenteditable="true" spellcheck="true" id="review-title" class="editable"></h1>
+          </div>
+          <div class="review-actions">
+            <button class="button" type="button" id="export-html">Download guide</button>
+            <button class="button secondary" type="button" id="export-pdf">Print or save as PDF</button>
+            <button class="button secondary" type="button" id="export-video" hidden>Download video</button>
+            <button class="button secondary" type="button" id="new-recording">New recording</button>
+          </div>
+        </div>
+        <div class="upsell">
+          <img src="ghost.svg" alt="" width="40" height="40" />
+          <p><strong>Want more than screenshots?</strong> In the desktop app each step carries the field you changed and the value you typed (masked), the agent asks <em>why</em> at natural pauses, and a Work Map of your rules is drafted when you stop.</p>
+          <a class="button small" data-download href="#">Download the app</a>
+        </div>
+        <section class="card intro-section">
+          <h3>Introduction</h3>
+          <textarea id="review-intro" rows="3" placeholder="What this task is, and who it's for."></textarea>
+        </section>
+        <ol class="guide" id="guide-steps"></ol>
+        <section class="card video-section" id="video-section" hidden><h3>Video of the session</h3><video id="review-video" controls></video></section>
+      </div>
+    </section>
+
+    <!-- Desktop app -->
+    <section class="view" id="view-desktop" data-view="desktop" hidden>
+      <div class="section-head">
+        <p class="eyebrow">Desktop app for Windows</p>
+        <h1>Everything the web recorder does, plus the parts a browser can't see.</h1>
+        <p class="lead small">Browsers only let a page see the pixels of the screen you share. The desktop app reads the screen through Windows accessibility, so it knows which field you changed and what you typed, without storing passwords, cards or IBANs.</p>
+      </div>
+      <div class="card table-card">
+        <table class="features">
+          <thead><tr><th scope="col">Feature</th><th scope="col">Web</th><th scope="col">Desktop</th></tr></thead>
+          <tbody>
+            <tr><td>Screenshots when the screen changes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+            <tr><td>Video of the session, with your voice</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+            <tr><td>Your words next to each step</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+            <tr><td>Field names and the values you typed, read through accessibility</td><td class="no">No</td><td class="yes">Yes</td></tr>
+            <tr><td>Clicks and keys (Enter, Ctrl+S) as steps, with the button's name</td><td class="no">No</td><td class="yes">Yes</td></tr>
+            <tr><td>Passwords never read; cards, IBANs and keys masked before storing</td><td class="no">Screenshots only</td><td class="yes">Yes</td></tr>
+            <tr><td>Voice agent that asks why at natural pauses</td><td class="no">No</td><td class="yes">Yes</td></tr>
+            <tr><td>Work Map of decisions and rules, confirmed by the expert</td><td class="no">No</td><td class="yes">Yes</td></tr>
+            <tr><td>Learns every app 24/7 (masked text only) and builds App Profiles</td><td class="no">No</td><td class="yes">Yes</td></tr>
+            <tr><td>Ghost that coaches the new hire and catches mistakes before they're saved</td><td class="no">No</td><td class="yes">Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="download-box card">
+        <div>
+          <h3>Get the desktop app</h3>
+          <p class="muted">Windows 10 or 11. Password managers, banking sites and private windows are never watched. You can pause, go off the record (Ctrl+Shift+O) or delete everything at any time.</p>
+        </div>
+        <a class="button" data-download href="#">Download for Windows</a>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="lightbox" aria-label="Screenshot"><img id="lightbox-img" alt="" /><form method="dialog"><button class="button secondary">Close</button></form></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
