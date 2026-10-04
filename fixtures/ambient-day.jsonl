@@ -1,0 +1,262 @@
+{"type":"context","t":1791018000,"app":"msedge.exe","key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","blocked":false,"hwnd":100,"monitor":1,"window_rect":[0,0,1280,1000],"dpi_awareness":"per_monitor","window_dpi":96,"monitor_scale":1,"capture":"uia"}
+{"type":"activity","t":1791018001,"kind":"scroll"}
+{"type":"text","t":1791018002,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 1"]}
+{"type":"activity","t":1791018016,"kind":"scroll"}
+{"type":"text","t":1791018017,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 2"]}
+{"type":"activity","t":1791018031,"kind":"scroll"}
+{"type":"text","t":1791018032,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 3"]}
+{"type":"activity","t":1791018046,"kind":"scroll"}
+{"type":"text","t":1791018047,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 4"]}
+{"type":"activity","t":1791018061,"kind":"scroll"}
+{"type":"text","t":1791018062,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 5"]}
+{"type":"activity","t":1791018076,"kind":"scroll"}
+{"type":"text","t":1791018077,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 6"]}
+{"type":"activity","t":1791018091,"kind":"scroll"}
+{"type":"text","t":1791018092,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 7"]}
+{"type":"activity","t":1791018106,"kind":"scroll"}
+{"type":"text","t":1791018107,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 8"]}
+{"type":"activity","t":1791018121,"kind":"scroll"}
+{"type":"text","t":1791018122,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 9"]}
+{"type":"activity","t":1791018136,"kind":"scroll"}
+{"type":"text","t":1791018137,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 10"]}
+{"type":"activity","t":1791018151,"kind":"scroll"}
+{"type":"text","t":1791018152,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 11"]}
+{"type":"activity","t":1791018166,"kind":"scroll"}
+{"type":"text","t":1791018167,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 12"]}
+{"type":"activity","t":1791018181,"kind":"scroll"}
+{"type":"text","t":1791018182,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 13"]}
+{"type":"activity","t":1791018196,"kind":"scroll"}
+{"type":"text","t":1791018197,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 14"]}
+{"type":"activity","t":1791018211,"kind":"scroll"}
+{"type":"text","t":1791018212,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 15"]}
+{"type":"activity","t":1791018226,"kind":"scroll"}
+{"type":"text","t":1791018227,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 16"]}
+{"type":"activity","t":1791018241,"kind":"scroll"}
+{"type":"text","t":1791018242,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 17"]}
+{"type":"activity","t":1791018256,"kind":"scroll"}
+{"type":"text","t":1791018257,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 18"]}
+{"type":"activity","t":1791018271,"kind":"scroll"}
+{"type":"text","t":1791018272,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 19"]}
+{"type":"activity","t":1791018286,"kind":"scroll"}
+{"type":"text","t":1791018287,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 20"]}
+{"type":"activity","t":1791018301,"kind":"scroll"}
+{"type":"text","t":1791018302,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 21"]}
+{"type":"activity","t":1791018316,"kind":"scroll"}
+{"type":"text","t":1791018317,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 22"]}
+{"type":"activity","t":1791018331,"kind":"scroll"}
+{"type":"text","t":1791018332,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 23"]}
+{"type":"activity","t":1791018346,"kind":"scroll"}
+{"type":"text","t":1791018347,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 24"]}
+{"type":"activity","t":1791018361,"kind":"scroll"}
+{"type":"text","t":1791018362,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 25"]}
+{"type":"activity","t":1791018376,"kind":"scroll"}
+{"type":"text","t":1791018377,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 26"]}
+{"type":"activity","t":1791018391,"kind":"scroll"}
+{"type":"text","t":1791018392,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 27"]}
+{"type":"activity","t":1791018406,"kind":"scroll"}
+{"type":"text","t":1791018407,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 28"]}
+{"type":"activity","t":1791018421,"kind":"scroll"}
+{"type":"text","t":1791018422,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 29"]}
+{"type":"activity","t":1791018436,"kind":"scroll"}
+{"type":"text","t":1791018437,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 30"]}
+{"type":"activity","t":1791018451,"kind":"scroll"}
+{"type":"text","t":1791018452,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 31"]}
+{"type":"activity","t":1791018466,"kind":"scroll"}
+{"type":"text","t":1791018467,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 32"]}
+{"type":"activity","t":1791018481,"kind":"scroll"}
+{"type":"text","t":1791018482,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 33"]}
+{"type":"activity","t":1791018496,"kind":"scroll"}
+{"type":"text","t":1791018497,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 34"]}
+{"type":"activity","t":1791018511,"kind":"scroll"}
+{"type":"text","t":1791018512,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 35"]}
+{"type":"activity","t":1791018526,"kind":"scroll"}
+{"type":"text","t":1791018527,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 36"]}
+{"type":"activity","t":1791018541,"kind":"scroll"}
+{"type":"text","t":1791018542,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 37"]}
+{"type":"activity","t":1791018556,"kind":"scroll"}
+{"type":"text","t":1791018557,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 38"]}
+{"type":"activity","t":1791018571,"kind":"scroll"}
+{"type":"text","t":1791018572,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 39"]}
+{"type":"activity","t":1791018586,"kind":"scroll"}
+{"type":"text","t":1791018587,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 40"]}
+{"type":"activity","t":1791018601,"kind":"scroll"}
+{"type":"text","t":1791018602,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Cost center 0400","Review batch 41"]}
+{"type":"activity","t":1791018616,"kind":"scroll"}
+{"type":"text","t":1791018617,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Equipment invoice review","Review batch 42"]}
+{"type":"activity","t":1791018631,"kind":"scroll"}
+{"type":"text","t":1791018632,"key":"browser:127.0.0.1","title":"MiniERP | Accounts payable","delta":["Supplier invoice queue","Review batch 43"]}
+{"type":"context","t":1791018780,"app":"EXCEL.EXE","key":"EXCEL.EXE","title":"Month-end accruals - Excel","blocked":false,"hwnd":100,"monitor":1,"window_rect":[0,0,1280,1000],"dpi_awareness":"per_monitor","window_dpi":96,"monitor_scale":1,"capture":"uia"}
+{"type":"activity","t":1791018781,"kind":"scroll"}
+{"type":"text","t":1791018782,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 1"]}
+{"type":"activity","t":1791018796,"kind":"scroll"}
+{"type":"text","t":1791018797,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 2"]}
+{"type":"activity","t":1791018811,"kind":"scroll"}
+{"type":"text","t":1791018812,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 3"]}
+{"type":"activity","t":1791018826,"kind":"scroll"}
+{"type":"text","t":1791018827,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 4"]}
+{"type":"activity","t":1791018841,"kind":"scroll"}
+{"type":"text","t":1791018842,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 5"]}
+{"type":"activity","t":1791018856,"kind":"scroll"}
+{"type":"text","t":1791018857,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 6"]}
+{"type":"activity","t":1791018871,"kind":"scroll"}
+{"type":"text","t":1791018872,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 7"]}
+{"type":"activity","t":1791018886,"kind":"scroll"}
+{"type":"text","t":1791018887,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 8"]}
+{"type":"activity","t":1791018901,"kind":"scroll"}
+{"type":"text","t":1791018902,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 9"]}
+{"type":"activity","t":1791018916,"kind":"scroll"}
+{"type":"text","t":1791018917,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 10"]}
+{"type":"activity","t":1791018931,"kind":"scroll"}
+{"type":"text","t":1791018932,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 11"]}
+{"type":"activity","t":1791018946,"kind":"scroll"}
+{"type":"text","t":1791018947,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 12"]}
+{"type":"activity","t":1791018961,"kind":"scroll"}
+{"type":"text","t":1791018962,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 13"]}
+{"type":"activity","t":1791018976,"kind":"scroll"}
+{"type":"text","t":1791018977,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 14"]}
+{"type":"activity","t":1791018991,"kind":"scroll"}
+{"type":"text","t":1791018992,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 15"]}
+{"type":"activity","t":1791019006,"kind":"scroll"}
+{"type":"text","t":1791019007,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 16"]}
+{"type":"activity","t":1791019021,"kind":"scroll"}
+{"type":"text","t":1791019022,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 17"]}
+{"type":"activity","t":1791019036,"kind":"scroll"}
+{"type":"text","t":1791019037,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 18"]}
+{"type":"activity","t":1791019051,"kind":"scroll"}
+{"type":"text","t":1791019052,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 19"]}
+{"type":"activity","t":1791019066,"kind":"scroll"}
+{"type":"text","t":1791019067,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 20"]}
+{"type":"activity","t":1791019081,"kind":"scroll"}
+{"type":"text","t":1791019082,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 21"]}
+{"type":"activity","t":1791019096,"kind":"scroll"}
+{"type":"text","t":1791019097,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 22"]}
+{"type":"activity","t":1791019111,"kind":"scroll"}
+{"type":"text","t":1791019112,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 23"]}
+{"type":"activity","t":1791019126,"kind":"scroll"}
+{"type":"text","t":1791019127,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 24"]}
+{"type":"activity","t":1791019141,"kind":"scroll"}
+{"type":"text","t":1791019142,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 25"]}
+{"type":"activity","t":1791019156,"kind":"scroll"}
+{"type":"text","t":1791019157,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 26"]}
+{"type":"activity","t":1791019171,"kind":"scroll"}
+{"type":"text","t":1791019172,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 27"]}
+{"type":"activity","t":1791019186,"kind":"scroll"}
+{"type":"text","t":1791019187,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 28"]}
+{"type":"activity","t":1791019201,"kind":"scroll"}
+{"type":"text","t":1791019202,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 29"]}
+{"type":"activity","t":1791019216,"kind":"scroll"}
+{"type":"text","t":1791019217,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 30"]}
+{"type":"activity","t":1791019231,"kind":"scroll"}
+{"type":"text","t":1791019232,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 31"]}
+{"type":"activity","t":1791019246,"kind":"scroll"}
+{"type":"text","t":1791019247,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 32"]}
+{"type":"activity","t":1791019261,"kind":"scroll"}
+{"type":"text","t":1791019262,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 33"]}
+{"type":"activity","t":1791019276,"kind":"scroll"}
+{"type":"text","t":1791019277,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 34"]}
+{"type":"activity","t":1791019291,"kind":"scroll"}
+{"type":"text","t":1791019292,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 35"]}
+{"type":"activity","t":1791019306,"kind":"scroll"}
+{"type":"text","t":1791019307,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 36"]}
+{"type":"activity","t":1791019321,"kind":"scroll"}
+{"type":"text","t":1791019322,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 37"]}
+{"type":"activity","t":1791019336,"kind":"scroll"}
+{"type":"text","t":1791019337,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 38"]}
+{"type":"activity","t":1791019351,"kind":"scroll"}
+{"type":"text","t":1791019352,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 39"]}
+{"type":"activity","t":1791019366,"kind":"scroll"}
+{"type":"text","t":1791019367,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 40"]}
+{"type":"activity","t":1791019381,"kind":"scroll"}
+{"type":"text","t":1791019382,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Supplier totals","Review batch 41"]}
+{"type":"activity","t":1791019396,"kind":"scroll"}
+{"type":"text","t":1791019397,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["December close","Review batch 42"]}
+{"type":"activity","t":1791019411,"kind":"scroll"}
+{"type":"text","t":1791019412,"key":"EXCEL.EXE","title":"Month-end accruals - Excel","delta":["Accrual reconciliation","Review batch 43"]}
+{"type":"context","t":1791019560,"app":"msedge.exe","key":"browser:docs.example.test","title":"AP procedures","blocked":false,"hwnd":100,"monitor":1,"window_rect":[0,0,1280,1000],"dpi_awareness":"per_monitor","window_dpi":96,"monitor_scale":1,"capture":"uia"}
+{"type":"activity","t":1791019561,"kind":"scroll"}
+{"type":"text","t":1791019562,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 1"]}
+{"type":"activity","t":1791019576,"kind":"scroll"}
+{"type":"text","t":1791019577,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 2"]}
+{"type":"activity","t":1791019591,"kind":"scroll"}
+{"type":"text","t":1791019592,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 3"]}
+{"type":"activity","t":1791019606,"kind":"scroll"}
+{"type":"text","t":1791019607,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 4"]}
+{"type":"activity","t":1791019621,"kind":"scroll"}
+{"type":"text","t":1791019622,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 5"]}
+{"type":"activity","t":1791019636,"kind":"scroll"}
+{"type":"text","t":1791019637,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 6"]}
+{"type":"activity","t":1791019651,"kind":"scroll"}
+{"type":"text","t":1791019652,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 7"]}
+{"type":"activity","t":1791019666,"kind":"scroll"}
+{"type":"text","t":1791019667,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 8"]}
+{"type":"activity","t":1791019681,"kind":"scroll"}
+{"type":"text","t":1791019682,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 9"]}
+{"type":"activity","t":1791019696,"kind":"scroll"}
+{"type":"text","t":1791019697,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 10"]}
+{"type":"activity","t":1791019711,"kind":"scroll"}
+{"type":"text","t":1791019712,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 11"]}
+{"type":"activity","t":1791019726,"kind":"scroll"}
+{"type":"text","t":1791019727,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 12"]}
+{"type":"activity","t":1791019741,"kind":"scroll"}
+{"type":"text","t":1791019742,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 13"]}
+{"type":"activity","t":1791019756,"kind":"scroll"}
+{"type":"text","t":1791019757,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 14"]}
+{"type":"activity","t":1791019771,"kind":"scroll"}
+{"type":"text","t":1791019772,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 15"]}
+{"type":"activity","t":1791019786,"kind":"scroll"}
+{"type":"text","t":1791019787,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 16"]}
+{"type":"activity","t":1791019801,"kind":"scroll"}
+{"type":"text","t":1791019802,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 17"]}
+{"type":"activity","t":1791019816,"kind":"scroll"}
+{"type":"text","t":1791019817,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 18"]}
+{"type":"activity","t":1791019831,"kind":"scroll"}
+{"type":"text","t":1791019832,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 19"]}
+{"type":"activity","t":1791019846,"kind":"scroll"}
+{"type":"text","t":1791019847,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 20"]}
+{"type":"activity","t":1791019861,"kind":"scroll"}
+{"type":"text","t":1791019862,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 21"]}
+{"type":"activity","t":1791019876,"kind":"scroll"}
+{"type":"text","t":1791019877,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 22"]}
+{"type":"activity","t":1791019891,"kind":"scroll"}
+{"type":"text","t":1791019892,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 23"]}
+{"type":"activity","t":1791019906,"kind":"scroll"}
+{"type":"text","t":1791019907,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 24"]}
+{"type":"activity","t":1791019921,"kind":"scroll"}
+{"type":"text","t":1791019922,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 25"]}
+{"type":"activity","t":1791019936,"kind":"scroll"}
+{"type":"text","t":1791019937,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 26"]}
+{"type":"activity","t":1791019951,"kind":"scroll"}
+{"type":"text","t":1791019952,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 27"]}
+{"type":"activity","t":1791019966,"kind":"scroll"}
+{"type":"text","t":1791019967,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 28"]}
+{"type":"activity","t":1791019981,"kind":"scroll"}
+{"type":"text","t":1791019982,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 29"]}
+{"type":"activity","t":1791019996,"kind":"scroll"}
+{"type":"text","t":1791019997,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 30"]}
+{"type":"activity","t":1791020011,"kind":"scroll"}
+{"type":"text","t":1791020012,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 31"]}
+{"type":"activity","t":1791020026,"kind":"scroll"}
+{"type":"text","t":1791020027,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 32"]}
+{"type":"activity","t":1791020041,"kind":"scroll"}
+{"type":"text","t":1791020042,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 33"]}
+{"type":"activity","t":1791020056,"kind":"scroll"}
+{"type":"text","t":1791020057,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 34"]}
+{"type":"activity","t":1791020071,"kind":"scroll"}
+{"type":"text","t":1791020072,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 35"]}
+{"type":"activity","t":1791020086,"kind":"scroll"}
+{"type":"text","t":1791020087,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 36"]}
+{"type":"activity","t":1791020101,"kind":"scroll"}
+{"type":"text","t":1791020102,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 37"]}
+{"type":"activity","t":1791020116,"kind":"scroll"}
+{"type":"text","t":1791020117,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 38"]}
+{"type":"activity","t":1791020131,"kind":"scroll"}
+{"type":"text","t":1791020132,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 39"]}
+{"type":"activity","t":1791020146,"kind":"scroll"}
+{"type":"text","t":1791020147,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 40"]}
+{"type":"activity","t":1791020161,"kind":"scroll"}
+{"type":"text","t":1791020162,"key":"browser:docs.example.test","title":"AP procedures","delta":["Equipment threshold EUR 5000","Review batch 41"]}
+{"type":"activity","t":1791020176,"kind":"scroll"}
+{"type":"text","t":1791020177,"key":"browser:docs.example.test","title":"AP procedures","delta":["Duplicate supplier references","Review batch 42"]}
+{"type":"activity","t":1791020191,"kind":"scroll"}
+{"type":"text","t":1791020192,"key":"browser:docs.example.test","title":"AP procedures","delta":["Second approval: Czech subsidiary","Review batch 43"]}
+{"type":"blocked","t":1791020250,"reason":"password_manager"}

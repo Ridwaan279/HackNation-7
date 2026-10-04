@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
+    "strict": true, "esModuleInterop": true, "skipLibCheck": true, "jsx": "react-jsx",
+    "types": ["node"], "typeRoots": ["./node_modules/@types"],
+    "baseUrl": "..",
+    "paths": {
+      "@shared/contracts": ["shared/contracts.ts"],
+      "@anthropic-ai/sdk": ["fixtures/node_modules/@anthropic-ai/sdk"],
+      "zod": ["fixtures/node_modules/zod"],
+      "electron": ["fixtures/node_modules/electron"],
+      "react": ["fixtures/node_modules/@types/react"],
+      "react/*": ["fixtures/node_modules/@types/react/*"],
+      "react-dom/*": ["fixtures/node_modules/@types/react-dom/*"]
+    }
+  },
+  "include": ["tests/**/*.ts", "../app/src/main/services/*.ts", "../app/src/renderer/dashboard/**/*.tsx", "../app/src/renderer/dashboard/**/*.ts", "../shared/contracts.ts"]
+}
