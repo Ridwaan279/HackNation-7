@@ -362,7 +362,9 @@ export function createStepsService(ctx: AppContext, dependencies: {
     if (!capture || capture.guide.session !== session || capture.kind !== 'teach' || capture.blocked || picking.has(session)) return null
     const previous = asked.get(session) ?? []
     const times = new Set([...previous.map((question) => question.about_event_t), ...(answered.get(session) ?? [])])
-    const candidates = capture.events.filter((event) => !times.has(event.t) && (event.type === 'commit' && event.old !== event.new || event.type === 'click' && /hold|approv|post|rerout/i.test(event.target?.name ?? ''))).slice(-12)
+    // Anything the expert changed or deliberately clicked is worth a "why". Decisive clicks (hold, approve,
+    // post, reroute) still rank first for the model through the prompt; the gate decides when to ask.
+    const candidates = capture.events.filter((event) => !times.has(event.t) && (event.type === 'commit' && event.old !== event.new || event.type === 'click' && !!event.target?.name?.trim())).slice(-12)
     if (!candidates.length) return null
     picking.add(session)
     try {
@@ -375,7 +377,8 @@ export function createStepsService(ctx: AppContext, dependencies: {
         // Local, evidence-based fallback works without API access; never invent policy.
         const event = candidates.at(-1)!
         const target = event.type === 'commit' ? event.field : event.type === 'click' ? event.target!.name : ''
-        result = { question: guardrail ? `What would make you stop and double-check ${target} here?` : `What made you choose this ${target} change?`, type: guardrail ? 'guardrail' : 'reason', about_event_t: event.t }
+        const reason = event.type === 'commit' ? `What made you change ${target} to that value?` : `Why did you click ${target} at this point?`
+        result = { question: guardrail ? `What would make you stop and double-check ${target} here?` : reason, type: guardrail ? 'guardrail' : 'reason', about_event_t: event.t }
         report('question', 'Using a local question because model selection is unavailable.')
       }
       if (!result || active !== capture || capture.blocked) return null
