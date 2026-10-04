@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { BookOpenTextIcon, BrainIcon, BuildingsIcon, ChatCircleDotsIcon, ChartLineUpIcon, CircleNotchIcon, DatabaseIcon, GraduationCapIcon, RecordIcon, ShieldCheckIcon, XIcon } from '@phosphor-icons/react'
+import { BookOpenTextIcon, BrainIcon, BuildingsIcon, ChartLineUpIcon, CircleNotchIcon, DatabaseIcon, GraduationCapIcon, MicrophoneIcon, RecordIcon, ShieldCheckIcon, XIcon } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import type { GuideStep } from '@shared/contracts'
 import type { ReplayCommand } from '../../common/ipc'
@@ -55,7 +55,6 @@ function Welcome({ bridge, settings, done }: { bridge: DashboardBridge; settings
   return <div className="onboarding"><div className="onboarding-brand">Protégé <span>for desktop</span></div>
     <div className="onboarding-content"><div className="onboarding-story"><span className="workspace-kicker">YOUR APPRENTICE STARTS HERE</span>
       <h1>Knowledge that stays with your team.</h1>
-      <p>Tell Protégé where you work and what you do. It uses this context to ask better questions and make training relevant to your role.</p>
       <div className="onboarding-ghost" aria-hidden><Ghost state="idle" size={270} /></div>
       <span className="onboarding-privacy"><ShieldCheckIcon size={18} /> Password fields and private apps stay off limits.</span>
     </div>
@@ -141,14 +140,14 @@ export default function Dashboard({ bridge = desktopBridge() }: { bridge?: Dashb
       <div className="desktop-brand"><div className="brand-mark" aria-hidden><Ghost state="idle" size={52} /></div><span>Protégé<small>WORKSPACE</small></span></div>
       <div className="sidebar-mode"><span className="sidebar-heading">YOUR MODE</span><ModeSwitch mode={mode} size="compact" onChange={switchMode} disabled={busy} /></div>
       <nav aria-label="Main navigation"><span className="sidebar-heading">WORKSPACE</span>{TABS[mode].map(navItem)}
-        <span className="sidebar-heading sidebar-heading-gap">SUPPORT</span>{navItem({ id: 'ask', label: 'Ask Protégé', icon: ChatCircleDotsIcon })}
+        <span className="sidebar-heading sidebar-heading-gap">SUPPORT</span>{navItem({ id: 'ask', label: 'Ask Protégé', icon: MicrophoneIcon })}
         <span className="sidebar-heading sidebar-heading-gap">ORGANIZATION</span>{PROFILE.map(navItem)}</nav>
       <div className="sidebar-bottom"><span className="sidebar-status"><span className={session.phase === 'live' ? 'status-live' : ''} />{session.phase === 'live' ? 'Recording now' : 'Ready when you are'}</span><p>Private by design. Your guides stay on this computer.</p></div>
     </aside>
     <div className="desktop-workspace"><header className="desktop-topbar"><div><span className="workspace-kicker">{mode === 'expert' ? 'EXPERT WORKSPACE' : 'NEW HIRE WORKSPACE'}</span><strong>{title}</strong></div>
-      <div className="desktop-top-actions"><button className="top-ask" onClick={() => go('ask')}><ChatCircleDotsIcon size={17} /> Ask AI <span>Ctrl Shift Space</span></button><button className="top-company" onClick={() => go('company')}><BuildingsIcon size={17} /> {settings.company}</button></div></header>
+      <div className="desktop-top-actions"><button className="top-ask" onClick={() => go('ask')}><MicrophoneIcon size={17} /> Talk to Protégé <span>Ctrl Shift Space</span></button><button className="top-company" onClick={() => go('company')}><BuildingsIcon size={17} /> {settings.company}</button></div></header>
       <main className={`shell-main page-${page}`}>
-        <div hidden={page !== 'ask'}><AskPage bridge={bridge} /></div>
+        <div hidden={page !== 'ask'}><AskPage bridge={bridge} session={session} /></div>
         {content}
       </main>
     </div>

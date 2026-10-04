@@ -9,6 +9,7 @@ const AGENT_ENV: Record<AgentKind, string> = {
   interviewer: 'VITE_AGENT_INTERVIEWER',
   debrief: 'VITE_AGENT_DEBRIEF',
   tutor: 'VITE_AGENT_TUTOR',
+  assistant: 'VITE_AGENT_ASSISTANT',
 }
 
 const key = () => process.env.ELEVENLABS_API_KEY ?? ''
@@ -32,8 +33,8 @@ export async function speak(text: string): Promise<TtsResult> {
 
 /** Private agents need a WebRTC conversation token; public agents work with the bare agent ID. */
 export async function agentAuth(agent: AgentKind): Promise<AgentAuth> {
-  const agentId = process.env[AGENT_ENV[agent]] ?? ''
-  if (!agentId) return { error: `${AGENT_ENV[agent]} not set in app/.env` }
+  const agentId = process.env[AGENT_ENV[agent]] || (agent === 'assistant' ? process.env.VITE_AGENT_TUTOR : '') || ''
+  if (!agentId) return { error: `${AGENT_ENV[agent]} (or VITE_AGENT_TUTOR) not set in app/.env` }
   if (!key()) return { agentId }
   try {
     const res = await fetch(`${API}/convai/conversation/token?agent_id=${encodeURIComponent(agentId)}`, {

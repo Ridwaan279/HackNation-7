@@ -7,6 +7,7 @@ export const TOOLS_BY_AGENT: Record<AgentKind, string[]> = {
   interviewer: ['record_answer'],
   debrief: ['record_answer', 'record_correction', 'teachback_confirmed'],
   tutor: ['point_at', 'replay_moment', 'mark_step'],
+  assistant: [],
 }
 
 type ClientTool = (params: Record<string, unknown>) => Promise<string>

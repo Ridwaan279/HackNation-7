@@ -29,19 +29,12 @@
 
 .mode-switch button.on {
   color: var(--text);
+  background: var(--layer-strong);
+  box-shadow: 0 1px 3px rgba(20, 16, 40, 0.12), 0 0 0 1px var(--stroke);
 }
 
 .mode-switch button:not(.on):not(:disabled):hover {
   color: var(--text);
-}
-
-/* The sliding highlight behind the selected option. */
-.mode-thumb {
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  background: var(--layer-strong);
-  box-shadow: 0 1px 3px rgba(20, 16, 40, 0.12), 0 0 0 1px var(--stroke);
 }
 
 .mode-label,

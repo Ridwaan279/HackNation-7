@@ -10,7 +10,7 @@ cd ..\app; npm install; npm run dev                        # the app with the re
 $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a recorded session instead
 ```
 
-`app/.env` needs `OPENAI_API_KEY`, `MODEL_FAST`, `MODEL_SMART`, `ELEVENLABS_API_KEY` and the three `VITE_AGENT_*` ids (see `app/.env.example`). Without the OpenAI key every model step falls back to a local version (below), so the app still runs end to end, just less cleverly.
+`app/.env` needs `OPENAI_API_KEY`, `MODEL_FAST`, `MODEL_SMART`, `ELEVENLABS_API_KEY` and the Interviewer, Debrief and Tutor `VITE_AGENT_*` ids (see `app/.env.example`). `VITE_AGENT_ASSISTANT` is optional for a dedicated Ask voice agent; otherwise it reuses the Tutor agent with prompt overrides enabled. Without the OpenAI key every model step falls back to a local version (below), so the app still runs end to end, just less cleverly.
 
 ## What is built
 
@@ -26,7 +26,7 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 | **Shell, voice, ghost** | One visible dashboard workspace, plus the transparent floating ghost; pop-ups (teach this app, a11y blind, warnings, curiosity), ElevenLabs Interviewer / Debrief / Tutor, hotkeys. The old small panel is no longer opened | `app/src/main/services/{windows,session,gate,tts,hotkeys,popups}.ts`, `app/src/renderer/{overlay,dashboard,mascot,agents}` |
 | **First run, Company profile** | Full-screen first-run onboarding requires company and role. Those values inform the voice agents, Work Maps, training questions and Ask AI. The Company profile can update them later | `settings.ts`, `dashboard/index.tsx`, `dashboard/CompanyPage.tsx` |
 | **Recording context and labels** | Every new recording asks what task it covers before capture begins. That task names the guide and enters the Interviewer's question context; with a model key, captured step labels are refined after stopping | `session.ts`, `steps.ts`, `dashboard/RecordPage.tsx` |
-| **Ask anytime** | Click the ghost, use the Ask AI button or press Ctrl+Shift+Space to ask from the dashboard. It uses company/role plus a relevant recorded guide and Work Map; without a model it gives grounded local guidance | `assistant.ts`, `dashboard/AskPage.tsx`, `hotkeys.ts` |
+| **Ask anytime** | Click the ghost, use Talk to Protégé or press Ctrl+Shift+Space to open voice help. Start an ElevenLabs conversation using company/role and masked saved training context, excluding local-only apps; during a recording, speak to the existing voice agent. There is no text chat | `assistant.ts`, `dashboard/AskPage.tsx`, `agents/AgentHost.tsx`, `hotkeys.ts` |
 | **Listen first** | The Interviewer opens without a question; the gate asks nothing until the expert has talked or worked for 10 s (`GATE_WARMUP_S`), and tells the agent to listen to the introduction | `gate.ts`, `session.ts` |
 | **Website** | Static site plus one Vercel function (`api/tts.js`, ElevenLabs voice). Kickstart starts Protégé's spoken tour; web app (traditional onboarding) vs desktop app (always on, recommended); switching versions restarts the explanation; moonshot section; web onboarding (company, role, teaching, for whom); recordings with spoken questions at natural pauses, an end-of-recording overview and last questions, guide editor and exports; download served from `web/downloads/Protege-Windows.zip` | `web/`, `scripts/make-download.*`, `start.bat`; setup in the root `README.md` |
 | **Desktop look** | The website's dark glass theme for the dashboard, panel and overlay (`protege.css`), dark window chrome | `app/src/renderer/protege.css`, `windows.ts` |
@@ -36,7 +36,7 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 ## Checked
 
 - `cd sidecar; python -m pytest tests`: 228 tests.
-- `cd fixtures; npm test`: 40 tests (capture, guide tools, Work Map flow, Ask AI fallback, memory, profiles, curiosity caps, checker incl. the €7,200 demo case, locate, mastery, privacy). Models are stubbed; no API calls.
+- `cd fixtures; npm test`: local data-pipeline tests (capture, guide tools, Work Map flow, memory, profiles, curiosity caps, checker incl. the €7,200 demo case, locate, mastery, privacy). Models are stubbed; no API calls.
 - `cd app; npm run typecheck; npm run build`: pass.
 - Dashboard pages rendered in headless Chromium with sample data: no console errors.
 - On Windows (one laptop, 150%): the Phase 1 spike passes 19/19; `observer.py --print --mode session` captured clicks, commits, masked text and blurred screenshots correctly.

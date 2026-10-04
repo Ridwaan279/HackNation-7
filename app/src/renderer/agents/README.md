@@ -1,7 +1,7 @@
 # ElevenLabs agents: setup
 
-Create three agents in the ElevenLabs dashboard (PLAN §7) and put their IDs in `app/.env`:
-`VITE_AGENT_INTERVIEWER`, `VITE_AGENT_DEBRIEF` and `VITE_AGENT_TUTOR`. With `ELEVENLABS_API_KEY` set,
+Create the Interviewer, Debrief and Tutor agents in the ElevenLabs dashboard (PLAN §7) and put their IDs in `app/.env`:
+`VITE_AGENT_INTERVIEWER`, `VITE_AGENT_DEBRIEF` and `VITE_AGENT_TUTOR`. For on-demand voice help, create a fourth conversational agent as `VITE_AGENT_ASSISTANT`. If omitted, Ask Protégé uses the Tutor agent with a prompt override, so **Allow overrides** must be enabled on that agent. With `ELEVENLABS_API_KEY` set,
 the main process mints a conversation token, so the agents can be private. Without it, they must be public.
 
 ## On every agent
@@ -135,3 +135,7 @@ Rules:
 - `point_at`: params `target` (string, the label of the control on screen).
 - `replay_moment`: params `step_id` (string).
 - `mark_step`: params `step_id` (string), `outcome` (string enum: alone, hint, caught).
+
+## 4. On-demand voice help
+
+Ask Protégé starts a separate ElevenLabs conversation when no recording voice agent is active. The desktop app supplies a short first message, a prompt override, company and role, and masked summaries of saved guides and Work Maps. The agent should have **Allow overrides** enabled for both prompt and first message, a microphone-enabled voice, and no required client tools. During an Interviewer, Debrief or Tutor session, that agent already hears the user, so Ask Protégé keeps the existing conversation rather than starting a second microphone session. The helper does not save its conversation as a recording.

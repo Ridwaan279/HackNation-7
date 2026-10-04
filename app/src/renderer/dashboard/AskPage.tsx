@@ -1,60 +1,69 @@
-import { useRef, useState } from 'react'
-import { ArrowUpRightIcon, SparkleIcon } from '@phosphor-icons/react'
+import { useEffect, useState } from 'react'
+import { CircleNotchIcon, MicrophoneIcon, ShieldCheckIcon, StopIcon, WaveformIcon } from '@phosphor-icons/react'
+import type { VoiceHelpState } from '../../main/services/assistant'
 import { Ghost } from '../mascot/Ghost'
-import { errorText, type DashboardBridge } from './bridge'
+import { errorText, type DashboardBridge, type SessionInfo } from './bridge'
 
-type Message = { role: 'user' | 'assistant'; text: string; source?: 'model' | 'local'; guide?: string }
-const SUGGESTIONS = [
-  'What do you know about this task?',
-  'What should I check before I submit?',
-  'How do I teach a new hire?',
-]
+const INITIAL: VoiceHelpState = { agent: null, status: 'disconnected', mode: 'listening', userSpeaking: false }
+const EXAMPLES = ['“What should I check before I submit?”', '“Why did the expert choose this step?”', '“How do I teach Protégé a new task?”']
 
-export function AskPage({ bridge }: { bridge: DashboardBridge }) {
-  const [question, setQuestion] = useState('')
-  const [messages, setMessages] = useState<Message[]>([])
+export function AskPage({ bridge, session }: { bridge: DashboardBridge; session: SessionInfo }) {
+  const [voice, setVoice] = useState<VoiceHelpState>(INITIAL)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const input = useRef<HTMLTextAreaElement>(null)
 
-  async function ask(text = question) {
-    const value = text.trim()
-    if (!value || busy) return
-    setQuestion(''); setError(''); setBusy(true)
-    setMessages((current) => [...current, { role: 'user', text: value }])
+  useEffect(() => {
+    void bridge.invoke('assistant:state', {}).then(setVoice).catch(() => undefined)
+    return bridge.on('assistant:state', (next) => setVoice(next as VoiceHelpState))
+  }, [bridge])
+
+  const sessionVoice = (session.phase === 'live' && session.kind !== 'quick_guide') || session.phase === 'debrief'
+  const active = voice.status === 'connected'
+  const helper = voice.agent === 'assistant' && voice.status !== 'disconnected'
+  const listening = active && voice.mode !== 'speaking'
+  const headline = voice.status === 'connecting' ? 'Connecting your microphone…'
+    : voice.status === 'disconnecting' ? 'Ending the conversation…'
+    : active && voice.mode === 'speaking' ? 'Protégé is speaking'
+    : listening && voice.userSpeaking ? 'Protégé is listening to you'
+    : listening ? 'Ask your question out loud'
+    : sessionVoice ? 'Your voice agent is ready in this session'
+    : 'A question away from clarity.'
+
+  async function change(action: 'start' | 'stop') {
+    setBusy(true)
+    setError('')
     try {
-      const reply = await bridge.invoke('assistant:ask', { question: value })
-      setMessages((current) => [...current, { role: 'assistant', text: reply.answer, source: reply.source, guide: reply.guide }])
+      const next = await bridge.invoke(action === 'start' ? 'assistant:start' : 'assistant:stop', {})
+      setVoice(next)
+      if (next.error) setError(next.error)
     } catch (failure) {
-      setError(errorText(failure, 'Could not answer right now.'))
+      setError(errorText(failure, 'Could not start voice. Check your microphone and try again.'))
     } finally {
       setBusy(false)
-      input.current?.focus()
     }
   }
 
-  return <section className="ask-page" aria-label="Ask Protégé">
+  return <section className="ask-page" aria-label="Ask Protégé by voice">
     <div className="ask-heading">
-      <div className="ask-ghost" aria-hidden><Ghost state="idle" size={145} /></div>
-      <div><span className="workspace-kicker">YOUR WORK COMPANION</span><h1>Ask whenever you need a hand.</h1>
-        <p>Get help with a recorded task, a decision, or what to do next. Protégé uses your company profile and the guides you have made.</p></div>
+      <div className="ask-ghost" aria-hidden><Ghost state={active ? voice.mode === 'speaking' ? 'speaking' : voice.userSpeaking ? 'listening' : 'idle' : 'idle'} size={145} /></div>
+      <div><span className="workspace-kicker">YOUR WORK COMPANION</span><h1>Talk it through with Protégé.</h1>
+        <p>Ask a question about a task, a decision, or what to do next. Protégé speaks with you using your role and recorded training.</p></div>
     </div>
-    <div className="ask-thread" aria-live="polite">
-      {messages.length === 0 && <div className="ask-empty"><SparkleIcon size={20} /><strong>Start with a question</strong><p>Ask about a process you recorded or how Protégé works.</p>
-        <div className="ask-suggestions">{SUGGESTIONS.map((s) => <button key={s} onClick={() => void ask(s)}>{s}<ArrowUpRightIcon size={16} /></button>)}</div>
-      </div>}
-      {messages.map((message, index) => <div className={`ask-message ${message.role}`} key={index}>
-        <span>{message.role === 'assistant' ? 'Protégé' : 'You'}</span><p>{message.text}</p>
-        {message.role === 'assistant' && <small>{message.guide ? `Based on “${message.guide}”` : message.source === 'local' ? 'Local guidance' : 'AI guidance'}</small>}
-      </div>)}
-      {busy && <p className="ask-thinking" role="status">Thinking through your question…</p>}
+    <div className={`ask-voice-card ${active ? 'is-active' : ''}`}>
+      <div className={`ask-voice-orb ${active ? 'is-active' : ''} ${voice.mode === 'speaking' ? 'is-speaking' : ''}`} aria-hidden><WaveformIcon size={42} weight="light" /></div>
+      <span className="workspace-kicker">ELEVENLABS VOICE</span>
+      <h2 role="status">{headline}</h2>
+      <p>{sessionVoice
+        ? 'Your session agent can answer you now. Just speak naturally while the recording or debrief continues.'
+        : active ? 'Your microphone is live. Speak naturally, then pause to hear the answer.'
+        : 'Start a voice conversation whenever you need help. You can return to your work while Protégé listens.'}</p>
+      {helper ? <button className="ask-voice-end" disabled={busy || voice.status === 'disconnecting'} onClick={() => void change('stop')}><StopIcon size={18} weight="fill" /> End conversation</button>
+        : !sessionVoice && <button className="ask-voice-start" disabled={busy} onClick={() => void change('start')}>{busy ? <CircleNotchIcon className="spin" size={19} /> : <MicrophoneIcon size={19} />} Start voice conversation</button>}
+      {(error || voice.error) && <p className="ask-voice-error" role="alert">{error || voice.error}</p>}
     </div>
-    <form className="ask-composer" onSubmit={(e) => { e.preventDefault(); void ask() }}>
-      <label htmlFor="ask-question">Your question</label>
-      <div><textarea id="ask-question" ref={input} value={question} maxLength={1000} rows={2} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask() } }} placeholder="Ask about a task, rule, or next step…" />
-        <button className="primary" disabled={busy || !question.trim()} aria-label="Send question"><ArrowUpRightIcon size={19} /></button></div>
-      <small>Questions are masked before processing. Answers based on draft Work Maps may need expert confirmation.</small>
-      {error && <p className="home-error" role="alert">{error}</p>}
-    </form>
+    <div className="ask-voice-foot">
+      <div><span className="ask-voice-foot-icon"><MicrophoneIcon size={18} /></span><div><strong>Try asking</strong><p>{EXAMPLES.join('  ·  ')}</p></div></div>
+      <div><span className="ask-voice-foot-icon"><ShieldCheckIcon size={18} /></span><div><strong>Privacy</strong><p>Your saved training context is masked before it is shared. Your live voice is processed by ElevenLabs while the conversation is active.</p></div></div>
+    </div>
   </section>
 }

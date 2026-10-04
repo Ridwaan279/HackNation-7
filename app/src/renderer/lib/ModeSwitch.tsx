@@ -1,7 +1,5 @@
 // The one big choice in the app: is an expert teaching the apprentice, or a new hire learning from it?
 // Used in the dashboard header (large) and the panel (compact).
-import { motion, useReducedMotion } from 'framer-motion'
-import { useId } from 'react'
 import './mode-switch.css'
 
 export type Mode = 'expert' | 'newhire'
@@ -22,8 +20,6 @@ export function ModeSwitch({
   size?: 'large' | 'compact'
   disabled?: boolean
 }) {
-  const id = useId()
-  const reduce = useReducedMotion()
   return (
     <div
       className={`mode-switch ${size}`}
@@ -43,13 +39,6 @@ export function ModeSwitch({
             className={on ? 'on' : ''}
             onClick={() => !on && onChange(o.id)}
           >
-            {on && (
-              <motion.span
-                className="mode-thumb"
-                layoutId={`mode-thumb-${id}`}
-                transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }}
-              />
-            )}
             <span className="mode-label">{o.label}</span>
             {size === 'large' && <span className="mode-hint">{o.hint}</span>}
           </button>

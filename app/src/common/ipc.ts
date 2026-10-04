@@ -16,12 +16,12 @@
 
 import type { GuideStep, Rect } from '@shared/contracts'
 
-export type AgentKind = 'interviewer' | 'debrief' | 'tutor'
+export type AgentKind = 'interviewer' | 'debrief' | 'tutor' | 'assistant'
 export type SessionKind = 'teach' | 'quick_guide' | 'tutor'
 
 /** main -> overlay on 'agent:command'. The overlay owns the ElevenLabs conversation. */
 export type AgentCommand =
-  | { op: 'start'; agent: AgentKind; session: string; dynamicVariables: Record<string, string>; firstMessage?: string }
+  | { op: 'start'; agent: AgentKind; session: string; dynamicVariables: Record<string, string>; firstMessage?: string; prompt?: string }
   | { op: 'stop' }
   | { op: 'nudge'; text: string }
   | { op: 'context'; text: string }

@@ -1,4 +1,5 @@
 import type { AppModes, AppProfile, CaptureMode, GuideIpc, MasteryReport, MemoryApp, MemoryEntry, PrivacyConfig, WorkMap } from '@shared/contracts'
+import type { VoiceHelpState } from '../../main/services/assistant'
 
 export type Mode = 'expert' | 'newhire'
 export interface Settings { role: string; company: string; teaching: string; expert: string; onboarded: boolean; mode: Mode }
@@ -35,7 +36,9 @@ export interface DashboardIpc extends GuideIpc {
   'settings:set': { req: Partial<Settings>; res: Settings }
   'mastery:list': { req: Empty; res: MasteryReport[] }
   'session:start': { req: { kind: 'teach' | 'quick_guide' | 'tutor'; workmap_id?: string; task?: string }; res: unknown }
-  'assistant:ask': { req: { question: string }; res: { answer: string; source: 'model' | 'local'; guide?: string } }
+  'assistant:state': { req: Empty; res: VoiceHelpState }
+  'assistant:start': { req: Empty; res: VoiceHelpState }
+  'assistant:stop': { req: Empty; res: VoiceHelpState }
   'session:stop': { req: Empty; res: SessionInfo }
   'session:state': { req: Empty; res: SessionInfo }
   'session:offRecord': { req: Empty; res: SessionInfo }

@@ -39,7 +39,11 @@ export function AgentHost({ onUi, onVolume, onMicLevel, onMicName }: Props) {
     ui.current = { ...ui.current, ...patch }
     onUi(ui.current)
   }
-  const report = (s: Partial<AgentStatus>) => void tryInvoke('agent:status', { agent: agentRef.current, ...s })
+  const report = (s: Partial<AgentStatus> & { error?: string }) => {
+    const status = { agent: agentRef.current, ...s }
+    void tryInvoke('agent:status', status)
+    void tryInvoke('assistant:status', status)
+  }
   /** Shows up in the terminal running `npm run dev`. */
   const log = (message: string) => void tryInvoke('agent:log', { message })
 
@@ -80,6 +84,7 @@ export function AgentHost({ onUi, onVolume, onMicLevel, onMicName }: Props) {
     onError: (message, context) => {
       console.error('[agent] error', message, context)
       log(`error: ${message}`)
+      report({ error: String(message) })
     },
     onDisconnect: (details) => log(`disconnected: ${details.reason}${'message' in details ? ` (${details.message})` : ''}`),
   })
@@ -92,6 +97,7 @@ export function AgentHost({ onUi, onVolume, onMicLevel, onMicName }: Props) {
     const auth = await invoke<AgentAuth>('agent:auth', { agent: cmd.agent })
     if (auth.error || (!auth.conversationToken && !auth.agentId)) {
       console.error(`[agent] cannot start ${cmd.agent}:`, auth.error)
+      report({ agent: cmd.agent, status: 'disconnected', error: auth.error || 'Voice agent unavailable.' })
       return
     }
     agentRef.current = cmd.agent
@@ -101,11 +107,20 @@ export function AgentHost({ onUi, onVolume, onMicLevel, onMicName }: Props) {
       ...(mic ? { inputDeviceId: mic } : {}),
       dynamicVariables: cmd.dynamicVariables,
       clientTools: clientTools(cmd.agent),
-      ...(cmd.firstMessage ? { overrides: { agent: { firstMessage: cmd.firstMessage } } } : {}),
+      ...(cmd.firstMessage || cmd.prompt ? { overrides: { agent: {
+        ...(cmd.firstMessage ? { firstMessage: cmd.firstMessage } : {}),
+        ...(cmd.prompt ? { prompt: { prompt: cmd.prompt } } : {}),
+      } } } : {}),
     }
-    if (auth.conversationToken)
-      convRef.current.startSession({ ...common, conversationToken: auth.conversationToken, connectionType: 'webrtc' })
-    else convRef.current.startSession({ ...common, agentId: auth.agentId!, connectionType: 'webrtc' })
+    try {
+      if (auth.conversationToken)
+        await convRef.current.startSession({ ...common, conversationToken: auth.conversationToken, connectionType: 'webrtc' })
+      else await convRef.current.startSession({ ...common, agentId: auth.agentId!, connectionType: 'webrtc' })
+    } catch (error) {
+      report({ status: 'disconnected', error: String(error) })
+      agentRef.current = null
+      update({ agent: null, connected: false })
+    }
   }
 
   useChannel<AgentCommand>('agent:command', (cmd) => {
