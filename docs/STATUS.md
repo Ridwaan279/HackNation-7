@@ -18,13 +18,13 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 |---|---|---|
 | **Observer** | Clicks, field commits, context, ambient text, screenshots with blurring, privacy gate, masking, DPI and app scaling, accessibility health, vision mode | `sidecar/`, `app/src/main/services/observer.ts`, `displays.ts` |
 | **Capture** | Live step guide from clicks and commits, questions at natural pauses (≥1 guardrail), answers linked to steps | `steps.ts`, `gate.ts`, `describe.ts`, `session.ts` |
-| **Guide editor** | Edit, delete, merge, reorder, notes, blur, hide screenshot; **Polish**, **Add the why**; export PDF, HTML, Markdown + images | `steps.ts`, `dashboard/GuidesPage.tsx` |
+| **Guide editor** | Edit, delete, merge, reorder, notes, blur, hide screenshot; **Polish**, **Add the why**; export PDF, HTML, Markdown + images. Delete an entire recorded task and its linked Work Maps, lessons, screenshots, transcripts and references. Add masked text extracted from PDF, TXT, Markdown, CSV and JSON references for voice help and lessons | `steps.ts`, `dashboard/GuidesPage.tsx`, `main/lib/references.ts` |
 | **Map** | Draft Work Map on Stop (reasons and guardrails must be the expert's own words), debrief answers close open questions, corrections, teach-back confirms | `workmap.ts`, `dashboard/WorkMapsPage.tsx` |
 | **Teach** | Guardrail checker on every commit and on Post / Save / Submit / Confirm clicks, using the form's current values; the ghost flies to the field; the expert's screenshots replay; `point_at` finds controls (vision fallback); mastery report | `checker.ts`, `locate.ts`, `mastery.ts`, `session.ts`, `dashboard/LessonsPage.tsx` |
-| **Always on** | Per-app daily memory (masked), active minutes, App Profiles (after 10 active minutes, 20 KB of new log, or Refresh), curiosity questions (1 per hour per app, 3 per day) answered on the App Profiles page | `memory.ts`, `rollup.ts`, `curiosity.ts`, `dashboard/ProfilesPage.tsx`, `MemoryPage.tsx` |
+| **Always on** | Per-app daily memory (masked), active minutes, App Profiles with a value-free interaction-habit summary (frequent fields, clicks, action sequences). Profiles update after 10 active minutes, 20 KB of new log, or Refresh; occasional spoken curiosity questions (1 per hour per app, 3 per day) can appear outside recordings | `memory.ts`, `rollup.ts`, `curiosity.ts`, `dashboard/ProfilesPage.tsx`, `MemoryPage.tsx` |
 | **Trust** | Masking toggles, default skips, block lists, allow-only, local-only apps, retention, capture mode per app, pause 15 min / 1 h / until tomorrow, off the record (Ctrl+Shift+O), delete per day / app / everything | `privacy.ts`, `dashboard/PrivacyPage.tsx`, `memory.ts` |
-| **Shell, voice, ghost** | One visible dashboard workspace, plus the transparent floating ghost; pop-ups (teach this app, a11y blind, warnings, curiosity), ElevenLabs Interviewer / Debrief / Tutor, hotkeys. The old small panel is no longer opened | `app/src/main/services/{windows,session,gate,tts,hotkeys,popups}.ts`, `app/src/renderer/{overlay,dashboard,mascot,agents}` |
-| **First run, Company profile** | Full-screen first-run onboarding requires company and role. Those values inform the voice agents, Work Maps, training questions and Ask AI. The Company profile can update them later | `settings.ts`, `dashboard/index.tsx`, `dashboard/CompanyPage.tsx` |
+| **Shell, voice, ghost** | One visible dashboard workspace, plus the transparent floating ghost clamped away from the top edge during flight and bounce; pop-ups (teach this app, a11y blind, warnings, curiosity), ElevenLabs Interviewer / Debrief / Tutor, hotkeys and cached ElevenLabs sound cues. The old small panel is no longer opened | `app/src/main/services/{windows,session,gate,tts,hotkeys,popups}.ts`, `app/src/renderer/{overlay,dashboard,mascot,agents}` |
+| **First run, Company profile** | Full-screen setup requires company and role, followed by a narrated five-step tour of recordings, always-on learning, curiosity, teaching and privacy. It checks `app/.env` readiness without exposing keys, opens the file for editing and can be replayed from Company profile. That page also controls sound effects | `settings.ts`, `dashboard/{index,Tour,CompanyPage}.tsx` |
 | **Recording context and labels** | Every new recording asks what task it covers before capture begins. That task names the guide and enters the Interviewer's question context; with a model key, captured step labels are refined after stopping | `session.ts`, `steps.ts`, `dashboard/RecordPage.tsx` |
 | **Ask anytime** | Click the ghost, use Talk to Protégé or press Ctrl+Shift+Space to open voice help. Start an ElevenLabs conversation using company/role and masked saved training context, excluding local-only apps; during a recording, speak to the existing voice agent. There is no text chat | `assistant.ts`, `dashboard/AskPage.tsx`, `agents/AgentHost.tsx`, `hotkeys.ts` |
 | **Listen first** | The Interviewer opens without a question; the gate asks nothing until the expert has talked or worked for 10 s (`GATE_WARMUP_S`), and tells the agent to listen to the introduction | `gate.ts`, `session.ts` |
@@ -36,9 +36,9 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 ## Checked
 
 - `cd sidecar; python -m pytest tests`: 228 tests.
-- `cd fixtures; npm test`: local data-pipeline tests (capture, guide tools, Work Map flow, memory, profiles, curiosity caps, checker incl. the €7,200 demo case, locate, mastery, privacy). Models are stubbed; no API calls.
+- `cd fixtures; npm test`: 42 local data-pipeline tests including masked references, PDF extraction, task deletion, habit summaries, memory erasure, capture, Work Maps, curiosity caps, checker, locate, mastery and privacy. Models are stubbed; no API calls.
 - `cd app; npm run typecheck; npm run build`: pass.
-- Dashboard pages rendered in headless Chromium with sample data: no console errors.
+- Dashboard pages rendered in headless Chromium with sample data: no console errors. The narrated tour was visually inspected in the Windows Electron workspace.
 - On Windows (one laptop, 150%): the Phase 1 spike passes 19/19; `observer.py --print --mode session` captured clicks, commits, masked text and blurred screenshots correctly.
 
 ## Not yet checked on Windows
@@ -50,7 +50,7 @@ $env:OBSERVER_FAKE="..\fixtures\expert-session.jsonl"; npm run dev   # replay a 
 ## Not built
 
 - The pointer self-test (ghost flies to the Start button) and `MediaRecorder` video replay in the desktop app (the web recorder keeps a video).
-- Web recorder: no AI descriptions or masking of screenshots (a browser only sees pixels and keys must stay server-side); the Download links point at the repository until a release is published.
+- Web recorder: no AI descriptions or masking of screenshots (a browser only sees pixels and keys must stay server-side). The Windows download is a source ZIP, not an installed executable.
 - Polish only cleans titles and drops noise; it does not group steps into sections.
 - Production packaging: `app/prompts/*.md` must be copied to `resources/prompts` (dev mode reads them from `app/prompts`).
 - Stretch goals (PLAN §13): agent-ready export / MCP server, ask your history, two experts.
