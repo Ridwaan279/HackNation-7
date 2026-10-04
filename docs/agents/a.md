@@ -1,6 +1,6 @@
 # Agent A status: Observer
 
-Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. On Windows, the Phase 1 spike passes 19/19 on one laptop (Edge, 150% scaling). **The full observer (`observer.py`) has not run end-to-end on Windows yet** (see "Verify on Windows").
+Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. On Windows, the Phase 1 spike passes 19/19 on one laptop (Edge, 150% scaling). The full observer (`observer.py --print --mode session`) has run once end-to-end on Windows; see "Observer on Windows" below.
 
 **Phase 1 go/no-go: all GO.** Per-monitor-v2 DPI awareness takes effect. A pynput click → `ControlFromPoint` gives Button 'Post' with the right rect at 150%. `IsPassword` is read and the password value never is. The Edge URL comes from the address bar (48 ms, then cached). `mss` grabs only the window. Edge's page content is visible without `--force-renderer-accessibility`.
 
@@ -13,7 +13,7 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 | Protocol | JSON lines on stdout (ASCII-only), commands on stdin, replies echo the `id`. stdout is isolated, so library prints can't corrupt it | `observer.py`, `protocol.py` |
 | Threads | Hook thread → queue → fast thread (clicks, keys, focus, context) and slow thread (text, health, screenshots, displays). Both are COM-initialised in MTA | `observer.py` |
 | Privacy gate | Password managers, banking, private windows (title + toolbar badge), internal browser pages, system dialogs, our own windows, user block lists, allow-only, pause | `privacy.py`, `config/skiplists.json` |
-| Masking | Cards (Luhn, keeps last 4), IBANs (mod-97, keeps last 4), SSNs, API keys, JWT, PEM, `key=value` secrets, high-entropy strings; email/phone optional | `redact.py` |
+| Masking | Cards (Luhn, keeps last 4), IBANs (mod-97, keeps last 4); numbers written like a card or IBAN that fail the checksum (edited, mistyped, half-typed) become `[CARD]` / `[IBAN]` with no digits. SSNs, API keys, JWT, PEM, `key=value` secrets, high-entropy strings; email/phone optional | `redact.py` |
 | Context | `context` / `blocked` at 2 Hz on change. Popups and dialogs belong to their owner window. A click on another window emits its `context` first. While the user types a search in the address bar, the page's last URL keeps the key stable (typing a bank's address still blocks at once) | `engine.py` |
 | Browsers read the page only | Text snapshots, sensitive-field scans and `tree` read only the web page, never the browser's tab strip (other tabs' titles could be skipped sites). A click on a browser tab is reported as "browser tab". Electron apps may fall back to the whole window | `uia.py`, `engine.py` |
 | Clicks | Element under the cursor, rect check, window-only screenshot (sessions) with a ring and a box, sensitive fields blurred | `engine.py`, `shots.py`, `uia.py` |
@@ -33,7 +33,7 @@ Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everythi
 
 ## Verification so far (Linux)
 
-- **211 Python tests** (`cd sidecar`, then `python -m pytest tests`), covering:
+- **226 Python tests** (`cd sidecar`, then `python -m pytest tests`), covering:
   - masking vectors and near-misses, the privacy gate, the protocol and config;
   - engine scenarios: password manager never read, a tab navigating to a bank blocked even on an immediate click, password fields never emitted, pause drops pending typing, a blind app prompts once then switches to vision mode, scaling correction saved and applied, heartbeats only on change, a first click in a new window already blurs masked fields;
   - adapters against fakes that mirror the real `uiautomation` 2.0.29 and `pynput` 1.8.2 APIs (checked against their source);
@@ -50,7 +50,7 @@ python observer.py --print --mode session  # click around MiniERP: context, clic
 python -m pytest tests                     # should also pass on Windows
 ```
 
-The spike has exercised `winapi.py`, the Windows branch of `display.py`, `uia.py` against Edge, `hooks.py` with real pynput, mss capture and the UIA timeouts. Not yet run on Windows: `observer.py` end-to-end (threads, engine, screenshots with blur), `pytest tests`, apps other than Edge, a second monitor, other scaling levels. If web content ever shows as empty, start Edge with `--force-renderer-accessibility` (not needed so far).
+The spike has exercised `winapi.py`, the Windows branch of `display.py`, `uia.py` against Edge, `hooks.py` with real pynput, mss capture and the UIA timeouts. Not yet run on Windows: `pytest tests`, apps other than Edge, a second monitor, other scaling levels. If web content ever shows as empty, start Edge with `--force-renderer-accessibility` (not needed so far).
 
 Spike results (one laptop, 2560x1600 at 150%, Edge):
 
@@ -73,6 +73,21 @@ Spike results (one laptop, 2560x1600 at 150%, Edge):
   - Typing started while focus was still in the Password box, so no field value was seen within the 2 s window.
   - Change: the spike now waits for a click on Post (other clicks are reported and ignored), keeps reading the focused field for up to 20 s, and says where focus was if it fails.
 - **Run 5: 19/19 passed.** Click → Button 'Post' at (173,786) inside its rect (104,759,213,819) at 150%; Cost center value read (`value_len=5`); every page check as in run 4.
+
+## Observer on Windows
+
+**Run 1** (`python observer.py --print --mode session`, the test page in Edge, 150% scaling, Edge on the right half of the screen). What worked:
+- `context` switches between Windows Terminal and Edge, with the right key (`browser:local-file`).
+- A click on a browser tab is reported as "browser tab".
+- Clicks resolve to Button 'Post' and Edit 'Notes' / 'Password', with correct rects in physical pixels.
+- Commits for Cost center come with `final: true` on Tab or leaving the field. Typing in the Password box, then Tab, emitted nothing.
+- Screenshots blur the Password and Notes boxes (checked by the tester).
+- Page text arrives with the IBAN masked.
+
+Found and fixed after run 1:
+- **Privacy leak:** typing into the IBAN in Notes broke its mod-97 checksum, so the edited value went out unmasked in `commit` and `text`. Notes would also have stopped being blurred. Numbers written like an IBAN or a card are now masked even when the checksum fails.
+- **Clicks inside a field reported as the whole page:** this happened twice on Cost center, and on Notes in spike run 4. When `ControlFromPoint` returns a web Document, the smallest element under the point is now looked up inside the page.
+- **Window chrome in text snapshots:** scrollbar buttons and `DesktopWindowXamlSource` showed up as text. Scrollbar and title-bar subtrees are now skipped.
 
 ## Stubbed / faked
 
@@ -98,6 +113,7 @@ Spike results (one laptop, 2560x1600 at 150%, Edge):
 - **Screenshot paths:** relative to `ctx.paths.root`. Kept shots are `shots/YYYY-MM-DD/<ms>.jpg`, ephemeral ones `shots/tmp/<ms>.jpg`. Delete ephemeral files after describing them; the sidecar removes leftovers after 10 minutes.
 - **`ShotMeta`:** `screen_px = origin_px + image_px / scale`. `size_px` is the captured screen region in physical pixels. `auto_blur: false` means sensitive fields were *not* blurred (vision mode), so offer the manual blur.
 - **Commits:** an idle commit (`final: false`) can be followed by more commits for the same field, so coalesce them. Values are masked and capped at 1000 characters. `masked: true` tells you a value was masked.
+- **Masked numbers:** `[IBAN ••••3000]` / `[CARD ••••4242]` keep the last 4 only when the checksum passes. `[IBAN]` / `[CARD]` (no digits) is an edited, mistyped or half-typed number. So a "bank details changed" guardrail can compare last-4s only for valid ones.
 - **Clicks on empty page space:** the element is the page's `Document` (its rect is the whole page). Treat it as "clicked the page", not as a named control.
 - **App keys:** always lowercase (`excel.exe`, `browser:minierp.local`).
 - **`observer:shot`:** returns a `shots/tmp/` path and is not emitted as an event.
@@ -109,7 +125,8 @@ Spike results (one laptop, 2560x1600 at 150%, Edge):
 - Chrome Incognito is detected through the toolbar badge's accessibility name. Edge's "InPrivate" and Firefox's "Private Browsing" also appear in titles. Confirm each browser with the spike.
 - Text snapshots read at most 300 elements in 1.5 s, so very long pages are only partly read. Lines are capped at 300 characters, document text at 1 KB, and each `text` event at 4 KB. `tree` stops after 1.5 s or `max` elements.
 - Elevated ("Run as administrator") windows and Citrix/RDP windows can't be read. Remote sessions are reported as blind, which prompts the switch to vision mode.
-- GUIDs and hashes are masked as secrets (fail-safe).
+- GUIDs and hashes are masked as secrets (fail-safe), and IBAN-like codes from IBAN countries with 15+ characters (some product codes) as `[IBAN]`.
+- A number that is still being typed is only recognised once it's long enough: until then an idle commit or text snapshot can show up to 12 digits of a card or 14 characters of an IBAN. For GB and FR, those 14 characters stop before the account number; for DE, they include its first 2 digits.
 - Owned popups that extend outside their window are included in the capture region (the union of both).
 
 ## Changes to the plan's file list
