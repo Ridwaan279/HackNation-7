@@ -83,7 +83,7 @@ class WalkResult:
 
 @dataclass
 class HookEvent:
-    kind: str  # 'click' | 'key' | 'typing' | 'scroll' | 'move'
+    kind: str  # 'click' | 'release' | 'key' | 'typing' | 'scroll' | 'move'
     t: float
     x: int = 0
     y: int = 0
@@ -103,6 +103,7 @@ class Backend(Protocol):
     def browser_url(self, win: WindowInfo) -> Optional[str]: ...
     def private_window(self, win: WindowInfo, markers: List[str]) -> bool: ...
     def element_at(self, x: int, y: int, win: WindowInfo) -> Optional[ElementInfo]: ...
+    def selection_at(self, x: int, y: int, win: WindowInfo) -> Optional[str]: ...  # highlighted text, raw (engine masks it)
     def focused(self, tracked_types: frozenset) -> Optional[FocusInfo]: ...
     def walk_text(self, win: WindowInfo, max_depth: int, max_elements: int, budget_s: float,
                   content_only: bool = False) -> Optional[WalkResult]: ...  # content_only: browsers (page only)

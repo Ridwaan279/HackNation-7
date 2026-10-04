@@ -653,3 +653,45 @@ def test_typing_a_search_in_the_address_bar_keeps_the_page_key(env):
     env.clock.tick(0.6)
     eng.fast_tick()
     assert env.out.events[-1]["type"] == "blocked" and env.out.events[-1]["reason"] == "banking"
+
+
+# -- highlighted text (always on, not just while recording) ---------------------
+
+def release(eng, x, y, t):
+    eng.on_hook(HookEvent("release", t, x=x, y=y, button="left"))
+
+
+def test_highlighted_text_is_emitted_masked_once(env):
+    win = erp(env.backend)
+    env.backend.selections[win.hwnd] = "Pay to DE89 3704 0044 0532 0130 00 before\n  Friday"
+    eng = env.build()  # ambient: no recording needed
+    eng.fast_tick()
+    release(eng, 640, 310, env.clock.tick(0.2))
+    [sel] = env.out.of("selection")
+    assert sel["key"] == "browser:minierp.local"
+    assert sel["text"] == "Pay to [IBAN ••••3000] before Friday"
+    release(eng, 640, 310, env.clock.tick(1))
+    assert len(env.out.of("selection")) == 1  # the same highlight isn't reported twice
+
+
+def test_highlight_in_password_manager_is_never_read(env):
+    erp(env.backend)
+    eng = env.build()
+    eng.fast_tick()
+    pm = make_window(hwnd=2, pid=200, process="1Password.exe", title="1Password", class_name="1PW")
+    env.backend.add_window(pm)
+    env.backend.selections[pm.hwnd] = "hunter2 vault notes"
+    env.clock.tick(1)
+    eng.fast_tick()
+    env.backend.calls.clear()
+    release(eng, 10, 10, env.clock.tick(0.1))
+    assert env.backend.calls["selection_at"] == 0 and not env.out.of("selection")
+
+
+def test_no_highlights_while_paused(env):
+    win = erp(env.backend)
+    env.backend.selections[win.hwnd] = "Quarterly accruals"
+    eng = env.build(mode="paused")
+    eng.fast_tick()
+    release(eng, 640, 310, env.clock.tick(0.2))
+    assert env.backend.calls["selection_at"] == 0 and not env.out.of("selection")

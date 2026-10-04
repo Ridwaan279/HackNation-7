@@ -109,6 +109,7 @@ class Engine:
         self._next: Dict[str, float] = {"context": 0.0, "focus": 0.0, "watchdog": now + self.WATCHDOG_EVERY,
                                         "displays": now + self.DISPLAYS_EVERY, "janitor": now + self.JANITOR_EVERY}
         self._activity_t: Dict[str, float] = {}
+        self._last_selection = ""
         self.last_input_t = 0.0
         self._last_hook_t = now
         self._last_hook_restart = 0.0
@@ -273,6 +274,9 @@ class Engine:
         if ev.kind == "click":
             self._on_click(ev)
             return
+        if ev.kind == "release":
+            self._on_release(ev)
+            return
         ctx = self._allowed_ctx()
         if ctx is None:
             return
@@ -292,6 +296,27 @@ class Engine:
         if t - self._activity_t.get(kind, -1e9) >= self.ACTIVITY_THROTTLE:
             self._activity_t[kind] = t
             self._emit({"type": "activity", "t": t, "kind": kind})
+
+    MAX_SELECTION_CHARS = 1000
+
+    def _on_release(self, ev: HookEvent) -> None:
+        """After a left release, report newly highlighted text (any mode but paused, allowed apps only)."""
+        ctx = self._allowed_ctx()
+        if ctx is None or ctx.capture != "uia":
+            return
+        win = self.backend.window_at(ev.x, ev.y)
+        if win is None or win.pid in self.gate.own_pids or win.hwnd != ctx.win.hwnd:
+            return
+        raw = self.backend.selection_at(ev.x, ev.y, win)
+        text = " ".join((raw or "").split())[: self.MAX_SELECTION_CHARS]
+        if len(text) < 3:
+            self._last_selection = ""
+            return
+        if text == self._last_selection:
+            return  # the same highlight, clicked again
+        self._last_selection = text
+        self._emit({"type": "selection", "t": ev.t, "key": ctx.decision.key,
+                    "title": self.redactor.redact(ctx.win.title), "text": self.redactor.redact(text)})
 
     def _on_click(self, ev: HookEvent) -> None:
         now = ev.t

@@ -214,6 +214,30 @@ def element_at(x: int, y: int, own_pids: Set[int], root_hwnd: int) -> Optional[E
     return _info(c)
 
 
+def selection_at(x: int, y: int, own_pids: Set[int], limit: int = 1000) -> Optional[str]:
+    """Text the user has highlighted, read through TextPattern on the element under the point or the
+    nearest ancestor that has one (a PDF page, a document, a web page). Never from password fields."""
+    c = _safe(lambda: auto.ControlFromPoint(int(x), int(y)))
+    if c is None or int(_safe(lambda: c.ProcessId, 0) or 0) in own_pids:
+        return None
+    for _ in range(8):
+        if _safe(lambda: c.IsPassword, False) or looks_like_password_field(_safe(lambda: c.Name, "") or ""):
+            return None
+        p = _safe(lambda: c.GetPattern(PID_TEXT))
+        if p is not None:
+            parts: List[str] = []
+            for r in (_safe(p.GetSelection) or [])[:5]:
+                t = _safe(lambda: r.GetText(limit))
+                if t:
+                    parts.append(t)
+            text = " ".join(parts).strip()
+            return text[:limit] or None
+        c = _safe(c.GetParentControl)
+        if c is None:
+            return None
+    return None
+
+
 def _deepest_at(root, x: int, y: int, budget_s: float = 0.3):
     deadline = time.monotonic() + budget_s
     node = root

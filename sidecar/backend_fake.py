@@ -44,6 +44,7 @@ class FakeBackend:
         self.focus: Optional[FocusInfo] = None
         self.walks: Dict[int, WalkResult] = {}
         self.web_empty: Dict[int, Optional[bool]] = {}
+        self.selections: Dict[int, str] = {}  # hwnd -> currently highlighted text
         self.monitor_list: List[MonitorInfo] = [MonitorInfo(1, (0, 0, 1920, 1080), (0, 0, 1920, 1040), 96, 1.0, True)]
         self.frame = 0  # change it to change the "screen" pixels
         self.idle: Optional[float] = None
@@ -125,6 +126,10 @@ class FakeBackend:
 
     def rect_of(self, handle: Any) -> Optional[Rect]:
         return handle.get("rect") if isinstance(handle, dict) else None
+
+    def selection_at(self, x: int, y: int, win: WindowInfo) -> Optional[str]:
+        self.calls["selection_at"] += 1
+        return self.selections.get(win.hwnd)
 
     def web_document_empty(self, win: WindowInfo) -> Optional[bool]:
         self.calls["web_document_empty"] += 1

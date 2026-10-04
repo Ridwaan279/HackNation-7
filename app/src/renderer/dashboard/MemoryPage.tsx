@@ -12,6 +12,7 @@ function describe(entry: MemoryEntry): [string, string] {
     case 'commit': return ['Entered', `${entry.field}: ${entry.old || '(empty)'} → ${entry.new || '(empty)'}${entry.masked ? ' (masked)' : ''}`]
     case 'click': return ['Clicked', `${entry.target} (${entry.control_type})`]
     case 'description': return ['Screen', entry.text]
+    case 'highlight': return ['Highlighted', entry.text]
   }
 }
 

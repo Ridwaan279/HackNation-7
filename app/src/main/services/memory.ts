@@ -108,6 +108,11 @@ export function createMemory(ctx: AppContext, options: { now?: () => number } = 
         if (event.target) write({ type: 'click', t: event.t, key: current.key, target: event.target.name, control_type: event.target.control_type })
         input(current.key, event.t)
         break
+      case 'selection':
+        // What the user highlighted (PDFs, documents, web pages), already masked by the sidecar.
+        write({ type: 'highlight', t: event.t, key: event.key, title: event.title, text: event.text })
+        input(current.key, event.t)
+        break
       case 'activity':
         input(current.key, event.t)
         break

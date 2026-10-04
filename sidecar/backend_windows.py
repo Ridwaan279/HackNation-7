@@ -82,6 +82,9 @@ class WindowsBackend:
     def element_at(self, x: int, y: int, win: WindowInfo) -> Optional[ElementInfo]:
         return uia.element_at(x, y, self.own_pids, win.hwnd)
 
+    def selection_at(self, x: int, y: int, win: WindowInfo) -> Optional[str]:
+        return uia.selection_at(x, y, self.own_pids)
+
     def focused(self, tracked_types: frozenset) -> Optional[FocusInfo]:
         return uia.focused(tracked_types)
 

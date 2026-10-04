@@ -35,17 +35,19 @@ const bump = <T>(counts: Map<T, number>, key: T) => counts.set(key, (counts.get(
 /** The log as compact lines: window titles, commits and clicks first (PLAN §5.2), then descriptions and text. */
 export function compressLog(entries: MemoryEntry[], budget = LOG_BUDGET): string {
   const titles = new Map<string, number>(), clicks = new Map<string, number>()
-  const commits: string[] = [], descriptions: string[] = [], text = new Set<string>()
+  const commits: string[] = [], descriptions: string[] = [], highlights: string[] = [], text = new Set<string>()
   for (const e of entries) {
     if (e.type === 'context') bump(titles, e.title)
     else if (e.type === 'click') bump(clicks, `${e.target} (${e.control_type})`)
     else if (e.type === 'commit') commits.push(`${e.field}: ${e.old || '(empty)'} → ${e.new || '(empty)'}`)
     else if (e.type === 'description') descriptions.push(e.text)
+    else if (e.type === 'highlight') highlights.push(`${e.text} (in ${e.title})`)
     else if (e.type === 'text') for (const line of e.lines) text.add(line)
   }
   const sections = [
     ['Window titles', top(titles, 40).map(([t, n]) => `${t} ×${n}`)],
     ['Field entries', commits.slice(-150)],
+    ['Highlighted text', highlights.slice(-80)],
     ['Clicked', top(clicks, 60).map(([t, n]) => `${t} ×${n}`)],
     ['Screen descriptions', descriptions.slice(-60)],
     ['Visible text', [...text].slice(-400)],

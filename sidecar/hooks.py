@@ -66,9 +66,12 @@ class Hooks:
 
     def _on_click(self, x, y, button, pressed, *rest) -> None:
         try:
-            if not pressed:
-                return
             name = getattr(button, "name", "")
+            if not pressed:
+                # A left release can end a text selection (drag or double-click); the engine reads it.
+                if name == "left":
+                    self.sink(HookEvent("release", time.time(), x=int(x), y=int(y), button=name))
+                return
             if name in ("left", "right", "middle"):
                 self.sink(HookEvent("click", time.time(), x=int(x), y=int(y), button=name))
         except Exception:
