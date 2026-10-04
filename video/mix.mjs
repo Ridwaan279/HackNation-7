@@ -33,7 +33,9 @@ for (const l of LINES) {
   const d = dur(f), tempo = Math.min(1.2, Math.max(1, d / (l.max * K)))
   const i = input(f), ms = Math.round(l.t * K * 1000)
   const gain = l.voice === 'narrator' ? 0 : -1
-  filters.push(`[${i}:a]aresample=48000,atempo=${tempo.toFixed(3)},volume=${gain}dB,highpass=f=70,adelay=${ms}|${ms},apad[v${voiceLabels.length}]`)
+  // atempo's first frame has no pts, so adelay's leading silence would get bogus timestamps and be dropped
+  // by amix/atrim (every line would start ~its delay early); asetpts renumbers the frames from zero.
+  filters.push(`[${i}:a]aresample=48000,atempo=${tempo.toFixed(3)},volume=${gain}dB,highpass=f=70,adelay=${ms}|${ms},asetpts=N/SR/TB,apad[v${voiceLabels.length}]`)
   voiceLabels.push(`[v${voiceLabels.length}]`)
 }
 for (const s of SFX) {
