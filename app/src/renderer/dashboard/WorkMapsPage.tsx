@@ -71,6 +71,11 @@ export function WorkMapsPage({ bridge }: { bridge?: DashboardBridge }) {
     try { await bridge.invoke('session:start', { kind: 'tutor', workmap_id: map.id }); setNotice('Lesson started. The tutor is on the ghost.') }
     catch (failure) { setError(errorText(failure)) }
   }
+  async function deleteTask() {
+    if (!bridge || !guide || !window.confirm(`Permanently delete “${guide.title}” and its guide, references and lesson history?`)) return
+    try { await bridge.invoke('guide:delete', { id: guide.id }); await reload(); setNotice('Recorded task deleted.') }
+    catch (failure) { setError(errorText(failure)) }
+  }
   return <>
     <div className="guide-page-heading"><div><p className="guide-eyebrow">Map / Work Maps</p><h1>The why behind the work.</h1><p>Each step links to the screen it happened on and to the expert’s own words.</p></div><button onClick={() => void reload()}>Reload</button></div>
     {error && <div className="guide-error" role="alert">{error}</div>}
@@ -79,7 +84,7 @@ export function WorkMapsPage({ bridge }: { bridge?: DashboardBridge }) {
       <div className="guide-workspace">
         <aside className="guide-library" aria-label="Work Maps"><h2>Work Maps <span>{maps.length}</span></h2>{maps.map((m) => <button key={m.id} className={m.id === selected ? 'is-current' : ''} aria-pressed={m.id === selected} onClick={() => setSelected(m.id)}><strong>{title(m)}</strong><span>{m.status === 'confirmed' ? 'Confirmed' : 'Draft'} · {m.steps.length} steps{sessionDate(m.id) ? ` · ${sessionDate(m.id)}` : ''}</span></button>)}</aside>
         <section className="guide-document">
-          <div className="guide-document-heading"><div><p className="guide-eyebrow">{map.role}</p><h2>{title(map)}</h2><p className="dash-muted">{map.status === 'confirmed' ? `Teach-back confirmed${map.teachback.t ? ` ${new Date(map.teachback.t * 1000).toLocaleString()}` : ''}` : 'Draft: the debrief is still filling the gaps.'}{map.teachback.corrections.length ? ` · ${map.teachback.corrections.length} correction(s)` : ''}</p></div><div className="dash-actions"><span className={`dash-chip status-${map.status}`}>{map.status === 'confirmed' ? 'Confirmed' : 'Draft'}</span><button className="guide-primary" onClick={() => void lesson()}>Start a lesson</button></div></div>
+          <div className="guide-document-heading"><div><p className="guide-eyebrow">{map.role}</p><h2>{title(map)}</h2><p className="dash-muted">{map.status === 'confirmed' ? `Teach-back confirmed${map.teachback.t ? ` ${new Date(map.teachback.t * 1000).toLocaleString()}` : ''}` : 'Draft: the debrief is still filling the gaps.'}{map.teachback.corrections.length ? ` · ${map.teachback.corrections.length} correction(s)` : ''}</p></div><div className="dash-actions"><span className={`dash-chip status-${map.status}`}>{map.status === 'confirmed' ? 'Confirmed' : 'Draft'}</span><button className="guide-primary" onClick={() => void lesson()}>Start a lesson</button>{guide && <button className="guide-danger" onClick={() => void deleteTask()}>Delete task</button>}</div></div>
           {map.open_questions.length > 0 && <div className="wm-open"><h3>Open questions for the debrief</h3><ul>{map.open_questions.map((q) => <li key={q}>{q}</li>)}</ul></div>}
           {map.teachback.corrections.length > 0 && <div className="wm-open"><h3>Corrections from the expert</h3><ul>{map.teachback.corrections.map((c, i) => <li key={i}>Step {c.step_id}: “{c.quote}”</li>)}</ul></div>}
           <div className="wm-timeline">{map.steps.map((step) => <StepCard key={step.id} step={step} guide={guide} start={start} bridge={bridge} />)}</div>

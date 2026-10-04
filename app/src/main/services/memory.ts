@@ -211,8 +211,11 @@ export function getMemory(ctx: AppContext): ReturnType<typeof createMemory> {
 export async function deleteEverything(ctx: AppContext): Promise<void> {
   const memory = getMemory(ctx)
   await memory.remove({})
-  for (const dir of ['guides', 'workmaps', 'sessions', 'mastery', 'shots']) {
-    await rm(path.join(ctx.paths.root, dir), { recursive: true, force: true })
+  const root = path.resolve(ctx.paths.root)
+  for (const dir of ['guides', 'workmaps', 'sessions', 'mastery', 'shots', 'references']) {
+    const target = path.resolve(root, dir)
+    if (!target.startsWith(`${root}${path.sep}`)) throw new Error('Refusing to delete outside the app data directory')
+    await rm(target, { recursive: true, force: true })
   }
   for (const dir of Object.values(ctx.paths)) await mkdir(dir, { recursive: true })
   ctx.bus.emit('data:cleared', { scope: 'all' })

@@ -139,6 +139,7 @@ export function createWorkmapService(ctx: AppContext, dependencies: {
 } = {}) {
   const store = getStore(ctx)
   const maps = new Map<string, WorkMap>()
+  const deletedGuides = new Set<string>()
   const kinds = new Map<string, string>()
   const stoppedAt = new Map<string, number>()
   const pendingAnswers = new Map<string, SourcedAnswer[]>()
@@ -173,6 +174,7 @@ export function createWorkmapService(ctx: AppContext, dependencies: {
     return clone([...maps.values()].sort((a, b) => b.id.localeCompare(a.id)))
   }
   async function publish(map: WorkMap): Promise<void> {
+    if (deletedGuides.has(map.guide)) return
     maps.set(map.id, map)
     const snapshot = clone(map)
     await store.write(['workmaps', `${map.id}.json`], snapshot)
@@ -370,6 +372,10 @@ export function createWorkmapService(ctx: AppContext, dependencies: {
   ctx.bus.on('agent:teachback_confirmed', (event) => { track(queue(() => confirm(event.session, event.t))) })
 
   ctx.bus.on('data:cleared', (event) => { if (event.scope === 'all') maps.clear() })
+  ctx.bus.on('recording:deleted', ({ guide_id, workmap_ids }) => {
+    deletedGuides.add(guide_id)
+    for (const id of workmap_ids) maps.delete(id)
+  })
 
   ctx.bus.handle('brain:workmap', async ({ id }) => clone(await load(id)))
   ctx.bus.handle('brain:stepsFor', async ({ workmap_id, step_id }) => {

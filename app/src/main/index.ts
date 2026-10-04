@@ -29,6 +29,7 @@ const paths: AppContext['paths'] = {
 /** Bus events every window receives on the channel of the same name. */
 const FORWARDED: (keyof BusEvents)[] = [
   'guide:updated',
+  'recording:deleted',
   'workmap:updated',
   'profile:updated',
   'tutor:violation',

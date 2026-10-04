@@ -1,10 +1,11 @@
 // On-demand ElevenLabs voice help. The overlay owns the microphone and conversation;
 // this service supplies masked, saved training context and coordinates its lifecycle.
-import type { AppContext, Guide, PrivacyConfig, ServiceInit, WorkMap } from '@shared/contracts'
+import type { AppContext, AppProfile, Guide, PrivacyConfig, ServiceInit, WorkMap } from '@shared/contracts'
 import type { AgentKind, AgentStatus } from '../../common/ipc'
 import { getSessionState } from './session'
 import { getSettings } from './settings'
 import { getStore } from './store'
+import { readReferenceText } from '../lib/references'
 
 export interface VoiceHelpState {
   agent: AgentKind | null
@@ -42,17 +43,22 @@ async function trainingContext(ctx: AppContext): Promise<string> {
   ])
   const guides = (await Promise.all(guideFiles.filter((f) => f.endsWith('.json')).slice(-20).map((f) => store.read<Guide>(['guides', f]).catch(() => null)))).filter((g): g is Guide => !!g)
   const maps = (await Promise.all(mapFiles.filter((f) => f.endsWith('.json')).slice(-20).map((f) => store.read<WorkMap>(['workmaps', f]).catch(() => null)))).filter((m): m is WorkMap => !!m)
-  const lines = guides.filter((guide) => {
+  const shareable = guides.filter((guide) => {
     const keys = guide.app_keys?.length ? guide.app_keys : [guide.app]
     return keys.every((key) => key && !localOnly.has(key.toLowerCase()) && !localOnly.has(key.toLowerCase().replace(/^browser:/, '')))
-  }).map((guide) => {
+  })
+  const lines = await Promise.all(shareable.map(async (guide) => {
     const map = maps.find((candidate) => candidate.guide === guide.id)
     const steps = map?.steps.length
       ? map.steps.slice(0, 12).map((step) => `${step.index}. ${step.title}: ${step.decision}. Why: ${step.reason.text}. Guardrails: ${step.guardrails.map((g) => g.rule).join('; ') || 'none recorded'}`).join('\n')
       : guide.steps.slice(0, 15).map((step) => `${step.n}. ${step.title}${step.note ? ` — ${step.note}` : ''}`).join('\n')
-    return `${guide.title} [${map?.status === 'confirmed' ? 'confirmed Work Map' : 'unconfirmed recording'}]\n${steps}`
-  })
-  return clip(lines.join('\n\n') || 'No recordings yet. Explain how to record a task and ask an expert about their decisions.', 18000)
+    const references = await readReferenceText(ctx, guide, 4000)
+    return `${guide.title} [${map?.status === 'confirmed' ? 'confirmed Work Map' : 'unconfirmed recording'}]\n${steps}${references ? `\nReference documents:\n${references}` : ''}`
+  }))
+  const profiles = await Promise.all((await store.list(['profiles'])).filter((f) => f.endsWith('.json')).slice(-15).map((f) => store.read<AppProfile>(['profiles', f]).catch(() => null)))
+  const ambient = profiles.filter((p): p is AppProfile => !!p && !localOnly.has(p.key.toLowerCase()) && !localOnly.has(p.key.toLowerCase().replace(/^browser:/, '')))
+    .map((p) => `${p.name} (learned between recordings): ${p.habits?.frequent_actions.slice(0, 4).map((a) => `${a.label} ×${a.count}`).join('; ') || 'No recurring actions yet'}. ${p.habits?.action_sequences.slice(0, 2).map((s) => `${s.from} → ${s.to} ×${s.count}`).join('; ') || ''}`)
+  return clip([...lines, ...ambient].join('\n\n') || 'No recordings yet. Explain how to record a task and ask an expert about their decisions.', 18000)
 }
 
 export const init: ServiceInit = (ctx) => {

@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
-import type { AppContext, ContextEvent, Guide, GuideEdit, GuideStep, PickedQuestion, ServiceInit, SidecarEvent, WorkMap } from '@shared/contracts'
+import type { AppContext, AppProfile, ContextEvent, Guide, GuideEdit, GuideStep, MasteryReport, PickedQuestion, ServiceInit, SidecarEvent, WorkMap } from '@shared/contracts'
 import { getStore } from './store'
 import { getLlm, readPrompt } from './llm'
 import { getDescriber, screenshotData, shotStorage } from './describe'
 import { getSettings } from './settings'
+import { extractReference, REFERENCE_EXTENSIONS } from '../lib/references'
 
 const clone = <T>(value: T): T => structuredClone(value)
 const normal = (text: string) => text.trim().toLowerCase()
@@ -248,9 +249,13 @@ export function createStepsService(ctx: AppContext, dependencies: {
   /** Tests: where a file or folder export goes (null = canceled). */
   saveFile?: (defaultName: string, extension: string) => Promise<string | null>
   chooseFolder?: () => Promise<string | null>
+  /** Tests can provide a chosen file without opening Electron's native dialog. */
+  chooseReference?: () => Promise<{ name: string; bytes: Buffer } | null>
+  isSessionActive?: (session: string) => boolean
 } = {}) {
   const store = getStore(ctx)
   const guides = new Map<string, Guide>()
+  const deleted = new Set<string>()
   let active: CaptureSession | null = null
   let latestContext: ContextEvent | null = null
   let serialized = Promise.resolve<unknown>(undefined)
@@ -272,6 +277,7 @@ export function createStepsService(ctx: AppContext, dependencies: {
   }
   async function load(id: string): Promise<Guide | null> {
     idSchema.parse(id)
+    if (deleted.has(id)) return null
     if (!guides.has(id)) {
       const saved = await store.read<Guide>(['guides', `${id}.json`])
       if (saved) { saved.recording = false; guides.set(id, saved) }
@@ -283,6 +289,7 @@ export function createStepsService(ctx: AppContext, dependencies: {
     return clone([...guides.values()].reverse())
   }
   async function publish(guide: Guide): Promise<void> {
+    if (deleted.has(guide.id)) return
     guide.revision = (guide.revision ?? 0) + 1
     guides.set(guide.id, guide)
     const snapshot = clone(guide)
@@ -425,6 +432,91 @@ export function createStepsService(ctx: AppContext, dependencies: {
 
   ctx.handle('guides:list', () => list())
   ctx.handle('guide:get', async (payload) => clone(await load(z.object({ id: idSchema }).strict().parse(payload).id)))
+  const revisionSchema = z.object({ id: idSchema, revision: z.number().int().nonnegative() }).strict()
+  ctx.handle('guide:referenceAdd', async (payload) => {
+    const { id, revision } = revisionSchema.parse(payload)
+    await checked(id, revision)
+    let chosen = await dependencies.chooseReference?.()
+    if (!dependencies.chooseReference) {
+      const { dialog } = await import('electron')
+      const result = await dialog.showOpenDialog({ title: 'Add training reference', properties: ['openFile'], filters: [{ name: 'Readable documents', extensions: [...REFERENCE_EXTENSIONS] }] })
+      if (result.canceled || !result.filePaths[0]) return { canceled: true }
+      const file = result.filePaths[0]
+      if ((await stat(file)).size > 5_000_000) throw new Error('Reference files must be under 5 MB.')
+      chosen = { name: path.basename(file), bytes: await readFile(file) }
+    }
+    if (!chosen) return { canceled: true }
+    const extension = path.extname(chosen.name).slice(1).toLowerCase()
+    const extracted = await extractReference(chosen.bytes, extension)
+    const safeText = (await ctx.bus.request('observer:redact', { text: extracted })).text.trim()
+    const safeName = (await ctx.bus.request('observer:redact', { text: path.basename(chosen.name) })).text.trim()
+    if (!safeText || !safeName) throw new Error('The reference could not be masked safely.')
+    return queue(async () => {
+      const guide = await checked(id, revision)
+      if ((guide.references?.length ?? 0) >= 10) throw new Error('A task can have up to 10 references.')
+      const reference = { id: randomUUID(), name: safeName.slice(0, 180), characters: safeText.length, added_at: new Date().toISOString() }
+      await store.writeBytes(['references', id, `${reference.id}.txt`], Buffer.from(safeText))
+      guide.references = [...(guide.references ?? []), reference]
+      await publish(guide)
+      return clone(guide)
+    })
+  })
+  ctx.handle('guide:referenceRemove', (payload) => queue(async () => {
+    const { id, revision, reference_id } = revisionSchema.extend({ reference_id: idSchema }).parse(payload)
+    const guide = await checked(id, revision)
+    if (!guide.references?.some((item) => item.id === reference_id)) throw new Error('Reference no longer exists.')
+    guide.references = guide.references.filter((item) => item.id !== reference_id)
+    await store.remove(['references', id, `${reference_id}.txt`])
+    await publish(guide)
+    return clone(guide)
+  }))
+  ctx.handle('guide:delete', async (payload) => {
+    const { id } = z.object({ id: idSchema }).strict().parse(payload)
+    await Promise.allSettled([...pending])
+    return queue(async () => {
+      const guide = await load(id)
+      if (!guide) throw new Error('Recording no longer exists.')
+      if (guide.recording) throw new Error('Stop recording before deleting this task.')
+      idSchema.parse(guide.session)
+      const activeSession = dependencies.isSessionActive
+        ? dependencies.isSessionActive(guide.session)
+        : (await import('./session')).getSessionState().id === guide.session
+      if (activeSession) throw new Error('Finish the recording or debrief before deleting this task.')
+      const workmaps: WorkMap[] = []
+      for (const file of await store.list(['workmaps'])) {
+        if (!file.endsWith('.json')) continue
+        const map = await store.read<WorkMap>(['workmaps', file]).catch(() => null)
+        if (map?.guide === id) workmaps.push(map)
+      }
+      const mapIds = new Set(workmaps.map((map) => map.id))
+      await store.remove(['guides', `${id}.json`])
+      deleted.add(id)
+      guides.delete(id)
+      ctx.bus.emit('recording:deleted', { guide_id: id, session: guide.session, workmap_ids: [...mapIds] })
+      for (const map of workmaps) await store.remove(['workmaps', `${map.id}.json`])
+      for (const file of await store.list(['mastery'])) {
+        if (!file.endsWith('.json')) continue
+        const report = await store.read<MasteryReport>(['mastery', file]).catch(() => null)
+        if (report && mapIds.has(report.workmap_id)) await store.remove(['mastery', file])
+      }
+      for (const file of await store.list(['sessions', guide.session])) await store.remove(['sessions', guide.session, file])
+      for (const file of await store.list(['references', id])) await store.remove(['references', id, file])
+      const otherShots = new Set((await list()).flatMap((item) => item.steps.map((step) => step.shot).filter((shot): shot is string => !!shot)))
+      for (const shot of new Set(guide.steps.map((step) => step.shot).filter((item): item is string => !!item))) {
+        if (!otherShots.has(shot)) { const storage = shotStorage(ctx, shot); await storage.store.remove(storage.parts) }
+      }
+      for (const file of await store.list(['profiles'])) {
+        if (!file.endsWith('.json')) continue
+        const profile = await store.read<AppProfile>(['profiles', file]).catch(() => null)
+        if (!profile || !profile.guides.includes(id)) continue
+        profile.guides = profile.guides.filter((item) => item !== id)
+        profile.workmaps = profile.workmaps.filter((item) => !mapIds.has(item))
+        await store.write(['profiles', file], profile)
+        ctx.bus.emit('profile:updated', profile)
+      }
+      return { ok: true }
+    })
+  })
   ctx.handle('guide:save', (payload) => queue(async () => {
     const { id, revision, edit } = saveSchema.parse(payload)
     await checked(id, revision)
@@ -499,7 +591,6 @@ export function createStepsService(ctx: AppContext, dependencies: {
     await writeFile(result.filePath, await printGuidePdf(html))
     return { canceled: false, path: result.filePath }
   })
-  const revisionSchema = z.object({ id: idSchema, revision: z.number().int().nonnegative() }).strict()
   ctx.handle('guide:polish', (payload) => queue(async () => {
     const { id, revision } = revisionSchema.parse(payload)
     const guide = await checked(id, revision)

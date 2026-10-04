@@ -13,6 +13,7 @@ import type {
   ServiceInit,
   Violation,
   WorkMap,
+  AppProfile,
 } from '@shared/contracts'
 import type {
   AgentCommand,
@@ -27,6 +28,8 @@ import type {
 import { lastPicked, setOffRecord as gateOffRecord } from './gate'
 import { getSettings, roleForAgents } from './settings'
 import { openDashboard, toOverlayLocal } from './windows'
+import { mayShareGuide, readReferenceText } from '../lib/references'
+import { appDirectory, getStore } from './store'
 
 const ROLE = () => roleForAgents()
 /** Nobody is addressed or described by name: the agent talks to "you" and about "the expert". */
@@ -242,7 +245,12 @@ async function tutorVariables(workmap_id?: string): Promise<Record<string, strin
     const wm = await ctx.bus.request('brain:workmap', { id: workmap_id })
     if (!wm) return { workmap: '(Work Map not found)' }
     const guide = wm.guide ? await ctx.bus.request('brain:guide', { id: wm.guide }).catch(() => null) : null
-    return { workmap: workmapText(wm), guide: guideText(guide), role: wm.role || ROLE() }
+    if (!guide || !(await mayShareGuide(ctx, guide))) return { workmap: '(Training content is unavailable or local-only.)', guide: '(No cloud training context.)', role: ROLE() }
+    const references = guide ? await readReferenceText(ctx, guide, 7000) : ''
+    const appKey = guide?.app_keys?.[0] || guide?.app
+    const profile = appKey ? await getStore(ctx).read<AppProfile>(['profiles', `${appDirectory(appKey)}.json`]).catch(() => null) : null
+    const habits = profile?.habits ? `\n\nHabits learned between recordings: ${profile.habits.frequent_actions.slice(0, 4).map((item) => `${item.label} (${item.count} times)`).join('; ')}. ${profile.habits.action_sequences.slice(0, 2).map((item) => `${item.from} then ${item.to}`).join('; ')}.` : ''
+    return { workmap: workmapText(wm), guide: clip(`${guideText(guide)}${references ? `\n\nReference documents:\n${references}` : ''}${habits}`, 10000), role: wm.role || ROLE() }
   } catch (err) {
     console.warn('[session] could not load the Work Map for the tutor:', (err as Error).message)
     return { workmap: '(Work Map unavailable)' }

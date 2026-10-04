@@ -87,6 +87,23 @@ export function GuidesPage({ bridge }: { bridge?: DashboardBridge }) {
     if (!bridge || !guide) return
     void run(async () => { accept(await bridge.invoke(channel, { id: guide.id, revision: guide.revision ?? 0 })); setNotice(channel === 'guide:polish' ? 'Guide polished.' : 'Reasons and guardrails added from the Work Map.') })
   }
+  function addReference() {
+    if (!bridge || !guide) return
+    void run(async () => {
+      const result = await bridge.invoke('guide:referenceAdd', { id: guide.id, revision: guide.revision ?? 0 })
+      if ('canceled' in result) return
+      accept(result)
+      setNotice('Reference added. Protégé can use its masked text during training.')
+    })
+  }
+  function removeReference(referenceId: string, name: string) {
+    if (!bridge || !guide || !window.confirm(`Remove “${name}” from this task?`)) return
+    void run(async () => { accept(await bridge.invoke('guide:referenceRemove', { id: guide.id, revision: guide.revision ?? 0, reference_id: referenceId })); setNotice('Reference removed.') })
+  }
+  function deleteTask() {
+    if (!bridge || !guide || !window.confirm(`Permanently delete “${guide.title}” and its Work Maps, references, transcripts and lesson history?`)) return
+    void run(async () => { await bridge.invoke('guide:delete', { id: guide.id }); current.current = null; await reload(); setNotice('Recorded task deleted.') })
+  }
   return <>
       <div className="guide-page-heading"><div><p className="guide-eyebrow">Capture / Step guides</p><h1>The work, step by step.</h1><p>Turn an expert’s actions into a guide someone else can follow.</p></div><button disabled={busy} onClick={() => void reload()}>Reload guides</button></div>
       {error && <div className="guide-error" role="alert">{error}</div>}
@@ -96,6 +113,9 @@ export function GuidesPage({ bridge }: { bridge?: DashboardBridge }) {
         <section className="guide-document">
           <div className="guide-document-heading"><div>{rename ? <form onSubmit={(event) => { event.preventDefault(); edit({ kind: 'rename', title: guideTitle }) }}><label>Guide title<input autoFocus value={guideTitle} maxLength={200} onChange={(event) => setGuideTitle(event.target.value)}/></label><button disabled={locked || !guideTitle.trim()}>Save title</button><button type="button" onClick={() => setRename(false)}>Cancel</button></form> : <><p className="guide-eyebrow">{guide.app || 'Recorded workflow'}</p><h2>{guide.title}</h2><button className="guide-text-button" disabled={locked || unsaved} onClick={() => { setGuideTitle(guide.title); setRename(true) }}>Rename guide</button></>}</div><div className="dash-actions"><button disabled={locked || unsaved} title="Clean titles and drop noise" onClick={() => ai('guide:polish')}>Polish</button><button disabled={locked || unsaved} title="Pull in quotes and guardrails from the Work Map" onClick={() => ai('guide:addWhy')}>Add the why</button><button disabled={locked || unsaved} onClick={() => void exportAs('guide:exportPdf', 'PDF')}>Export PDF</button><button disabled={locked || unsaved} onClick={() => void exportAs('guide:exportHtml', 'HTML')}>HTML</button><button disabled={locked || unsaved} onClick={() => void exportAs('guide:exportMarkdown', 'Markdown')}>Markdown</button></div></div>
           {guide.recording && <p className="guide-recording" role="status">Recording in progress. Steps update live. Stop the session to edit or export.</p>}
+          <div className="guide-references"><div><span className="guide-eyebrow">TRAINING CONTEXT</span><h3>Reference files</h3><p>Add a policy or procedure so Protégé can use it while teaching this task. PDF, TXT, Markdown, CSV or JSON; up to 5 MB. Only masked text is kept.</p></div><button disabled={locked || unsaved} onClick={addReference}>+ Add file</button>
+            {(guide.references?.length ?? 0) > 0 && <ul>{guide.references!.map((reference) => <li key={reference.id}><span><strong>{reference.name}</strong><small>{reference.characters.toLocaleString()} characters of training context</small></span><button className="guide-danger" disabled={locked || unsaved} onClick={() => removeReference(reference.id, reference.name)}>Remove</button></li>)}</ul>}
+          </div>
           <div className="guide-editor-layout">
             <nav className="guide-steps" aria-label="Guide steps">{guide.steps.map((item) => <button key={item.id} className={item.id === stepId ? 'is-current' : ''} onClick={() => selectStep(item)} aria-current={item.id === stepId ? 'step' : undefined}><span className="guide-step-number">{item.n.toString().padStart(2, '0')}</span><span><strong>{item.title}</strong><small>{item.kind}{item.shot ? ' · Screen captured' : ''}</small></span></button>)}<button className="guide-add-note" disabled={locked || unsaved} onClick={() => edit({ kind: 'note', after_id: step?.id, note: 'Add context for this part of the workflow.' })}>+ Insert note</button></nav>
             <div className="guide-step-editor">{step ? <>
@@ -107,6 +127,7 @@ export function GuidesPage({ bridge }: { bridge?: DashboardBridge }) {
               {step.quote && <blockquote><p>“{step.quote.text}”</p><cite>Expert explanation · {step.quote.source ?? 'session'}</cite></blockquote>}
             </> : <div className="guide-empty"><h3>No steps yet</h3><p>Capture an action or insert a note to begin.</p></div>}</div>
           </div>
+          <div className="guide-task-danger"><button className="guide-danger" disabled={locked || unsaved} onClick={deleteTask}>Delete recorded task</button><span>Also removes its Work Maps, lesson history and saved references.</span></div>
         </section>
       </div>}
   </>
