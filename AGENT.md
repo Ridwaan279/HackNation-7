@@ -1,6 +1,10 @@
 # AI Apprentice: instructions for coding agents
 
-This file is for every coding-agent session working in this repo, whether it's Claude Code, Codex or another tool. `CLAUDE.md`, `CODEX.md` and `AGENTS.md` only point here. **Three agents build in parallel**, each on its own branch and in its own folders, and their work is merged at fixed merge points.
+This file is for every coding-agent session working in this repo, whether it's Claude Code, Codex or another tool. `CLAUDE.md`, `CODEX.md` and `AGENTS.md` only point here.
+
+> **Current mode (since 2026-10-04): one agent, on `main`.** The three agent branches were merged into `main` (A → C → B) and the split ended. One agent now works across the whole repo and commits to `main`. The ownership table (§3), merge points (§5) and status files (§6) are kept below as history. The privacy rules and code rules 4, 6, 7 and 8 still apply. What exists now and how to check it: **`docs/STATUS.md`**.
+
+Originally, **three agents built in parallel**, each on its own branch and in its own folders, and their work was merged at fixed merge points.
 
 - **Product spec and design decisions:** `docs/PLAN.md` (§ numbers below refer to it). Read it before writing code.
 - **Shared data types:** `shared/contracts.ts`. Every message between the sidecar, the main process and the windows is defined there.
@@ -34,11 +38,11 @@ There are three judged modules: **Capture**, **Map** and **Teach** (PLAN §2).
 **Code:**
 
 4. API keys stay in the main process (`app/.env`). Model names come from `MODEL_FAST` and `MODEL_SMART` env vars, never hard-coded.
-5. Edit only the paths your agent owns (§3). If you need something from another agent's area, write a stub on your side and note it in your status file (§6).
+5. *(Three-agent mode only.)* Edit only the paths your agent owns (§3). If you need something from another agent's area, write a stub on your side and note it in your status file (§6).
 6. `shared/contracts.ts` changes must be **additive only**: add optional fields, new event types or new channels. Never rename or remove anything. Commit contract changes on their own (`contracts: add X`) so merges stay trivial.
 7. Keep it simple: this is a 10-hour hackathon. No new frameworks, no state libraries, no ORMs. Store JSON and JSONL files under `%APPDATA%/apprentice`.
 8. This is Windows-only. Code that touches the OS gets tested on a Windows machine. In a Linux or cloud session, build only the platform-neutral parts and say what's untested.
-9. Small commits with clear messages. Don't push to `main` yourself; the integrator merges (§5).
+9. Small commits with clear messages. *(Three-agent mode: don't push to `main` yourself; the integrator merges, §5. Single-agent mode: commit to `main`.)*
 
 ---
 
@@ -294,6 +298,10 @@ python -m pytest tests                      # all observer tests (any OS)
 
 # MiniERP (Agent C)
 cd sandbox-erp && npm install && npm run dev
+
+# brain, dashboard and service tests (no API key needed; models are stubbed)
+cd fixtures && npm install && npm run typecheck && npm test
+cd app && npm run typecheck && npm run build
 ```
 
 Keep these commands working. If you change how something runs, update this section in your next merge (that's the only AGENT.md edit agents may make without asking).
