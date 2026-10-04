@@ -10,7 +10,6 @@
     "test:electron": "node preview.mjs --smoke"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.68.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -21,5 +20,8 @@
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "zod": "^4.1.0"
+  },
+  "dependencies": {
+    "openai": "^7.27.0"
   }
 }

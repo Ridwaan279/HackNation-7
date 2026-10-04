@@ -12,11 +12,11 @@
     "postinstall": "node node_modules/electron/install.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.131.0",
     "@elevenlabs/react": "^1.16.0",
     "@phosphor-icons/react": "^2.1.10",
     "dotenv": "^18.0.5",
     "framer-motion": "^14.0.0",
+    "openai": "^7.27.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.6.5"
