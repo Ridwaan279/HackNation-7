@@ -2,7 +2,7 @@
 // Voices sit on top; the music ducks under them; the result is loudness-normalised to -14 LUFS.
 //
 //   node mix.mjs                 -> out/protege-demo.mp4
-//   node mix.mjs --video other.mp4
+//   node mix.mjs --video protege-demo.mp4   reuse the committed 60 s film's picture (no re-render needed)
 
 import fs from 'node:fs'
 import path from 'node:path'
@@ -69,9 +69,13 @@ console.log(`mixed ${voiceLabels.length} voice clips, ${fxLabels.length} sound e
 const video = arg('video', path.join(OUT, 'silent.mp4'))
 if (fs.existsSync(video)) {
   const out = path.join(OUT, 'protege-demo.mp4')
-  // Retime the 66 s render to the delivered length, re-encoding at a shareable size.
-  r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-i', wav, '-map', '0:v', '-map', '1:a',
-    '-vf', `setpts=PTS*${K.toFixed(6)},fps=30`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p',
+  // A 66 s render is retimed to the delivered length and re-encoded; a video that is already 60 s
+  // (e.g. the committed video/protege-demo.mp4) keeps its picture and only gets the new audio.
+  const retime = dur(video) > OUTPUT + 1
+  const vcodec = retime
+    ? ['-vf', `setpts=PTS*${K.toFixed(6)},fps=30`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p']
+    : ['-c:v', 'copy']
+  r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-i', wav, '-map', '0:v', '-map', '1:a', ...vcodec,
     '-c:a', 'aac', '-b:a', '256k', '-movflags', '+faststart', '-t', String(OUTPUT), out], { stdio: 'inherit' })
   if (r.status) process.exit(r.status)
   console.log(`wrote ${path.relative(HERE, out)}`)
