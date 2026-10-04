@@ -1,11 +1,11 @@
 @echo off
-rem Apprentice for Windows: installs what it needs the first time, then starts the app.
+rem Protege for Windows: installs what it needs the first time, then starts the app.
 setlocal
-title Apprentice
+title Protege
 cd /d "%~dp0"
 
 echo.
-echo   Apprentice
+echo   Protege
 echo   ----------
 
 where node >nul 2>nul
@@ -37,20 +37,20 @@ if not exist "app\.env" (
   start /wait notepad "app\.env"
 )
 
-echo   Starting. Keep this window open while you use Apprentice.
+echo   Starting. Keep this window open while you use Protege.
 pushd app
 call npm run dev
 popd
 goto :eof
 
 :need_node
-echo   Apprentice needs Node.js 20 or newer. Opening the download page.
+echo   Protege needs Node.js 20 or newer. Opening the download page.
 start "" "https://nodejs.org/en/download"
 pause
 exit /b 1
 
 :need_python
-echo   Apprentice needs Python 3.11 or newer. Opening the download page.
+echo   Protege needs Python 3.11 or newer. Opening the download page.
 echo   When you install it, tick "Add python.exe to PATH".
 start "" "https://www.python.org/downloads/windows/"
 pause

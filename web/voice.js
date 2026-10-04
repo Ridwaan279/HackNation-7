@@ -1,78 +1,122 @@
-// The ghost's voice. Kickstart starts it; it then talks through each step of the site.
-// With an ElevenLabs agent id (config.js) it is a live conversation that can move the page with client tools.
-// Without one, a browser voice reads the short scripts below. The SDK loads on the first use.
+// Protégé's voice on the website.
+// Speech: ElevenLabs text-to-speech through api/tts (a Vercel function that keeps the API key on the server);
+// where that isn't deployed, the most natural voice the browser has. With an ElevenLabs agent id (config.js),
+// Kickstart becomes a live conversation that can move the page with client tools.
 import config from './config.js'
 
 const SDK = 'https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.26.0/dist/lib.iife.js'
+const TTS = 'api/tts'
 
-/** Browser-voice scripts: [line, cue]. A cue moves the page while its line is spoken (app.js cue()). */
+/** Spoken tours: [line, cue]. A cue moves the page while its line is spoken (app.js cue()). */
 const SCRIPTS = {
   intro: [
-    ["Hi, I'm the apprentice. I learn how your experts do their work, and I teach it to whoever comes next.", null],
+    ["Hi, I'm Protégé. I learn how your experts do their work, and I teach it to whoever comes next.", null],
     ['You can use me in two ways.', 'options'],
-    ['On the left, the web app. It runs right here in your browser. It records your screen, takes a screenshot whenever it changes, and writes down what you say.', 'web'],
-    ["On the right, the desktop app. It sees what you're doing in real time: every field, every click, and what you typed, masked. So I can ask why at the right moments, and learn the whole job, even the exceptions.", 'desktop'],
-    ['I recommend the desktop app. Pick one to continue.', 'recommend'],
+    ["On the left, the web app. It's a traditional onboarding recording: you record a task, I ask questions when something needs explaining, and at the end I sum it up and ask what's missing.", 'web'],
+    ["On the right, the desktop app. It doesn't stop when the recording does. It runs all the time, reads every task through Windows accessibility, and keeps training itself, so it catches the things an expert forgets to explain.", 'desktop'],
+    ["That's the one I recommend. It's where we pushed this idea to its limit. Pick one to continue.", 'recommend'],
   ],
   web: [
-    ["Here's how the web app works. Press New recording, and choose the window you work in.", null],
-    ["Spend the first ten seconds saying what you're going to show. Then just work, and talk me through it.", null],
-    ['When you stop, you get a guide: a screenshot for every step, with your words next to it. Open the dashboard to begin.', 'dashboard'],
+    ["Here's the web app. It works like a traditional onboarding session.", null],
+    ["Press New recording, choose the window you work in, and spend the first ten seconds saying what you're going to show.", null],
+    ["While you work, I'll ask a question whenever something needs explaining. Just answer out loud.", null],
+    ["When you stop, I'll sum up what I saw and ask a few last questions. Then your guide is ready. Open the dashboard to begin.", 'dashboard'],
   ],
   desktop: [
-    ['Good choice. The desktop app runs on Windows.', null],
-    ['Download the zip, unzip it, and double-click start dot bat. The first start installs everything it needs.', 'install'],
-    ['Then I sit with you while you work, ask why at the pauses, and keep learning every app, without ever reading a password.', 'download'],
+    ['This is the desktop app, the full version of me.', null],
+    ["Unlike the web app, I don't only learn while you record. I run all the time, and I read every field, click and value through Windows accessibility, masked, so I see the whole job.", 'features'],
+    ['I keep training myself, and I fill in what an expert forgets to mention, which is exactly where traditional onboarding falls short.', null],
+    ["This is where we pushed the idea to its limit, and it's only possible because I run on your computer, not in a browser.", 'moonshot'],
+    ["Download the zip, unzip it, and double-click start dot bat. That's all.", 'download'],
   ],
 }
 
-/** What the live agent hears when the visitor moves on. The agent's prompt says to answer these out loud. */
+/** What the live agent hears when the visitor moves on. Its prompt says to answer these out loud. */
 const AGENT_NOTES = {
-  web: '[Website: the visitor chose the web app. In two short sentences, explain how it works: press New recording, choose a window, introduce the task in the first ten seconds, talk while working, get a guide. Then tell them to open the dashboard.]',
-  desktop: '[Website: the visitor chose the desktop app. In two short sentences, say how to install it: download the zip, unzip it and double-click start.bat; it needs Node.js and Python. Then say what it adds: it sees every field in real time, asks why, and keeps learning.]',
+  web: '[Website: the visitor opened the web app. In two or three short sentences: it is traditional onboarding. They record a task, you ask questions while they work, and at the end you sum it up and ask a few more questions. Then tell them to open the dashboard.]',
+  desktop: '[Website: the visitor opened the desktop app. In two or three short sentences: unlike the web app it runs all the time, reads every task through Windows accessibility, keeps training itself and catches what the expert forgot to explain. It is where the idea is pushed to its limit. Then say how to install it: download, unzip, double-click start.bat.]',
 }
 
-function loadSdk() {
-  if (window.ElevenLabsClient) return Promise.resolve(window.ElevenLabsClient)
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = SDK
-    script.async = true
-    script.onload = () => (window.ElevenLabsClient ? resolve(window.ElevenLabsClient) : reject(new Error('the voice library did not load')))
-    script.onerror = () => reject(new Error('the voice library could not be downloaded'))
-    document.head.append(script)
-  })
+// ------------------------------------------------------------------ speaking one line
+
+let tts = null // null: not tried yet; true: ElevenLabs works; false: use the browser's voice
+const audioCache = new Map()
+let audio = null
+let analyser = null
+
+function fetchSpeech(text) {
+  if (tts === false) return Promise.resolve(null)
+  if (!audioCache.has(text)) {
+    audioCache.set(text, fetch(`${TTS}?text=${encodeURIComponent(text)}`)
+      .then((r) => {
+        if (!r.ok || !(r.headers.get('content-type') ?? '').includes('audio')) throw new Error(String(r.status))
+        tts = true
+        return r.blob()
+      })
+      .catch(() => { tts = false; audioCache.delete(text); return null }))
+  }
+  return audioCache.get(text)
 }
 
-/** Browsers load their voices late; wait briefly for them. */
-function pickVoice(synth) {
+function ensureAudio() {
+  if (audio) return
+  audio = new Audio()
+  try {
+    const ctx = new AudioContext()
+    const source = ctx.createMediaElementSource(audio)
+    analyser = ctx.createAnalyser()
+    analyser.fftSize = 256
+    source.connect(analyser)
+    analyser.connect(ctx.destination)
+    audio.addEventListener('play', () => void ctx.resume())
+  } catch {
+    analyser = null
+  }
+}
+
+function outputLevel() {
+  if (!analyser) return 0.45
+  const data = new Uint8Array(analyser.fftSize)
+  analyser.getByteTimeDomainData(data)
+  let sum = 0
+  for (const v of data) sum += ((v - 128) / 128) ** 2
+  return Math.min(1, Math.sqrt(sum / data.length) * 5)
+}
+
+/** The most natural voice the browser offers. Browsers load voices late, so wait briefly. */
+let browserVoice
+function pickVoice() {
+  const synth = window.speechSynthesis
+  if (browserVoice !== undefined || !synth) return Promise.resolve(browserVoice ?? null)
   const choose = () => {
-    const voices = synth.getVoices()
-    return voices.find((v) => /^en/i.test(v.lang) && /natural|neural|aria|jenny|samantha|daniel|google uk|google us/i.test(v.name))
-      ?? voices.find((v) => /^en/i.test(v.lang))
-      ?? null
+    const voices = synth.getVoices().filter((v) => /^en/i.test(v.lang))
+    const prefer = [/(Aria|Jenny|Ava|Emma|Andrew|Brian).*Natural/i, /Natural/i, /Google UK English Female/i, /Google US English/i, /Samantha|Serena|Karen|Moira|Daniel/i]
+    for (const re of prefer) { const v = voices.find((x) => re.test(x.name)); if (v) return v }
+    return voices[0] ?? null
   }
   const now = choose()
-  if (now || !('onvoiceschanged' in synth)) return Promise.resolve(now)
+  if (now) { browserVoice = now; return Promise.resolve(now) }
   return new Promise((resolve) => {
-    const done = () => { synth.removeEventListener('voiceschanged', done); resolve(choose()) }
+    const done = () => { synth.removeEventListener('voiceschanged', done); browserVoice = choose(); resolve(browserVoice) }
     synth.addEventListener('voiceschanged', done)
-    setTimeout(done, 700)
+    setTimeout(done, 800)
   })
 }
+
+// ------------------------------------------------------------------ the voice
 
 /**
  * ui: {
  *   state(s), level(0..1), caption(who, text), clearCaptions(), previewNote(on), error(text),
- *   cue(name)                 move the page for a browser-voice line,
+ *   cue(name)                 move the page while a tour line is spoken,
  *   tool(name, arg) → string  run an agent client tool and describe what is now on screen,
  * }
  */
 export function createVoice(ui) {
   let session = null
-  let preview = null
   let state = 'idle'
   let frame = 0
+  let current = null // { cancelled, finish } for the line or tour being spoken
   /** The visitor wants the voice (Kickstart, or the voice button); later steps are narrated too. */
   let narrating = false
 
@@ -83,6 +127,72 @@ export function createVoice(ui) {
     frame = requestAnimationFrame(loop)
   }
   const stopMeter = () => { cancelAnimationFrame(frame); ui.level(0) }
+
+  function cancelSpeech() {
+    if (!current) return
+    current.cancelled = true
+    current.finish?.()
+    current = null
+    if (audio) audio.pause()
+    window.speechSynthesis?.cancel()
+  }
+
+  /** Speak one line; resolves when it has been said (or cancelled). */
+  async function speakLine(text, job) {
+    const blob = await fetchSpeech(text)
+    if (job.cancelled) return
+    if (blob) {
+      ensureAudio()
+      ui.previewNote(false)
+      const url = URL.createObjectURL(blob)
+      audio.src = url
+      meter(outputLevel)
+      await new Promise((resolve) => {
+        job.finish = resolve
+        audio.onended = resolve
+        audio.onerror = resolve
+        audio.play().catch(resolve)
+      })
+      URL.revokeObjectURL(url)
+      return
+    }
+    const synth = window.speechSynthesis
+    if (!synth) { await new Promise((r) => { job.finish = r; setTimeout(r, text.length * 55) }); return }
+    ui.previewNote(true)
+    const voice = await pickVoice()
+    if (job.cancelled) return
+    meter(() => 0.35 + 0.35 * Math.abs(Math.sin(performance.now() / 160) * Math.sin(performance.now() / 410)))
+    await new Promise((resolve) => {
+      job.finish = resolve
+      const utterance = new SpeechSynthesisUtterance(text)
+      if (voice) utterance.voice = voice
+      utterance.rate = 0.98
+      const started = performance.now()
+      // A browser without voices fails at once: give people time to read the caption.
+      const done = () => setTimeout(resolve, Math.max(0, text.length * 55 - (performance.now() - started)))
+      utterance.onend = done
+      utterance.onerror = done
+      synth.speak(utterance)
+    })
+  }
+
+  /** Speak a list of lines, with cues and captions. */
+  async function run(lines) {
+    cancelSpeech()
+    const job = { cancelled: false }
+    current = job
+    set('speaking')
+    for (let i = 0; i < lines.length; i++) {
+      const [text, cue] = lines[i]
+      if (job.cancelled) return
+      if (lines[i + 1]) void fetchSpeech(lines[i + 1][0]) // fetch the next line while this one plays
+      if (cue) ui.cue(cue)
+      ui.caption('ghost', text)
+      await speakLine(text, job)
+      if (!job.cancelled) await new Promise((r) => setTimeout(r, 220))
+    }
+    if (current === job) { current = null; stopMeter(); set('idle') }
+  }
 
   async function startAgent() {
     set('connecting')
@@ -109,54 +219,13 @@ export function createVoice(ui) {
       stopMeter()
       set('idle')
       const text = String(failure?.message ?? failure)
-      ui.error(/permission|denied|notallowed/i.test(text) ? 'Allow the microphone to talk to the ghost.' : `The ghost couldn't connect: ${text}`)
+      ui.error(/permission|denied|notallowed/i.test(text) ? 'Allow the microphone to talk to Protégé.' : `Protégé couldn't connect: ${text}`)
     }
-  }
-
-  function stopPreview() {
-    if (!preview) return
-    preview = null
-    window.speechSynthesis?.cancel()
-  }
-
-  async function play(name) {
-    const lines = SCRIPTS[name]
-    const synth = window.speechSynthesis
-    if (!lines) return
-    if (!synth) { ui.error("This browser can't speak. The page explains everything too."); return }
-    stopPreview()
-    const token = {}
-    preview = token
-    ui.previewNote(true)
-    set('connecting')
-    const voice = await pickVoice(synth)
-    if (preview !== token) return
-    let i = 0
-    set('speaking')
-    // The browser voice has no level meter: a gentle pulse stands in for it.
-    meter(() => 0.35 + 0.35 * Math.abs(Math.sin(performance.now() / 160) * Math.sin(performance.now() / 410)))
-    const next = () => {
-      if (preview !== token) return
-      if (i >= lines.length) { preview = null; stopMeter(); set('idle'); return }
-      const [text, cue] = lines[i++]
-      if (cue) ui.cue(cue)
-      ui.caption('ghost', text)
-      const utterance = new SpeechSynthesisUtterance(text)
-      if (voice) utterance.voice = voice
-      utterance.rate = 1.03
-      const started = performance.now()
-      // No voice installed: the line fails at once, so give people time to read it.
-      const after = () => setTimeout(next, Math.max(300, text.length * 55 - (performance.now() - started)))
-      utterance.onend = after
-      utterance.onerror = after
-      synth.speak(utterance)
-    }
-    next()
   }
 
   async function stop() {
+    cancelSpeech()
     stopMeter()
-    stopPreview()
     if (session) {
       const s = session
       session = null
@@ -167,29 +236,53 @@ export function createVoice(ui) {
 
   return {
     get active() { return state !== 'idle' },
-    /** Kickstart: the ghost introduces the two versions. */
+    get narrating() { return narrating },
+    /** Kickstart: Protégé introduces the two versions. */
     kickstart() {
       narrating = true
       ui.clearCaptions()
       if (config.elevenLabsAgentId) return session ? undefined : startAgent()
-      return play('intro')
+      return run(SCRIPTS.intro)
     },
-    /** The visitor moved on to a step: narrate it, if they wanted the voice. */
+    /** A version page opened: explain it again from the start, if the visitor wanted the voice. */
     narrate(name) {
       if (!narrating) return
       if (config.elevenLabsAgentId) {
         if (session && AGENT_NOTES[name]) { try { session.sendUserMessage(AGENT_NOTES[name]) } catch { /* closed */ } }
         return
       }
-      void play(name)
+      if (SCRIPTS[name]) void run(SCRIPTS[name])
     },
     /** The voice button: stop, or start again for the step on screen. */
     toggle(name) {
       if (state !== 'idle') { narrating = false; return stop() }
       narrating = true
       ui.clearCaptions()
-      return config.elevenLabsAgentId ? startAgent() : play(name)
+      return config.elevenLabsAgentId ? startAgent() : run(SCRIPTS[name] ?? SCRIPTS.intro)
     },
+    /** Say something during a recording (questions, the overview). Resolves when it has been said. */
+    async say(text) {
+      cancelSpeech()
+      const job = { cancelled: false }
+      current = job
+      await speakLine(text, job)
+      if (current === job) { current = null; stopMeter() }
+      return !job.cancelled
+    },
+    /** Warm the speech cache for a line that is coming up. */
+    prepare(text) { void fetchSpeech(text) },
     stop() { narrating = false; return stop() },
   }
+}
+
+function loadSdk() {
+  if (window.ElevenLabsClient) return Promise.resolve(window.ElevenLabsClient)
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = SDK
+    script.async = true
+    script.onload = () => (window.ElevenLabsClient ? resolve(window.ElevenLabsClient) : reject(new Error('the voice library did not load')))
+    script.onerror = () => reject(new Error('the voice library could not be downloaded'))
+    document.head.append(script)
+  })
 }

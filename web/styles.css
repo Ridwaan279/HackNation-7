@@ -820,3 +820,54 @@ dialog { color: var(--ink); }
   .step-badge { color: #111; }
   .rv { opacity: 1 !important; transform: none !important; filter: none !important; }
 }
+
+/* ------------------------------------------------------------ questions, debrief, moonshot, onboarding */
+.ask-card .core { padding: 18px 22px; background: linear-gradient(120deg, rgba(245, 159, 223, 0.14), rgba(179, 141, 232, 0.08)), var(--core); animation: pop-in 0.7s var(--ease) both; }
+.ask-k { display: inline-flex; align-items: center; gap: 8px; font-size: 10.5px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--pink); }
+.ask-card p { margin: 10px 0 6px; color: var(--ink); font-size: 1.12rem; font-weight: 400; line-height: 1.4; }
+.ask-card small { color: var(--ink-3); font-size: 0.82rem; }
+.transcript p.q { color: var(--pink); }
+.transcript p.answer { padding-left: 10px; box-shadow: inset 2px 0 0 var(--lav); }
+.transcript-mock p.q { color: var(--pink); }
+
+main.debrief { padding-top: 110px !important; padding-bottom: 120px !important; }
+.debrief-stage { max-width: 760px; margin: 0 auto; display: grid; justify-items: center; gap: 1.1rem; text-align: center; }
+.debrief-ghost { width: 220px; mix-blend-mode: lighten; -webkit-mask-image: radial-gradient(circle, #000 52%, transparent 70%); mask-image: radial-gradient(circle, #000 52%, transparent 70%); animation: hover-float 6s var(--float) infinite; }
+.debrief-stage h2 { font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.08; }
+.debrief-text { margin: 0; max-width: 40rem; color: var(--ink-2); font-weight: 300; font-size: 1.12rem; line-height: 1.65; }
+.debrief-answer { width: 100%; text-align: left; }
+.debrief-answer .core { padding: 20px 24px; display: grid; gap: 10px; }
+.debrief-answer p { margin: 0; font-size: 1.05rem; color: var(--ink); min-height: 1.6em; }
+.debrief-answer textarea { width: 100%; margin: 0; border-radius: 12px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--hair); color: var(--ink); }
+.debrief-stage .cta-row { margin-top: 0.4rem; }
+
+.debrief-card { margin-top: 16px; }
+.debrief-card .core { padding: 22px 24px; display: grid; gap: 14px; justify-items: start; }
+.overview { margin: 0; color: var(--ink); font-size: 1.02rem; line-height: 1.6; }
+dl.qa { margin: 4px 0 0; display: grid; gap: 6px 0; width: 100%; }
+dl.qa dt { color: var(--pink); font-size: 0.9rem; margin-top: 8px; }
+dl.qa dd { margin: 0; padding-left: 12px; box-shadow: inset 2px 0 0 var(--lav); color: var(--ink-2); font-weight: 300; line-height: 1.55; }
+
+.moonshot { margin-top: 110px; }
+.moonshot .core { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 40px; padding: 44px; background: radial-gradient(120% 140% at 0% 0%, rgba(179, 141, 232, 0.18), transparent 55%), radial-gradient(90% 120% at 100% 100%, rgba(124, 199, 244, 0.12), transparent 60%), var(--core); }
+.moon-text { display: grid; justify-items: start; gap: 1.1rem; align-content: center; }
+.moon-text h2 { font-size: clamp(2rem, 4vw, 3.4rem); }
+.moon-text p { margin: 0; }
+.moon-note { color: var(--ink) !important; font-weight: 400 !important; }
+.moon-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; align-content: center; }
+.moon-points li { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 18px; background: rgba(255, 255, 255, 0.03); box-shadow: inset 0 0 0 1px var(--hair); }
+.moon-points .step-badge { margin: 0; flex: none; }
+.moon-points strong { display: block; font-weight: 500; }
+.moon-points small { display: block; margin-top: 2px; color: var(--ink-2); font-weight: 300; font-size: 0.92rem; line-height: 1.5; }
+
+.sheet-lead { margin: -4px 0 12px; color: var(--ink-2); font-weight: 300; }
+.field { display: grid; gap: 6px; margin-bottom: 14px; font-size: 0.9rem; color: var(--ink-2); }
+.field input { width: 100%; min-height: 46px; padding: 10px 14px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--hair-2); color: var(--ink); font: inherit; font-size: 1rem; transition: box-shadow 0.5s var(--ease), background-color 0.5s var(--ease); }
+.field input:focus { outline: none; background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1.5px var(--lav); }
+.field input::placeholder { color: var(--ink-3); }
+.opt { color: var(--ink-3); font-size: 0.8rem; }
+#profile-form .btn.wide { margin-top: 8px; }
+
+@media (max-width: 1024px) {
+  .moonshot .core { grid-template-columns: 1fr; padding: 28px; gap: 24px; }
+}

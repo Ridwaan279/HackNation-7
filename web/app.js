@@ -1,4 +1,4 @@
-// Apprentice website. Home: the banner and a Kickstart button. Kickstart starts the ghost's voice and opens the
+// Protégé website. Home: the banner and a Kickstart button. Kickstart starts the ghost's voice and opens the
 // choice between the web app and the desktop app; each has a short overview, then the web dashboard or the download.
 // The web recorder only sees the pixels of the screen you share, so it keeps a screenshot whenever the screen
 // changes and writes down what you say. Recordings stay in this browser (IndexedDB). Nothing is uploaded.
@@ -15,8 +15,14 @@ const DIFF_H = 36
 /** A screenshot is kept when this share of a 64×36 thumbnail changed by more than PIXEL_DELTA. */
 const CHANGE_FRACTION = 0.008
 const PIXEL_DELTA = 22
-const DEFAULT_OPTIONS = { mic: true, transcript: true, video: true, interval: 5 }
-const VIEWS = ['home', 'choose', 'web', 'desktop', 'dashboard', 'live', 'guide']
+const DEFAULT_OPTIONS = { mic: true, transcript: true, questions: true, video: true, interval: 5 }
+/** Questions while recording: not before this many seconds, at least this far apart, at most this many. */
+const FIRST_QUESTION_S = INTRO_S + 6
+const QUESTION_GAP_S = 30
+const MAX_QUESTIONS = 8
+/** A pause long enough to ask: no speech for this long. */
+const QUIET_S = 4
+const VIEWS = ['home', 'choose', 'web', 'desktop', 'dashboard', 'live', 'debrief', 'guide']
 /** Views where the voice button floats in the corner. */
 const VOICE_VIEWS = ['choose', 'web', 'desktop', 'dashboard']
 
@@ -34,6 +40,10 @@ let videoUrl = ''
 let recordings = []
 let options = { ...DEFAULT_OPTIONS }
 let currentView = ''
+/** Who this is for (onboarding): { company, role, teaching, forWhom } */
+let profile = null
+/** The debrief after a recording, while it runs. */
+let debrief = null
 
 // ------------------------------------------------------------------ helpers
 
@@ -226,6 +236,8 @@ async function route() {
   let { name, arg } = parseHash()
   if (rec) name = 'live' // while recording, the live view is the only place to be
   else if (name === 'live') name = 'dashboard'
+  else if (name === 'debrief' && !debrief) name = 'dashboard'
+  else if (debrief && name !== 'debrief') endDebrief(false)
   const changed = name !== currentView
   currentView = name
   for (const view of document.querySelectorAll('[data-view]')) view.hidden = view.dataset.view !== name
@@ -241,7 +253,12 @@ async function route() {
     window.scrollTo({ top: 0, behavior: 'instant' })
     setMenu(false)
   }
-  if (name === 'dashboard') renderDashboard()
+  // Switching between the two versions restarts the explanation of the one on screen.
+  if (changed && (name === 'web' || name === 'desktop')) voice.narrate(name)
+  if (name === 'dashboard') {
+    renderDashboard()
+    if (!profile && !$('profile').open) openProfile(false)
+  }
   if (name === 'guide') {
     const found = await openGuide(arg)
     if (currentView !== 'guide') return
@@ -315,6 +332,16 @@ function cue(name) {
     case 'dashboard':
       if (currentView === 'web') restart($('open-dashboard'), 'pulse')
       break
+    case 'features':
+      if (currentView === 'desktop') document.getElementById('features')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      break
+    case 'moonshot':
+      if (currentView === 'desktop') {
+        const moon = document.querySelector('#moonshot .bezel')
+        moon?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (moon) restart(moon, 'spotlight')
+      }
+      break
     case 'install':
       if (currentView === 'desktop') document.querySelector('.install')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       break
@@ -351,7 +378,7 @@ const voice = createVoice({
   state(s) {
     const live = s !== 'idle'
     $('voice-dock').classList.toggle('live', live)
-    $('voice-dock-text').textContent = !live ? 'Ask the ghost' : s === 'connecting' ? 'Connecting…' : s === 'speaking' ? 'The ghost is talking · tap to stop' : 'Listening · tap to end'
+    $('voice-dock-text').textContent = !live ? 'Ask Protégé' : s === 'connecting' ? 'Connecting…' : s === 'speaking' ? 'Protégé is talking · tap to stop' : 'Listening · tap to end'
     clearTimeout(captionTimer)
     if (!live) captionTimer = setTimeout(() => { $('dock-caption').hidden = true }, 3500)
   },
@@ -477,20 +504,90 @@ function tick() {
   if (t < INTRO_S) return
   $('intro-card').hidden = true
   if (t - rec.lastShotT >= rec.interval) void shoot(false)
+  questionsTick(t)
 }
 
 function addLine(text) {
   if (!rec) return
   // A final result arrives when the sentence ends; date it from roughly when it started.
   const t = Math.max(0, elapsed() - countWords(text) * 0.35)
-  rec.lines.push({ t, text })
+  const q = rec.pending
+  if (q) {
+    q.answer = q.answer ? `${q.answer} ${text}` : text
+    rec.lastSpeechT = elapsed()
+    q.answered = true
+    $('ask-hint').textContent = 'Got it. Carry on whenever you like.'
+  } else {
+    rec.lines.push({ t, text })
+  }
   rec.words += countWords(text)
   $('stat-words').textContent = rec.words
   const box = $('live-transcript')
   box.querySelector('.muted')?.remove()
   box.querySelector('.interim')?.remove()
-  box.append(el('p', {}, el('span', { className: 'line-time' }, fmt(t)), text))
+  box.append(el('p', { className: q ? 'answer' : '' }, el('span', { className: 'line-time' }, fmt(t)), text))
   box.scrollTop = box.scrollHeight
+}
+
+// ------------------------------------------------------------------ questions while recording
+
+function questionFor(r) {
+  const who = profile?.forWhom || 'a new person'
+  const silentStep = !r.lines.some((l) => l.t >= r.lastShotT)
+  if (silentStep && r.steps.length) return 'Could you say what you are doing on this screen, and why?'
+  const pool = [
+    'What do you check here before you move on?',
+    `What would ${who} most likely get wrong at this step?`,
+    'Is there a rule here that you never break?',
+    'Why do it this way, and not another way?',
+    'What happens if this step is skipped, or done wrong?',
+    'Is there an exception, a case where you would do this differently?',
+    'How do you know this step was done correctly?',
+    'Where does the information on this screen come from?',
+  ]
+  return pool[r.questions.length % pool.length]
+}
+
+/** Ask one question out loud at a natural pause; the next thing the expert says is the answer. */
+async function ask(r) {
+  const q = { q: questionFor(r), t: elapsed(), step: Math.max(0, r.steps.length - 1), answer: '', answered: false, endT: 0 }
+  r.questions.push(q)
+  r.lastQuestionT = q.t
+  r.seen = { steps: r.steps.length, lines: r.lines.length }
+  r.asking = true
+  try { r.speech?.stop() } catch { /* ignore */ }
+  $('ask-text').textContent = q.q
+  $('ask-hint').textContent = 'Answer out loud, then carry on.'
+  $('ask-card').hidden = false
+  const box = $('live-transcript')
+  box.querySelector('.muted')?.remove()
+  box.append(el('p', { className: 'q' }, el('span', { className: 'line-time' }, fmt(q.t)), `Protégé: ${q.q}`))
+  box.scrollTop = box.scrollHeight
+  await voice.say(q.q)
+  if (rec !== r) return
+  r.asking = false
+  q.endT = elapsed()
+  r.lastSpeechT = q.endT
+  r.pending = q
+  if (r.speech && !r.speechOff && !r.paused) { try { r.speech.start() } catch { /* already running */ } }
+}
+
+function questionsTick(t) {
+  const r = rec
+  if (!options.questions || r.asking) return
+  const q = r.pending
+  if (q) {
+    // The answer is over after a quiet moment, or nobody answered.
+    if ((q.answered && t - r.lastSpeechT >= QUIET_S) || (!q.answered && t - q.endT >= 25)) {
+      r.pending = null
+      $('ask-card').hidden = true
+    }
+    return
+  }
+  if (t < FIRST_QUESTION_S || !r.steps.length || r.questions.length >= MAX_QUESTIONS) return
+  if (t - r.lastQuestionT < QUESTION_GAP_S || t - r.lastSpeechT < QUIET_S) return
+  if (r.steps.length === r.seen.steps && r.lines.length === r.seen.lines) return // nothing new to ask about
+  void ask(r)
 }
 
 function showInterim(text) {
@@ -507,12 +604,13 @@ function showInterim(text) {
 }
 
 function startSpeech() {
-  if (!SpeechRecognition || !options.transcript) return
+  if (!SpeechRecognition || !(options.transcript || options.questions)) return
   const r = new SpeechRecognition()
   r.continuous = true
   r.interimResults = true
   r.lang = navigator.language || 'en-US'
   r.onresult = (event) => {
+    if (rec) rec.lastSpeechT = elapsed()
     let interim = ''
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i]
@@ -530,7 +628,7 @@ function startSpeech() {
   }
   // Chrome ends recognition after a silence; keep it going while recording.
   r.onend = () => {
-    if (rec && rec.speech === r && !rec.paused && !rec.stopping && !rec.speechOff) {
+    if (rec && rec.speech === r && !rec.paused && !rec.stopping && !rec.speechOff && !rec.asking) {
       try { r.start() } catch { /* already starting */ }
     }
   }
@@ -600,6 +698,12 @@ async function startRecording() {
     lastSmall: null,
     steps: [],
     lines: [],
+    questions: [],
+    pending: null,
+    asking: false,
+    lastQuestionT: -Infinity,
+    lastSpeechT: 0,
+    seen: { steps: 0, lines: 0 },
     words: 0,
     chunks: [],
     screen,
@@ -622,6 +726,7 @@ async function startRecording() {
   $('stat-words').textContent = '0'
   $('mic-status').textContent = options.mic && !mic ? 'Recording without a microphone.' : ''
   $('intro-card').hidden = false
+  $('ask-card').hidden = true
   setPaused(false)
   startRecorder(screen, mic)
   startSpeech()
@@ -667,7 +772,7 @@ function guideTitle(intro) {
   const shown = first.match(/\b(?:i'?m going to|i am going to|i will|i'll|let me|we'?re going to|we will|we'll)\s+(?:show|walk|take)\s+(?:you\s+)?(?:through\s+)?(.+)$/i)
   if (shown) first = shown[1]
   first = first.trim()
-  if (first.length < 8) return `Recording, ${shortDate(Date.now())}`
+  if (first.length < 8) return profile?.teaching || `Recording, ${shortDate(Date.now())}`
   const title = first.length > 72 ? `${first.slice(0, 70).trim()}…` : first
   return title.replace(/^./, (c) => c.toUpperCase())
 }
@@ -682,9 +787,10 @@ function buildGuide(r, duration) {
     const from = i === 0 ? -Infinity : step.t
     const to = steps[i + 1]?.t ?? Infinity
     step.note = rest.filter((l) => l.t >= from && l.t < to).map((l) => l.text).join(' ')
-    step.title = autoTitle(step.note, i + 1)
+    step.qa = r.questions.filter((q) => q.step === i && q.answer).map((q) => ({ q: q.q, a: q.answer }))
+    step.title = autoTitle(step.note || step.qa[0]?.a || '', i + 1)
   })
-  return { id: uid(), title: guideTitle(intro), intro, created: Date.now(), duration, hasVideo: false, steps }
+  return { id: uid(), title: guideTitle(intro), intro, created: Date.now(), duration, hasVideo: false, steps, forWhom: profile?.forWhom ?? '', overview: '', debrief: [] }
 }
 
 async function stop() {
@@ -706,7 +812,128 @@ async function stop() {
   videoBlob = blob
   if (!next.steps.length) toast('No screenshots were taken. Record a little longer, or press Screenshot.')
   await saveRecording(next, blob)
-  goto(`guide/${next.id}`)
+  if (options.questions) void runDebrief(next)
+  else goto(`guide/${next.id}`)
+}
+
+// ------------------------------------------------------------------ debrief: an overview, then a few last questions
+
+function overviewOf(g) {
+  const n = g.steps.length
+  const titles = g.steps.map((s) => s.title.replace(/[….!?]+$/, '').trim()).filter((t) => t && !/^Step \d+$/.test(t))
+  let text = `I recorded ${n} step${n === 1 ? '' : 's'} in ${Math.max(1, Math.round(g.duration / 60))} minute${Math.round(g.duration / 60) > 1 ? 's' : ''}.`
+  if (titles.length >= 2) text += ` It starts with “${titles[0]}” and ends with “${titles[titles.length - 1]}”.`
+  else if (titles.length === 1) text += ` The main step: “${titles[0]}”.`
+  const answered = g.steps.reduce((sum, s) => sum + (s.qa?.length ?? 0), 0)
+  if (answered) text += ` You answered ${answered} of my questions along the way.`
+  return `${text} Before I write the guide, a few last questions.`
+}
+
+function lastQuestions() {
+  const task = profile?.teaching ? profile.teaching.replace(/^./, (c) => c.toLowerCase()) : 'this task'
+  const who = profile?.forWhom || 'a new person'
+  return [
+    `Is there anything you usually do for ${task} that didn't come up today?`,
+    'When would you do this differently? Are there exceptions I should know about?',
+    `What is the one thing ${who} must never forget here?`,
+  ]
+}
+
+/** Listen for one answer: it ends after a quiet moment, or when the expert presses Next. */
+function listen() {
+  return new Promise((resolve) => {
+    let text = ''
+    let quietTimer = 0
+    let maxTimer = 0
+    const heard = $('debrief-heard')
+    const typed = $('debrief-typed')
+    const finish = () => {
+      clearTimeout(quietTimer)
+      clearTimeout(maxTimer)
+      if (r) { r.onend = null; try { r.stop() } catch { /* ignore */ } }
+      debrief.finishAnswer = null
+      resolve((text || typed.value).trim())
+    }
+    debrief.finishAnswer = finish
+    $('debrief-answer').hidden = false
+    typed.value = ''
+    let r = null
+    if (!SpeechRecognition) {
+      typed.hidden = false
+      heard.hidden = true
+      typed.focus()
+      return
+    }
+    typed.hidden = true
+    heard.hidden = false
+    heard.textContent = 'Listening…'
+    heard.classList.add('muted')
+    r = new SpeechRecognition()
+    r.continuous = true
+    r.interimResults = true
+    r.lang = navigator.language || 'en-US'
+    r.onresult = (event) => {
+      let interim = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i]
+        if (res.isFinal) text = `${text} ${res[0].transcript.trim()}`.trim()
+        else interim += res[0].transcript
+      }
+      heard.textContent = `${text} ${interim}`.trim() || 'Listening…'
+      heard.classList.toggle('muted', !text && !interim)
+      clearTimeout(quietTimer)
+      if (text) quietTimer = setTimeout(finish, 4000)
+    }
+    r.onerror = () => { typed.hidden = false; heard.hidden = !text }
+    r.onend = () => { if (debrief?.finishAnswer === finish) { try { r.start() } catch { /* ignore */ } } }
+    try { r.start() } catch { typed.hidden = false }
+    maxTimer = setTimeout(finish, 45000)
+  })
+}
+
+async function runDebrief(g) {
+  debrief = { guide: g, answers: [], cancelled: false, finishAnswer: null }
+  const d = debrief
+  goto('debrief')
+  const overview = overviewOf(g)
+  g.overview = overview
+  $('debrief-step').textContent = 'Overview'
+  $('debrief-title').textContent = "Here's what I got."
+  $('debrief-text').textContent = overview
+  $('debrief-answer').hidden = true
+  $('debrief-next-label').textContent = 'Next'
+  const questions = lastQuestions()
+  for (const q of questions) voice.prepare(q)
+  await voice.say(overview)
+  for (let i = 0; i < questions.length; i++) {
+    if (d.cancelled) return
+    $('debrief-step').textContent = `Last questions · ${i + 1} of ${questions.length}`
+    $('debrief-title').textContent = questions[i]
+    $('debrief-text').textContent = ''
+    $('debrief-answer').hidden = true
+    $('debrief-next-label').textContent = i === questions.length - 1 ? 'Finish' : 'Next'
+    await voice.say(questions[i])
+    if (d.cancelled) return
+    const answer = await listen()
+    if (d.cancelled) return
+    if (answer) d.answers.push({ q: questions[i], a: answer })
+  }
+  endDebrief(true)
+}
+
+/** Save what the debrief collected and open the guide. */
+function endDebrief(openGuide) {
+  const d = debrief
+  if (!d) return
+  d.cancelled = true
+  d.finishAnswer?.()
+  debrief = null
+  void voice.stop()
+  d.guide.debrief = d.answers
+  if (guide?.id === d.guide.id) guide = d.guide
+  const g = d.guide
+  idb('readwrite', (s) => s.put(docOnly(g), `guide:${g.id}`)).catch(() => undefined)
+  if (openGuide) goto(`guide/${g.id}`)
 }
 
 // ------------------------------------------------------------------ dashboard
@@ -794,7 +1021,8 @@ function stepCard(step, index) {
             toolButton('Move down', 'arrow-down', () => move(index, 1), index === guide.steps.length - 1),
             toolButton('Delete step', 'trash', () => removeStep(index), false, 'danger'))),
         title,
-        note)))
+        note,
+        step.qa?.length ? el('dl', { className: 'qa' }, ...step.qa.flatMap((x) => [el('dt', {}, x.q), el('dd', {}, x.a)])) : null)))
 }
 
 function renderGuide() {
@@ -805,6 +1033,10 @@ function renderGuide() {
   const intro = $('guide-intro')
   intro.value = guide.intro
   requestAnimationFrame(() => autoGrow(intro))
+  const hasDebrief = !!(guide.overview || guide.debrief?.length)
+  $('guide-debrief').hidden = !hasDebrief
+  $('guide-overview').textContent = guide.overview ?? ''
+  $('guide-qa').replaceChildren(...(guide.debrief ?? []).flatMap((x) => [el('dt', {}, x.q), el('dd', {}, x.a)]))
   const list = $('guide-steps')
   list.replaceChildren(...guide.steps.map(stepCard))
   if (!guide.steps.length) list.append(el('li', { className: 'bezel empty-steps' }, el('div', { className: 'core' }, 'No screenshots in this recording. The screen may not have changed, or it ended during the introduction.')))
@@ -824,6 +1056,7 @@ function exportHtml() {
   <section class="step">
     <h2><span>${i + 1}</span>${esc(s.title || `Step ${i + 1}`)}</h2>
     ${para(s.note)}
+    ${(s.qa ?? []).map((x) => `<p class="qa"><b>${esc(x.q)}</b><br>${esc(x.a)}</p>`).join('')}
     ${s.image ? `<img src="${s.image}" alt="Screenshot for step ${i + 1}">` : ''}
   </section>`).join('')
   const html = `<!doctype html>
@@ -840,15 +1073,17 @@ function exportHtml() {
   .step h2{display:flex;gap:12px;align-items:center;font-size:20px;font-weight:600;letter-spacing:-.01em;margin:0 0 8px}
   .step h2 span{display:inline-grid;place-items:center;min-width:30px;height:30px;border-radius:50%;background:linear-gradient(120deg,#7cc7f4,#b38de8 55%,#f59fdf);color:#fff;font-size:14px}
   .step p{margin:0 0 14px;color:#45434f}
+  .qa{border-left:3px solid #b38de8;padding-left:12px}
   .step img{display:block;width:100%;border-radius:14px;box-shadow:0 0 0 1px #e8e5f0}
   footer{color:#8b8898;font-size:13px;margin-top:36px}
 </style></head>
 <body><main>
-  <p class="meta">Step-by-step guide</p>
+  <p class="meta">Step-by-step guide${guide.forWhom ? ` · for ${esc(guide.forWhom)}` : ''}</p>
   <h1>${esc(guide.title)}</h1>
   ${guide.intro ? `<div class="intro">${para(guide.intro)}</div>` : ''}
+  ${guide.overview || guide.debrief?.length ? `<div class="intro">${para(guide.overview ?? '')}${(guide.debrief ?? []).map((x) => `<p class="qa"><b>${esc(x.q)}</b><br>${esc(x.a)}</p>`).join('')}</div>` : ''}
   ${steps}
-  <footer>Recorded with Apprentice on ${esc(new Date(guide.created).toLocaleDateString())}.</footer>
+  <footer>Recorded with Protégé on ${esc(new Date(guide.created).toLocaleDateString())}.</footer>
 </main></body></html>`
   download(new Blob([html], { type: 'text/html' }), `${slug(guide.title)}.html`)
 }
@@ -861,17 +1096,51 @@ function loadOptions() {
   if (!SpeechRecognition) options.transcript = false
   $('o-mic').checked = options.mic
   $('o-transcript').checked = options.transcript
+  $('o-questions').checked = options.questions
   $('o-video').checked = options.video
   for (const radio of document.querySelectorAll('input[name="o-interval"]')) radio.checked = Number(radio.value) === options.interval
 }
 
 function readOptions() {
   const interval = Number(document.querySelector('input[name="o-interval"]:checked')?.value) || 5
-  options = { mic: $('o-mic').checked, transcript: $('o-transcript').checked, video: $('o-video').checked, interval }
+  options = { mic: $('o-mic').checked, transcript: $('o-transcript').checked, questions: $('o-questions').checked, video: $('o-video').checked, interval }
   store.set('apprentice-options', options)
 }
 
+// ------------------------------------------------------------------ onboarding: who this is for
+
+let startAfterProfile = false
+
+function renderProfile() {
+  $('dash-profile').textContent = profile ? [profile.company, profile.role].filter(Boolean).join(' · ') : 'Web app'
+  $('dash-teaching').textContent = profile?.teaching
+    ? `Teaching: ${profile.teaching}${profile.forWhom ? `, for ${profile.forWhom}` : ''}. Each recording becomes a guide you can edit and share.`
+    : 'Record a task and talk it through. Each one becomes a guide you can edit and share.'
+}
+
+function openProfile(thenStart) {
+  startAfterProfile = thenStart
+  $('p-company').value = profile?.company ?? ''
+  $('p-role').value = profile?.role ?? ''
+  $('p-teaching').value = profile?.teaching ?? ''
+  $('p-for').value = profile?.forWhom ?? ''
+  $('profile').showModal()
+}
+
+function saveProfile(event) {
+  event.preventDefault()
+  const next = { company: $('p-company').value.trim(), role: $('p-role').value.trim(), teaching: $('p-teaching').value.trim(), forWhom: $('p-for').value.trim() }
+  if (!next.role || !next.teaching) { toast('Add your role and what you are teaching.'); return }
+  profile = next
+  store.set('protege-profile', profile)
+  renderProfile()
+  $('profile').close()
+  toast('Saved. Protégé will tailor its questions to this.')
+  if (startAfterProfile) { startAfterProfile = false; void startRecording() }
+}
+
 function init() {
+  profile = store.get('protege-profile')
   document.documentElement.classList.remove('no-js')
   // The HTML already links to the zip, so the button works without JavaScript; config.js can point it elsewhere.
   for (const a of document.querySelectorAll('[data-download]')) {
@@ -895,10 +1164,17 @@ function init() {
   for (const button of document.querySelectorAll('[data-mode]')) {
     button.addEventListener('click', () => {
       goto(button.dataset.mode)
-      voice.narrate(button.dataset.mode)
     })
   }
-  for (const button of document.querySelectorAll('[data-start]')) button.addEventListener('click', () => void startRecording())
+  for (const button of document.querySelectorAll('[data-start]')) {
+    button.addEventListener('click', () => { if (!profile) openProfile(true); else void startRecording() })
+  }
+  renderProfile()
+  $('profile-form').addEventListener('submit', saveProfile)
+  $('profile-close').addEventListener('click', () => $('profile').close())
+  $('open-profile').addEventListener('click', () => openProfile(false))
+  $('debrief-next').addEventListener('click', () => { if (debrief?.finishAnswer) debrief.finishAnswer(); else void voice.stop() })
+  $('debrief-skip').addEventListener('click', () => endDebrief(true))
   $('open-options').addEventListener('click', () => $('options').showModal())
   $('options-start').addEventListener('click', (event) => {
     event.preventDefault()
