@@ -1,6 +1,6 @@
 # Agent A status: Observer
 
-Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. On Windows, the Phase 1 spike passes on one laptop (Edge, 150% scaling). **The full observer (`observer.py`) has not run end-to-end on Windows yet** (see "Verify on Windows").
+Branch: `agent/a-observer`. The code for all of Phase 1–4 is written. Everything that can run on Linux is tested. On Windows, the Phase 1 spike passes 19/19 on one laptop (Edge, 150% scaling). **The full observer (`observer.py`) has not run end-to-end on Windows yet** (see "Verify on Windows").
 
 **Phase 1 go/no-go: all GO.** Per-monitor-v2 DPI awareness takes effect. A pynput click → `ControlFromPoint` gives Button 'Post' with the right rect at 150%. `IsPassword` is read and the password value never is. The Edge URL comes from the address bar (48 ms, then cached). `mss` grabs only the window. Edge's page content is visible without `--force-renderer-accessibility`.
 
@@ -72,7 +72,7 @@ Spike results (one laptop, 2560x1600 at 150%, Edge):
   - The first click landed on empty page space. It returned the page's Document, and the spike counted that as a pass.
   - Typing started while focus was still in the Password box, so no field value was seen within the 2 s window.
   - Change: the spike now waits for a click on Post (other clicks are reported and ignored), keeps reading the focused field for up to 20 s, and says where focus was if it fails.
-- **Run 5:** _(paste here)_
+- **Run 5: 19/19 passed.** Click → Button 'Post' at (173,786) inside its rect (104,759,213,819) at 150%; Cost center value read (`value_len=5`); every page check as in run 4.
 
 ## Stubbed / faked
 
