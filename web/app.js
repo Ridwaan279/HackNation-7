@@ -1,7 +1,7 @@
-// Apprentice website and web recorder. A browser only sees the pixels of the screen you share, so the recorder
-// keeps a screenshot whenever the screen changes, writes down what you say, and turns that into a step guide.
-// Field names, typed values, masking and 24/7 learning need the desktop app; the page says so and links to it.
-// Recordings stay in this browser (IndexedDB). Nothing is uploaded.
+// Apprentice website. Home: the banner and a Kickstart button. Kickstart starts the ghost's voice and opens the
+// choice between the web app and the desktop app; each has a short overview, then the web dashboard or the download.
+// The web recorder only sees the pixels of the screen you share, so it keeps a screenshot whenever the screen
+// changes and writes down what you say. Recordings stay in this browser (IndexedDB). Nothing is uploaded.
 import config from './config.js'
 import { createVoice } from './voice.js'
 
@@ -9,12 +9,16 @@ import { createVoice } from './voice.js'
 const INTRO_S = 10
 const MAX_SHOTS = 300
 const SHOT_MAX_W = 1600
+const THUMB_W = 480
 const DIFF_W = 64
 const DIFF_H = 36
 /** A screenshot is kept when this share of a 64×36 thumbnail changed by more than PIXEL_DELTA. */
 const CHANGE_FRACTION = 0.008
 const PIXEL_DELTA = 22
 const DEFAULT_OPTIONS = { mic: true, transcript: true, video: true, interval: 5 }
+const VIEWS = ['home', 'choose', 'web', 'desktop', 'dashboard', 'live', 'guide']
+/** Views where the voice button floats in the corner. */
+const VOICE_VIEWS = ['choose', 'web', 'desktop', 'dashboard']
 
 const $ = (id) => document.getElementById(id)
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -22,11 +26,14 @@ const canShare = !!navigator.mediaDevices?.getDisplayMedia
 
 /** The recording in progress, or null. */
 let rec = null
-/** The last guide: { id, title, intro, created, duration, hasVideo, steps: [{ id, t, image, title, note }] } */
+/** The open guide: { id, title, intro, created, duration, hasVideo, steps: [{ id, t, image, title, note }] } */
 let guide = null
 let videoBlob = null
 let videoUrl = ''
+/** All recordings, newest first: [{ id, title, created, duration, count, thumb }] */
+let recordings = []
 let options = { ...DEFAULT_OPTIONS }
+let currentView = ''
 
 // ------------------------------------------------------------------ helpers
 
@@ -35,6 +42,7 @@ const uid = () => Math.random().toString(36).slice(2, 10)
 const countWords = (text) => text.split(/\s+/).filter(Boolean).length
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'guide'
+const shortDate = (t) => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 const store = {
   get(key) { try { return JSON.parse(localStorage.getItem(key) ?? 'null') } catch { return null } },
   set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage may be blocked */ } },
@@ -77,7 +85,14 @@ function autoGrow(area) {
   area.style.height = `${area.scrollHeight + 2}px`
 }
 
-// ------------------------------------------------------------------ storage (IndexedDB, best effort)
+function restart(node, className) {
+  node.classList.remove(className)
+  void node.offsetWidth
+  node.classList.add(className)
+}
+
+// ------------------------------------------------------------------ storage: one entry per recording (IndexedDB)
+// index → summaries; guide:<id> → the guide without images; img:<id>:<step> → a screenshot; video:<id> → the video.
 
 let dbPromise = null
 function db() {
@@ -101,79 +116,139 @@ async function idb(mode, fn) {
 }
 const idbGet = (key) => idb('readonly', (s) => s.get(key))
 const docOnly = (g) => ({ ...g, steps: g.steps.map(({ image, ...rest }) => rest) })
+const summary = (g, thumb) => ({ id: g.id, title: g.title, created: g.created, duration: g.duration, count: g.steps.length, thumb })
 
-let saveTimer = 0
-function saveSoon() {
-  clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    if (guide) idb('readwrite', (s) => s.put(docOnly(guide), 'guide')).catch(() => undefined)
-  }, 400)
+async function makeThumb(dataUrl) {
+  if (!dataUrl) return ''
+  const img = new Image()
+  img.src = dataUrl
+  await img.decode().catch(() => undefined)
+  if (!img.width) return ''
+  const c = document.createElement('canvas')
+  c.width = Math.min(THUMB_W, img.width)
+  c.height = Math.round(img.height * (c.width / img.width))
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
+  return c.toDataURL('image/jpeg', 0.76)
 }
 
-async function saveNew(g, blob) {
+/** Recordings saved by the first version of this page (one guide only) move into the list. */
+async function migrate() {
+  const old = await idbGet('guide')
+  if (!old?.steps) return
+  const images = {}
+  for (const st of old.steps) images[st.id] = (await idbGet(`img:${st.id}`)) ?? ''
+  const video = (await idbGet('video')) ?? null
+  const thumb = await makeThumb(images[old.steps[0]?.id])
+  await idb('readwrite', (s) => {
+    s.put(old, `guide:${old.id}`)
+    for (const st of old.steps) { s.put(images[st.id], `img:${old.id}:${st.id}`); s.delete(`img:${st.id}`) }
+    if (video) s.put(video, `video:${old.id}`)
+    s.delete('guide')
+    s.delete('video')
+    s.put([summary(old, thumb)], 'index')
+  })
+}
+
+async function loadIndex() {
+  try {
+    if (!(await idbGet('index'))) await migrate()
+    recordings = (await idbGet('index')) ?? []
+  } catch {
+    recordings = [] // private windows can refuse IndexedDB: the page still works for this visit
+  }
+}
+
+async function saveRecording(g, blob) {
+  const thumb = await makeThumb(g.steps[0]?.image)
+  recordings = [summary(g, thumb), ...recordings.filter((r) => r.id !== g.id)]
   try {
     await idb('readwrite', (s) => {
-      s.clear()
-      s.put(docOnly(g), 'guide')
-      for (const st of g.steps) s.put(st.image, `img:${st.id}`)
-      if (blob) s.put(blob, 'video')
+      s.put(docOnly(g), `guide:${g.id}`)
+      for (const st of g.steps) s.put(st.image, `img:${g.id}:${st.id}`)
+      if (blob) s.put(blob, `video:${g.id}`)
+      s.put(recordings, 'index')
     })
   } catch {
     toast("This browser couldn't keep the recording. Download the guide before you close the tab.")
   }
 }
 
-async function loadSaved() {
+async function openGuide(id) {
+  if (guide?.id === id) return guide
   try {
-    const doc = await idbGet('guide')
-    if (!doc?.steps) return
-    for (const st of doc.steps) st.image = (await idbGet(`img:${st.id}`)) ?? ''
+    const doc = await idbGet(`guide:${id}`)
+    if (!doc?.steps) return null
+    for (const st of doc.steps) st.image = (await idbGet(`img:${id}:${st.id}`)) ?? ''
     guide = doc
-    videoBlob = (await idbGet('video')) ?? null
+    videoBlob = (await idbGet(`video:${id}`)) ?? null
+    return guide
   } catch {
-    // Private windows can refuse IndexedDB: the page still works for this visit.
+    return null
   }
 }
 
-// ------------------------------------------------------------------ routing and page behaviour
-
-const VIEWS = ['home', 'live', 'guide']
-let currentView = ''
-
-function viewFromHash() {
-  const hash = location.hash
-  if (hash.startsWith('#/')) {
-    const name = hash.slice(2).split('?')[0]
-    return VIEWS.includes(name) ? name : 'home'
-  }
-  return 'home'
+let saveTimer = 0
+function saveSoon() {
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    if (!guide) return
+    const entry = recordings.find((r) => r.id === guide.id)
+    if (entry) { entry.title = guide.title; entry.count = guide.steps.length }
+    idb('readwrite', (s) => { s.put(docOnly(guide), `guide:${guide.id}`); s.put(recordings, 'index') }).catch(() => undefined)
+  }, 400)
 }
 
-function route() {
-  let name = viewFromHash()
+async function deleteRecording(id) {
+  const doc = await idbGet(`guide:${id}`).catch(() => null)
+  recordings = recordings.filter((r) => r.id !== id)
+  await idb('readwrite', (s) => {
+    for (const st of doc?.steps ?? []) s.delete(`img:${id}:${st.id}`)
+    s.delete(`guide:${id}`)
+    s.delete(`video:${id}`)
+    s.put(recordings, 'index')
+  }).catch(() => undefined)
+  if (guide?.id === id) { guide = null; videoBlob = null }
+}
+
+// ------------------------------------------------------------------ routing
+
+function parseHash() {
+  const [name = 'home', arg = ''] = location.hash.replace(/^#\/?/, '').split('/')
+  return { name: VIEWS.includes(name) ? name : 'home', arg: decodeURIComponent(arg) }
+}
+
+function goto(path) {
+  if (location.hash !== `#/${path}`) history.pushState(null, '', `#/${path}`)
+  void route()
+}
+
+async function route() {
+  let { name, arg } = parseHash()
   if (rec) name = 'live' // while recording, the live view is the only place to be
-  else if (name === 'live') name = guide ? 'guide' : 'home'
+  else if (name === 'live') name = 'dashboard'
   const changed = name !== currentView
   currentView = name
-  for (const section of document.querySelectorAll('[data-view]')) section.hidden = section.dataset.view !== name
-  document.body.classList.toggle('is-live', name === 'live')
+  for (const view of document.querySelectorAll('[data-view]')) view.hidden = view.dataset.view !== name
   $('island').hidden = name === 'live'
-  updateDock()
-  if (name === 'guide') renderGuide()
+  $('island').classList.toggle('minimal', name === 'home')
+  for (const a of document.querySelectorAll('[data-nav]')) {
+    if (a.dataset.nav === name || (a.dataset.nav === 'dashboard' && name === 'guide')) a.setAttribute('aria-current', 'page')
+    else a.removeAttribute('aria-current')
+  }
+  $('voice-dock').classList.toggle('away', !VOICE_VIEWS.includes(name))
+  if (!VOICE_VIEWS.includes(name)) $('dock-caption').hidden = true
   if (changed) {
-    const anchor = !location.hash.startsWith('#/') && location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null
-    if (anchor) requestAnimationFrame(() => anchor.scrollIntoView({ behavior: 'instant', block: 'start' }))
-    else window.scrollTo({ top: 0, behavior: 'instant' })
-    observeReveals()
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    setMenu(false)
   }
-}
-
-function goHome(sectionId) {
-  if (currentView !== 'home') {
-    history.pushState(null, '', '#/')
-    route()
+  if (name === 'dashboard') renderDashboard()
+  if (name === 'guide') {
+    const found = await openGuide(arg)
+    if (currentView !== 'guide') return
+    if (found) renderGuide()
+    else { $('guide-empty').hidden = false; $('guide-body').hidden = true }
   }
-  if (sectionId) requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  observeReveals()
 }
 
 const revealer = 'IntersectionObserver' in window
@@ -188,8 +263,8 @@ const revealer = 'IntersectionObserver' in window
 
 function observeReveals() {
   for (const node of document.querySelectorAll('.rv:not(.in)')) {
-    if (!revealer || node.closest('[hidden]')) { if (!revealer) node.classList.add('in'); continue }
-    revealer.observe(node)
+    if (!revealer) { node.classList.add('in'); continue }
+    if (!node.closest('[hidden]')) revealer.observe(node)
   }
 }
 
@@ -200,70 +275,104 @@ function setMenu(open) {
   if (open) {
     menu.hidden = false
     requestAnimationFrame(() => requestAnimationFrame(() => menu.classList.add('open')))
-  } else {
+  } else if (!menu.hidden) {
     menu.classList.remove('open')
     setTimeout(() => { if (!menu.classList.contains('open')) menu.hidden = true }, 350)
   }
 }
 
-// ------------------------------------------------------------------ voice agent ("Ask the ghost")
+// ------------------------------------------------------------------ the ghost's voice
 
-const SECTIONS = { how: 'how', desktop: 'desktop', compare: 'compare', comparison: 'compare', teach: 'teach', privacy: 'privacy', download: 'download', ask: 'ask' }
-let askVisible = false
-
-function spotlight(node) {
-  node.classList.remove('spotlight')
-  void node.offsetWidth
-  node.classList.add('spotlight')
-  setTimeout(() => node.classList.remove('spotlight'), 2700)
+let cueTimer = 0
+/** Move the page to what the ghost is talking about. */
+function cue(name) {
+  const web = $('choice-web')
+  const desk = $('choice-desktop')
+  const focus = (on, off) => {
+    clearTimeout(cueTimer)
+    on.classList.add('cue')
+    on.classList.remove('dim')
+    off.classList.add('dim')
+    off.classList.remove('cue')
+    on.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    cueTimer = setTimeout(() => { on.classList.remove('cue'); off.classList.remove('dim') }, 5200)
+  }
+  switch (name) {
+    case 'options':
+      if (currentView !== 'choose') goto('choose')
+      break
+    case 'web':
+      if (currentView === 'choose') focus(web, desk)
+      break
+    case 'desktop':
+      if (currentView === 'choose') focus(desk, web)
+      break
+    case 'recommend':
+      if (currentView !== 'choose') goto('choose')
+      focus(desk, web)
+      restart(desk.querySelector('[data-mode]'), 'pulse')
+      break
+    case 'dashboard':
+      if (currentView === 'web') restart($('open-dashboard'), 'pulse')
+      break
+    case 'install':
+      if (currentView === 'desktop') document.querySelector('.install')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      break
+    case 'download':
+      if (currentView === 'desktop') {
+        $('download-btn').scrollIntoView({ behavior: 'smooth', block: 'center' })
+        restart($('download-btn'), 'pulse')
+      }
+      break
+  }
 }
 
+/** Client tools the ElevenLabs agent can call. The returned text tells the agent what is on screen now. */
+function tool(name, arg) {
+  if (name === 'options') {
+    goto('choose')
+    return 'The two options are on screen: the web app on the left, and the desktop app, recommended, on the right.'
+  }
+  if (name === 'highlight_download') {
+    if (currentView === 'desktop') { cue('download'); return 'The Download for Windows button is highlighted.' }
+    cue('recommend')
+    return 'The desktop app option is highlighted with its Get the desktop app button.'
+  }
+  if (name === 'open_mode') {
+    if (arg !== 'web' && arg !== 'desktop') return 'Unknown mode. Use "web" or "desktop".'
+    goto(arg)
+    return arg === 'web' ? 'The web app overview is on screen, with an Open the dashboard button.' : 'The desktop app page is on screen, with the Download for Windows button.'
+  }
+  return 'Unknown tool.'
+}
+
+let captionTimer = 0
 const voice = createVoice({
   state(s) {
     const live = s !== 'idle'
-    const labels = { idle: 'Ready when you are', connecting: 'Connecting…', listening: 'Listening', speaking: 'Speaking' }
-    $('orb-state').textContent = labels[s] ?? s
-    $('orb-state').classList.toggle('live', live)
-    for (const label of document.querySelectorAll('[data-talk-label]')) label.textContent = live ? 'End the conversation' : 'Talk to the ghost'
     $('voice-dock').classList.toggle('live', live)
-    $('voice-dock-text').textContent = live ? (s === 'speaking' ? 'The ghost is talking' : s === 'connecting' ? 'Connecting…' : 'Listening… tap to end') : 'Ask the ghost'
-    if (!live) $('dock-caption').hidden = true
+    $('voice-dock-text').textContent = !live ? 'Ask the ghost' : s === 'connecting' ? 'Connecting…' : s === 'speaking' ? 'The ghost is talking · tap to stop' : 'Listening · tap to end'
+    clearTimeout(captionTimer)
+    if (!live) captionTimer = setTimeout(() => { $('dock-caption').hidden = true }, 3500)
   },
-  level(v) { $('orb').style.setProperty('--level', v.toFixed(3)) },
+  level(v) { $('voice-dock-ghost').style.setProperty('--level', v.toFixed(3)) },
   caption(who, text) {
-    const box = $('captions')
-    box.querySelector('.muted')?.remove()
-    box.append(el('p', { className: who === 'you' ? 'you' : '' }, text))
-    while (box.children.length > 4) box.firstElementChild.remove()
-    if (who !== 'you' && !askVisible && currentView === 'home') {
-      $('dock-caption').textContent = text
-      $('dock-caption').hidden = false
-    }
+    if (!VOICE_VIEWS.includes(currentView)) return
+    clearTimeout(captionTimer)
+    const p = $('dock-caption-text')
+    p.textContent = who === 'you' ? `You: ${text}` : text
+    p.classList.toggle('you', who === 'you')
+    $('dock-caption').hidden = false
   },
-  clearCaptions() { $('captions').replaceChildren() },
-  show(section, pulse = false) {
-    const id = SECTIONS[section.toLowerCase()]
-    const node = id && document.getElementById(id)
-    if (!node) return `There is no section called "${section}". Use one of: how, desktop, compare, teach, privacy, download.`
-    goHome()
-    node.scrollIntoView({ behavior: 'smooth', block: id === 'compare' || id === 'teach' || id === 'privacy' ? 'center' : 'start' })
-    const target = node.classList.contains('bezel') ? node : node.querySelector('.bezel') ?? node
-    spotlight(target)
-    if (pulse || id === 'download') {
-      const btn = $('download-btn')
-      btn.classList.remove('pulse')
-      void btn.offsetWidth
-      btn.classList.add('pulse')
-    }
-    return id === 'download' ? 'The Download for Windows button is highlighted on screen.' : `Showing the ${id} section on screen.`
-  },
-  error(text) { toast(text) },
+  clearCaptions() { $('dock-caption').hidden = true },
   previewNote(on) { $('preview-note').hidden = !on },
+  error(text) { toast(text) },
+  cue,
+  tool,
 })
 
-function updateDock() {
-  $('voice-dock').classList.toggle('away', currentView !== 'home' || askVisible)
-}
+/** Which browser-voice script fits the step on screen. */
+const scriptFor = (view) => (view === 'web' || view === 'dashboard' ? 'web' : view === 'desktop' ? 'desktop' : 'intro')
 
 // ------------------------------------------------------------------ recording
 
@@ -462,7 +571,7 @@ async function startRecording() {
     toast('Recording needs Chrome or Edge on a computer.')
     return
   }
-  if (voice.active) void voice.stop()
+  void voice.stop()
   let screen
   try {
     screen = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false })
@@ -517,8 +626,7 @@ async function startRecording() {
   startRecorder(screen, mic)
   startSpeech()
   rec.stopTicker = startTicker(tick)
-  history.pushState(null, '', '#/live')
-  route()
+  goto('live')
   tick()
 }
 
@@ -559,7 +667,7 @@ function guideTitle(intro) {
   const shown = first.match(/\b(?:i'?m going to|i am going to|i will|i'll|let me|we'?re going to|we will|we'll)\s+(?:show|walk|take)\s+(?:you\s+)?(?:through\s+)?(.+)$/i)
   if (shown) first = shown[1]
   first = first.trim()
-  if (first.length < 8) return `Recording, ${new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+  if (first.length < 8) return `Recording, ${shortDate(Date.now())}`
   const title = first.length > 72 ? `${first.slice(0, 70).trim()}…` : first
   return title.replace(/^./, (c) => c.toUpperCase())
 }
@@ -597,9 +705,37 @@ async function stop() {
   guide = next
   videoBlob = blob
   if (!next.steps.length) toast('No screenshots were taken. Record a little longer, or press Screenshot.')
-  await saveNew(next, blob)
-  history.pushState(null, '', '#/guide')
-  route()
+  await saveRecording(next, blob)
+  goto(`guide/${next.id}`)
+}
+
+// ------------------------------------------------------------------ dashboard
+
+function renderDashboard() {
+  const list = $('recordings')
+  $('dash-empty').hidden = recordings.length > 0
+  list.replaceChildren(...recordings.map((r, i) => {
+    const remove = el('button', { type: 'button', className: 'icon-btn danger', title: 'Delete recording' })
+    remove.setAttribute('aria-label', `Delete ${r.title}`)
+    remove.append(icon('trash'))
+    remove.addEventListener('click', async (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      if (!window.confirm(`Delete "${r.title}"? This can't be undone.`)) return
+      await deleteRecording(r.id)
+      renderDashboard()
+      toast('Recording deleted.')
+    })
+    const card = el('div', { className: 'rec-card' },
+      el('a', { className: 'rec-open', href: `#/guide/${encodeURIComponent(r.id)}` },
+        el('span', { className: 'core' },
+          r.thumb ? el('img', { className: 'rec-thumb', src: r.thumb, alt: '', loading: 'lazy' }) : el('span', { className: 'rec-thumb no-image' }, 'No screenshot'),
+          el('h3', {}, r.title),
+          el('span', { className: 'rec-meta' }, `${r.count} step${r.count === 1 ? '' : 's'} · ${fmt(r.duration)} · ${shortDate(r.created)}`))),
+      remove)
+    card.style.animationDelay = `${Math.min(i, 8) * 60}ms`
+    return card
+  }))
 }
 
 // ------------------------------------------------------------------ guide
@@ -618,9 +754,9 @@ function move(index, by) {
   renderGuide()
 }
 
-function remove(index) {
+function removeStep(index) {
   const [step] = guide.steps.splice(index, 1)
-  idb('readwrite', (s) => s.delete(`img:${step.id}`)).catch(() => undefined)
+  idb('readwrite', (s) => s.delete(`img:${guide.id}:${step.id}`)).catch(() => undefined)
   saveSoon()
   renderGuide()
   toast(`Step ${index + 1} deleted.`)
@@ -635,7 +771,7 @@ function stepCard(step, index) {
   note.setAttribute('aria-label', `Notes for step ${n}`)
   note.addEventListener('input', () => { step.note = note.value; autoGrow(note); saveSoon() })
   requestAnimationFrame(() => autoGrow(note))
-  const tool = (label, name, onClick, disabled = false, extra = '') => {
+  const toolButton = (label, name, onClick, disabled = false, extra = '') => {
     const b = el('button', { type: 'button', className: `icon-btn ${extra}`, title: label, disabled })
     b.setAttribute('aria-label', label)
     b.append(icon(name))
@@ -654,22 +790,18 @@ function stepCard(step, index) {
           el('span', { className: 'step-badge' }, String(n)),
           el('span', { className: 'step-time' }, fmt(step.t)),
           el('span', { className: 'step-tools' },
-            tool('Move up', 'arrow-up', () => move(index, -1), index === 0),
-            tool('Move down', 'arrow-down', () => move(index, 1), index === guide.steps.length - 1),
-            tool('Delete step', 'trash', () => remove(index), false, 'danger'))),
+            toolButton('Move up', 'arrow-up', () => move(index, -1), index === 0),
+            toolButton('Move down', 'arrow-down', () => move(index, 1), index === guide.steps.length - 1),
+            toolButton('Delete step', 'trash', () => removeStep(index), false, 'danger'))),
         title,
         note)))
 }
 
 function renderGuide() {
-  const has = !!guide
-  $('guide-empty').hidden = has
-  $('guide-body').hidden = !has
-  for (const link of document.querySelectorAll('[data-guide-link]')) link.hidden = !has
-  if (!has) return
+  $('guide-empty').hidden = true
+  $('guide-body').hidden = false
   $('guide-title').textContent = guide.title
-  const meta = [`${guide.steps.length} step${guide.steps.length === 1 ? '' : 's'}`, fmt(guide.duration), new Date(guide.created).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })]
-  $('guide-meta').textContent = meta.join(' · ')
+  $('guide-meta').textContent = [`${guide.steps.length} step${guide.steps.length === 1 ? '' : 's'}`, fmt(guide.duration), shortDate(guide.created)].join(' · ')
   const intro = $('guide-intro')
   intro.value = guide.intro
   requestAnimationFrame(() => autoGrow(intro))
@@ -756,7 +888,17 @@ function init() {
   if (!canShare) $('no-share').hidden = false
   loadOptions()
 
-  for (const button of document.querySelectorAll('[data-start]')) button.addEventListener('click', () => { setMenu(false); void startRecording() })
+  $('kickstart').addEventListener('click', () => {
+    goto('choose')
+    void voice.kickstart()
+  })
+  for (const button of document.querySelectorAll('[data-mode]')) {
+    button.addEventListener('click', () => {
+      goto(button.dataset.mode)
+      voice.narrate(button.dataset.mode)
+    })
+  }
+  for (const button of document.querySelectorAll('[data-start]')) button.addEventListener('click', () => void startRecording())
   $('open-options').addEventListener('click', () => $('options').showModal())
   $('options-start').addEventListener('click', (event) => {
     event.preventDefault()
@@ -765,24 +907,9 @@ function init() {
     void startRecording()
   })
   $('options').addEventListener('close', readOptions)
-
-  for (const link of document.querySelectorAll('[data-scroll]')) {
-    link.addEventListener('click', (event) => {
-      event.preventDefault()
-      setMenu(false)
-      goHome(link.getAttribute('href').slice(1))
-    })
-  }
-  for (const link of document.querySelectorAll('[data-goto]')) {
-    link.addEventListener('click', (event) => { event.preventDefault(); goHome(link.dataset.goto) })
-  }
+  $('voice-dock').addEventListener('click', () => void voice.toggle(scriptFor(currentView)))
   $('burger').addEventListener('click', () => setMenu($('burger').getAttribute('aria-expanded') !== 'true'))
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false) })
-
-  for (const button of document.querySelectorAll('[data-talk]')) button.addEventListener('click', () => void voice.toggle())
-  if (revealer) {
-    new IntersectionObserver(([entry]) => { askVisible = entry.isIntersecting; if (askVisible) $('dock-caption').hidden = true; updateDock() }, { threshold: 0.35 }).observe($('ask'))
-  }
 
   $('shot-btn').addEventListener('click', () => void shoot(true))
   $('pause-btn').addEventListener('click', togglePause)
@@ -795,15 +922,17 @@ function init() {
   $('export-video').addEventListener('click', () => {
     if (videoBlob) download(videoBlob, `${slug(guide?.title ?? 'recording')}.${videoBlob.type.includes('mp4') ? 'mp4' : 'webm'}`)
   })
+  $('delete-recording').addEventListener('click', async () => {
+    if (!guide || !window.confirm(`Delete "${guide.title}"? This can't be undone.`)) return
+    await deleteRecording(guide.id)
+    toast('Recording deleted.')
+    goto('dashboard')
+  })
   $('lightbox').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close() })
   window.addEventListener('beforeunload', (e) => { if (rec) { e.preventDefault(); e.returnValue = '' } })
-  window.addEventListener('popstate', route)
-  window.addEventListener('hashchange', route)
-  route()
-  void loadSaved().then(() => {
-    for (const link of document.querySelectorAll('[data-guide-link]')) link.hidden = !guide
-    if (currentView === 'guide') renderGuide()
-  })
+  window.addEventListener('popstate', () => void route())
+  window.addEventListener('hashchange', () => void route())
+  void loadIndex().then(() => route())
 }
 
 init()

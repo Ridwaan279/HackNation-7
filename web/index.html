@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Apprentice</title>
-  <meta name="description" content="Record how you do a task once. Apprentice turns it into a step-by-step guide your new hire can follow." />
+  <meta name="description" content="An AI apprentice that learns how your experts work and teaches it to the next person. Use it online or download it for Windows." />
   <meta name="theme-color" content="#050505" />
   <meta property="og:title" content="Apprentice: show it once, the apprentice remembers" />
   <meta property="og:description" content="Record a task and talk it through. Get a step-by-step guide your new hire can follow." />
@@ -19,6 +19,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
 <symbol id="i-arrow-up-right" viewBox="0 0 256 256"><path d="M198,64V168a6,6,0,0,1-12,0V78.48L68.24,196.24a6,6,0,0,1-8.48-8.48L177.52,70H88a6,6,0,0,1,0-12H192A6,6,0,0,1,198,64Z"/></symbol>
 <symbol id="i-arrow-right" viewBox="0 0 256 256"><path d="M220.24,132.24l-72,72a6,6,0,0,1-8.48-8.48L201.51,134H40a6,6,0,0,1,0-12H201.51L139.76,60.24a6,6,0,0,1,8.48-8.48l72,72A6,6,0,0,1,220.24,132.24Z"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 256 256"><path d="M222,128a6,6,0,0,1-6,6H54.49l61.75,61.76a6,6,0,1,1-8.48,8.48l-72-72a6,6,0,0,1,0-8.48l72-72a6,6,0,0,1,8.48,8.48L54.49,122H216A6,6,0,0,1,222,128Z"/></symbol>
 <symbol id="i-download-simple" viewBox="0 0 256 256"><path d="M222,144v64a6,6,0,0,1-6,6H40a6,6,0,0,1-6-6V144a6,6,0,0,1,12,0v58H210V144a6,6,0,0,1,12,0Zm-98.24,4.24a6,6,0,0,0,8.48,0l40-40a6,6,0,0,0-8.48-8.48L134,129.51V32a6,6,0,0,0-12,0v97.51L92.24,99.76a6,6,0,0,0-8.48,8.48Z"/></symbol>
 <symbol id="i-record" viewBox="0 0 256 256"><path d="M128,26A102,102,0,1,0,230,128,102.12,102.12,0,0,0,128,26Zm0,192a90,90,0,1,1,90-90A90.1,90.1,0,0,1,128,218Zm0-160a70,70,0,1,0,70,70A70.08,70.08,0,0,0,128,58Zm0,128a58,58,0,1,1,58-58A58.07,58.07,0,0,1,128,186Z"/></symbol>
 <symbol id="i-microphone" viewBox="0 0 256 256"><path d="M128,174a46.06,46.06,0,0,0,46-46V64a46,46,0,0,0-92,0v64A46.06,46.06,0,0,0,128,174ZM94,64a34,34,0,0,1,68,0v64a34,34,0,0,1-68,0Zm40,141.75V240a6,6,0,0,1-12,0V205.75A78.09,78.09,0,0,1,50,128a6,6,0,0,1,12,0,66,66,0,0,0,132,0,6,6,0,0,1,12,0A78.09,78.09,0,0,1,134,205.75Z"/></symbol>
@@ -36,12 +37,15 @@
 <symbol id="i-check" viewBox="0 0 256 256"><path d="M228.24,76.24l-128,128a6,6,0,0,1-8.48,0l-56-56a6,6,0,0,1,8.48-8.48L96,191.51,219.76,67.76a6,6,0,0,1,8.48,8.48Z"/></symbol>
 <symbol id="i-minus" viewBox="0 0 256 256"><path d="M222,128a6,6,0,0,1-6,6H40a6,6,0,0,1,0-12H216A6,6,0,0,1,222,128Z"/></symbol>
 <symbol id="i-monitor" viewBox="0 0 256 256"><path d="M208,42H48A22,22,0,0,0,26,64V176a22,22,0,0,0,22,22H208a22,22,0,0,0,22-22V64A22,22,0,0,0,208,42Zm10,134a10,10,0,0,1-10,10H48a10,10,0,0,1-10-10V64A10,10,0,0,1,48,54H208a10,10,0,0,1,10,10Zm-52,48a6,6,0,0,1-6,6H96a6,6,0,0,1,0-12h64A6,6,0,0,1,166,224Z"/></symbol>
+<symbol id="i-desktop" viewBox="0 0 256 256"><path d="M208,42H48A22,22,0,0,0,26,64V176a22,22,0,0,0,22,22h74v20H96a6,6,0,0,0,0,12h64a6,6,0,0,0,0-12H134V198h74a22,22,0,0,0,22-22V64A22,22,0,0,0,208,42ZM48,54H208a10,10,0,0,1,10,10v82H38V64A10,10,0,0,1,48,54ZM208,186H48a10,10,0,0,1-10-10V158H218v18A10,10,0,0,1,208,186Z"/></symbol>
+<symbol id="i-globe-simple" viewBox="0 0 256 256"><path d="M128,26A102,102,0,1,0,230,128,102.12,102.12,0,0,0,128,26Zm89.8,96H173.89c-1.54-40.77-18.48-68.23-30.43-82.67A90.19,90.19,0,0,1,217.8,122ZM128,215.83a110,110,0,0,1-15.19-19.45A128.37,128.37,0,0,1,94.13,134h67.74a128.37,128.37,0,0,1-18.68,62.38A110,110,0,0,1,128,215.83ZM94.13,122a128.37,128.37,0,0,1,18.68-62.38A110,110,0,0,1,128,40.17a110,110,0,0,1,15.19,19.45A128.37,128.37,0,0,1,161.87,122Zm18.41-82.67c-12,14.44-28.89,41.9-30.43,82.67H38.2A90.19,90.19,0,0,1,112.54,39.33ZM38.2,134H82.11c1.54,40.77,18.48,68.23,30.43,82.67A90.19,90.19,0,0,1,38.2,134Zm105.26,82.67c11.95-14.44,28.89-41.9,30.43-82.67H217.8A90.19,90.19,0,0,1,143.46,216.67Z"/></symbol>
 <symbol id="i-windows-logo" viewBox="0 0 256 256"><path d="M208,138H128a6,6,0,0,0-6,6v57.45a6,6,0,0,0,4.93,5.91l80,14.54a5.46,5.46,0,0,0,1.07.1,6,6,0,0,0,6-6V144A6,6,0,0,0,208,138Zm-6,70.81-68-12.36V150h68ZM96,138H32a6,6,0,0,0-6,6v40a6,6,0,0,0,4.93,5.9l64,11.64a6.36,6.36,0,0,0,1.07.1,6,6,0,0,0,6-6V144A6,6,0,0,0,96,138Zm-6,50.45L38,179V150H90ZM211.84,35.39a6,6,0,0,0-4.91-1.29l-80,14.54A6,6,0,0,0,122,54.55V112a6,6,0,0,0,6,6h80a6,6,0,0,0,6-6V40A6,6,0,0,0,211.84,35.39ZM202,106H134V59.55l68-12.36ZM99.84,55.76a6,6,0,0,0-4.91-1.3l-64,11.64A6,6,0,0,0,26,72v40a6,6,0,0,0,6,6H96a6,6,0,0,0,6-6V60.36A6,6,0,0,0,99.84,55.76ZM90,106H38V77l52-9.46Z"/></symbol>
 <symbol id="i-github-logo" viewBox="0 0 256 256"><path d="M206.13,75.92A57.79,57.79,0,0,0,201.2,29a6,6,0,0,0-5.2-3,57.77,57.77,0,0,0-47,24H123A57.77,57.77,0,0,0,76,26a6,6,0,0,0-5.2,3,57.79,57.79,0,0,0-4.93,46.92A55.88,55.88,0,0,0,58,104v8a54.06,54.06,0,0,0,50.45,53.87A37.85,37.85,0,0,0,98,192v10H72a26,26,0,0,1-26-26A38,38,0,0,0,8,138a6,6,0,0,0,0,12,26,26,0,0,1,26,26,38,38,0,0,0,38,38H98v18a6,6,0,0,0,12,0V192a26,26,0,0,1,52,0v40a6,6,0,0,0,12,0V192a37.85,37.85,0,0,0-10.45-26.13A54.06,54.06,0,0,0,214,112v-8A55.88,55.88,0,0,0,206.13,75.92ZM202,112a42,42,0,0,1-42,42H112a42,42,0,0,1-42-42v-8a43.86,43.86,0,0,1,7.3-23.69,6,6,0,0,0,.81-5.76,45.85,45.85,0,0,1,1.43-36.42,45.85,45.85,0,0,1,35.23,21.1A6,6,0,0,0,119.83,62h32.34a6,6,0,0,0,5.06-2.76,45.83,45.83,0,0,1,35.23-21.11,45.85,45.85,0,0,1,1.43,36.42,6,6,0,0,0,.79,5.74A43.78,43.78,0,0,1,202,104Z"/></symbol>
 <symbol id="i-camera" viewBox="0 0 256 256"><path d="M208,58H179.21L165,36.67A6,6,0,0,0,160,34H96a6,6,0,0,0-5,2.67L76.78,58H48A22,22,0,0,0,26,80V192a22,22,0,0,0,22,22H208a22,22,0,0,0,22-22V80A22,22,0,0,0,208,58Zm10,134a10,10,0,0,1-10,10H48a10,10,0,0,1-10-10V80A10,10,0,0,1,48,70H80a6,6,0,0,0,5-2.67L99.21,46h57.57L171,67.33A6,6,0,0,0,176,70h32a10,10,0,0,1,10,10ZM128,90a42,42,0,1,0,42,42A42,42,0,0,0,128,90Zm0,72a30,30,0,1,1,30-30A30,30,0,0,1,128,162Z"/></symbol>
 <symbol id="i-sparkle" viewBox="0 0 256 256"><path d="M196.89,130.94,144.4,111.6,125.06,59.11a13.92,13.92,0,0,0-26.12,0L79.6,111.6,27.11,130.94a13.92,13.92,0,0,0,0,26.12L79.6,176.4l19.34,52.49a13.92,13.92,0,0,0,26.12,0L144.4,176.4l52.49-19.34a13.92,13.92,0,0,0,0-26.12Zm-4.15,14.86-55.08,20.3a6,6,0,0,0-3.56,3.56l-20.3,55.08a1.92,1.92,0,0,1-3.6,0L89.9,169.66a6,6,0,0,0-3.56-3.56L31.26,145.8a1.92,1.92,0,0,1,0-3.6l55.08-20.3a6,6,0,0,0,3.56-3.56l20.3-55.08a1.92,1.92,0,0,1,3.6,0l20.3,55.08a6,6,0,0,0,3.56,3.56l55.08,20.3a1.92,1.92,0,0,1,0,3.6ZM146,40a6,6,0,0,1,6-6h18V16a6,6,0,0,1,12,0V34h18a6,6,0,0,1,0,12H182V64a6,6,0,0,1-12,0V46H152A6,6,0,0,1,146,40ZM246,88a6,6,0,0,1-6,6H230v10a6,6,0,0,1-12,0V94H208a6,6,0,0,1,0-12h10V72a6,6,0,0,1,12,0V82h10A6,6,0,0,1,246,88Z"/></symbol>
 <symbol id="i-graph" viewBox="0 0 256 256"><path d="M200,154a29.87,29.87,0,0,0-19.5,7.23L154.88,141.3A29.83,29.83,0,0,0,158,128a30.52,30.52,0,0,0-.22-3.6L174,119a30,30,0,1,0-4-15,30.52,30.52,0,0,0,.22,3.6L154,113a29.91,29.91,0,0,0-32.42-14.31l-8.14-18.3a30,30,0,1,0-11,4.88l8.14,18.3A29.92,29.92,0,0,0,102.06,143L74,168a30.08,30.08,0,1,0,8,9L110,152a29.91,29.91,0,0,0,37.47-1.23l25.62,19.93A30,30,0,1,0,200,154Zm0-68a18,18,0,1,1-18,18A18,18,0,0,1,200,86ZM78,56A18,18,0,1,1,96,74,18,18,0,0,1,78,56ZM56,210a18,18,0,1,1,18-18A18,18,0,0,1,56,210Zm72-64a18,18,0,1,1,18-18A18,18,0,0,1,128,146Zm72,56a18,18,0,1,1,18-18A18,18,0,0,1,200,202Z"/></symbol>
-<symbol id="i-map-trifold" viewBox="0 0 256 256"><path d="M227.69,51.27a6,6,0,0,0-5.15-1.09L160.7,65.64l-62-31a6,6,0,0,0-4.14-.45l-64,16A6,6,0,0,0,26,56V200a6,6,0,0,0,7.46,5.82L95.3,190.36l62,31a6,6,0,0,0,4.14.45l64-16A6,6,0,0,0,230,200V56A6,6,0,0,0,227.69,51.27ZM102,49.71l52,26V206.29l-52-26Zm-64,11,52-13V179.32l-52,13ZM218,195.32l-52,13V76.68l52-13Z"/></symbol>
+<symbol id="i-speaker-high" viewBox="0 0 256 256"><path d="M154.64,26.61a6,6,0,0,0-6.32.65L77.94,82H32A14,14,0,0,0,18,96v64a14,14,0,0,0,14,14H77.94l70.38,54.74A6,6,0,0,0,158,224V32A6,6,0,0,0,154.64,26.61ZM30,160V96a2,2,0,0,1,2-2H74v68H32A2,2,0,0,1,30,160Zm116,51.73L86,165.07V90.93l60-46.66Zm50.53-108.85a38,38,0,0,1,0,50.24,6,6,0,1,1-9-7.94,26,26,0,0,0,0-34.37,6,6,0,0,1,9-7.93ZM246,128a77.86,77.86,0,0,1-19.86,52,6,6,0,1,1-8.94-8,66,66,0,0,0,0-88,6,6,0,1,1,8.94-8A77.86,77.86,0,0,1,246,128Z"/></symbol>
+<symbol id="i-speaker-slash" viewBox="0 0 256 256"><path d="M52.44,36A6,6,0,0,0,43.56,44L78,81.94l-.08.06H32A14,14,0,0,0,18,96v64a14,14,0,0,0,14,14H77.94l70.38,54.74A6,6,0,0,0,158,224V169.92L203.56,220a6,6,0,0,0,8.88-8.08ZM30,160V96a2,2,0,0,1,2-2H74v68H32A2,2,0,0,1,30,160Zm116,51.73L86,165.07V90.93l.11-.08L146,156.72Zm41.5-66.53a26,26,0,0,0,0-34.37,6,6,0,1,1,9-7.93,38,38,0,0,1,0,50.24,6,6,0,0,1-9-7.94ZM107.41,66.68a6,6,0,0,1,1.06-8.42l39.85-31A6,6,0,0,1,158,32v74.83a6,6,0,0,1-12,0V44.27L115.83,67.73A6,6,0,0,1,107.41,66.68ZM246,128a77.86,77.86,0,0,1-19.86,52,6,6,0,1,1-8.94-8,66,66,0,0,0,0-88,6,6,0,1,1,8.94-8A77.86,77.86,0,0,1,246,128Z"/></symbol>
 <symbol id="i-ghost" viewBox="0 0 256 256"><path d="M110,116a10,10,0,1,1-10-10A10,10,0,0,1,110,116Zm46-10a10,10,0,1,0,10,10A10,10,0,0,0,156,106Zm66,14v96a6,6,0,0,1-9.8,4.64l-25.53-20.89-25.54,20.89a6,6,0,0,1-7.6,0L128,199.75l-25.53,20.89a6,6,0,0,1-7.6,0L69.33,199.75,43.8,220.64A6,6,0,0,1,34,216V120a94,94,0,0,1,188,0Zm-12,0a82,82,0,0,0-164,0v83.34l19.53-16a6,6,0,0,1,7.6,0l25.54,20.89,25.53-20.89a6,6,0,0,1,7.6,0l25.53,20.89,25.54-20.89a6,6,0,0,1,7.6,0l19.53,16Z"/></symbol>
 <symbol id="i-hand-pointing" viewBox="0 0 256 256"><path d="M196,90a25.87,25.87,0,0,0-14.59,4.49A26,26,0,0,0,142,78.1V44a26,26,0,0,0-52,0v87l-7.53-12.1a26,26,0,0,0-45,26.07l4.67,8.25c34,60,48.07,84.77,93.86,84.77a86.1,86.1,0,0,0,86-86V116A26,26,0,0,0,196,90Zm14,62a74.09,74.09,0,0,1-74,74c-38.8,0-50-19.83-83.42-78.69L47.89,139l0,0A14,14,0,0,1,53,119.88,13.87,13.87,0,0,1,60,118a14,14,0,0,1,12.15,7l.1.17,18.68,30A6,6,0,0,0,102,152V44a14,14,0,0,1,28,0v68a6,6,0,0,0,12,0V100a14,14,0,0,1,28,0v20a6,6,0,0,0,12,0v-4a14,14,0,0,1,28,0Z"/></symbol>
 <symbol id="i-sliders-horizontal" viewBox="0 0 256 256"><path d="M40,86H74.6a30,30,0,0,0,58.8,0H216a6,6,0,0,0,0-12H133.4a30,30,0,0,0-58.8,0H40a6,6,0,0,0,0,12Zm64-24A18,18,0,1,1,86,80,18,18,0,0,1,104,62ZM216,170H197.4a30,30,0,0,0-58.8,0H40a6,6,0,0,0,0,12h98.6a30,30,0,0,0,58.8,0H216a6,6,0,0,0,0-12Zm-48,24a18,18,0,1,1,18-18A18,18,0,0,1,168,194Z"/></symbol>
@@ -54,52 +58,47 @@
 <symbol id="i-lightning" viewBox="0 0 256 256"><path d="M213.84,118.63a6,6,0,0,0-3.73-4.25L150.88,92.17l15-75a6,6,0,0,0-10.27-5.27l-112,120a6,6,0,0,0,2.28,9.71l59.23,22.21-15,75a6,6,0,0,0,3.14,6.52A6.07,6.07,0,0,0,96,246a6,6,0,0,0,4.39-1.91l112-120A6,6,0,0,0,213.84,118.63ZM106,220.46l11.85-59.28a6,6,0,0,0-3.77-6.8l-55.6-20.85,91.46-98L138.12,94.82a6,6,0,0,0,3.77,6.8l55.6,20.85Z"/></symbol>
 <symbol id="i-info" viewBox="0 0 256 256"><path d="M142,176a6,6,0,0,1-6,6,14,14,0,0,1-14-14V128a2,2,0,0,0-2-2,6,6,0,0,1,0-12,14,14,0,0,1,14,14v40a2,2,0,0,0,2,2A6,6,0,0,1,142,176ZM124,94a10,10,0,1,0-10-10A10,10,0,0,0,124,94Zm106,34A102,102,0,1,1,128,26,102.12,102.12,0,0,1,230,128Zm-12,0a90,90,0,1,0-90,90A90.1,90.1,0,0,0,218,128Z"/></symbol>
 <symbol id="i-plus" viewBox="0 0 256 256"><path d="M222,128a6,6,0,0,1-6,6H134v82a6,6,0,0,1-12,0V134H40a6,6,0,0,1,0-12h82V40a6,6,0,0,1,12,0v82h82A6,6,0,0,1,222,128Z"/></symbol>
-<symbol id="i-users-three" viewBox="0 0 256 256"><path d="M243.6,148.8a6,6,0,0,1-8.4-1.2A53.58,53.58,0,0,0,192,126a6,6,0,0,1,0-12,26,26,0,1,0-25.18-32.5,6,6,0,0,1-11.62-3,38,38,0,1,1,59.91,39.63A65.69,65.69,0,0,1,244.8,140.4,6,6,0,0,1,243.6,148.8ZM189.19,213a6,6,0,0,1-2.19,8.2,5.9,5.9,0,0,1-3,.81,6,6,0,0,1-5.2-3,59,59,0,0,0-101.62,0,6,6,0,1,1-10.38-6A70.1,70.1,0,0,1,103,182.55a46,46,0,1,1,50.1,0A70.1,70.1,0,0,1,189.19,213ZM128,178a34,34,0,1,0-34-34A34,34,0,0,0,128,178ZM70,120a6,6,0,0,0-6-6A26,26,0,1,1,89.18,81.49a6,6,0,1,0,11.62-3,38,38,0,1,0-59.91,39.63A65.69,65.69,0,0,0,11.2,140.4a6,6,0,1,0,9.6,7.2A53.58,53.58,0,0,1,64,126,6,6,0,0,0,70,120Z"/></symbol>
+<symbol id="i-film-strip" viewBox="0 0 256 256"><path d="M216,42H40A14,14,0,0,0,26,56V200a14,14,0,0,0,14,14H216a14,14,0,0,0,14-14V56A14,14,0,0,0,216,42ZM38,86h84v84H38Zm96-12V54h36V74Zm-12,0H86V54h36Zm0,108v20H86V182Zm12,0h36v20H134Zm0-12V86h84v84ZM218,56V74H182V54h34A2,2,0,0,1,218,56ZM40,54H74V74H38V56A2,2,0,0,1,40,54ZM38,200V182H74v20H40A2,2,0,0,1,38,200Zm178,2H182V182h36v18A2,2,0,0,1,216,202Z"/></symbol>
 </svg>
   <div class="aura" aria-hidden="true"></div>
 
   <header class="island" id="island">
     <a class="island-brand" href="#/" aria-label="Apprentice home"><img src="ghost.svg" alt="" width="26" height="26" /><span>Apprentice</span></a>
     <nav class="island-links" aria-label="Main">
-      <a href="#how" data-scroll>How it works</a>
-      <a href="#desktop" data-scroll>Desktop app</a>
-      <a href="#ask" data-scroll>Ask the ghost</a>
-      <a href="#/guide" data-guide-link hidden>Your guide</a>
+      <a href="#/choose" data-nav="choose">Versions</a>
+      <a href="#/dashboard" data-nav="dashboard">Web app</a>
+      <a href="#/desktop" data-nav="desktop">Desktop app</a>
     </nav>
-    <button class="btn btn-primary btn-sm island-cta" type="button" data-start>
-      <span>Start recording</span><span class="btn-ico"><svg class="i"><use href="#i-record" /></svg></span>
-    </button>
+    <a class="btn btn-primary btn-sm island-cta" href="#/desktop">
+      <span>Download</span><span class="btn-ico"><svg class="i"><use href="#i-download-simple" /></svg></span>
+    </a>
     <button class="burger" type="button" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><span></span><span></span></button>
   </header>
 
   <div class="menu" id="menu" hidden>
     <nav aria-label="Menu">
-      <a href="#how" data-scroll style="--i:0">How it works</a>
-      <a href="#desktop" data-scroll style="--i:1">Desktop app</a>
-      <a href="#ask" data-scroll style="--i:2">Ask the ghost</a>
-      <a href="#download" data-scroll style="--i:3">Download</a>
-      <a href="#/guide" data-guide-link style="--i:4" hidden>Your guide</a>
+      <a href="#/" style="--i:0">Home</a>
+      <a href="#/choose" style="--i:1">Versions</a>
+      <a href="#/dashboard" style="--i:2">Web app</a>
+      <a href="#/desktop" style="--i:3">Desktop app</a>
     </nav>
-    <p class="menu-note" style="--i:5">Recording needs Chrome or Edge on a computer.</p>
+    <p class="menu-note" style="--i:4">Recording needs Chrome or Edge on a computer.</p>
   </div>
 
-  <!-- ============================================================ HOME -->
+  <!-- ============================================================ HOME: the banner and one button -->
   <main class="view" id="view-home" data-view="home">
     <section class="hero">
       <div class="hero-copy">
-        <a class="pill rv" href="#desktop" data-scroll><span class="pill-dot"></span>Web recorder · Free · Nothing uploaded<svg class="i"><use href="#i-arrow-right" /></svg></a>
+        <span class="pill rv"><span class="pill-dot"></span>An AI apprentice for your team</span>
         <h1 class="display rv" style="--d:80ms">Show it once.<br /><em>The apprentice</em> remembers.</h1>
-        <p class="lead rv" style="--d:160ms">Record yourself doing a task and talk it through. You get a step-by-step guide your new hire can follow: a screenshot for every screen, and your words next to each step.</p>
-        <div class="cta-row rv" style="--d:240ms">
-          <button class="btn btn-primary btn-lg" type="button" data-start>
-            <span>Start recording</span><span class="btn-ico"><svg class="i"><use href="#i-record" /></svg></span>
+        <p class="lead rv" style="--d:160ms">It learns how your experts work, asks why at the right moments, and teaches it to the next person.</p>
+        <div class="kick-row rv" style="--d:240ms">
+          <button class="kickstart" type="button" id="kickstart">
+            <span class="kick-label">Kickstart</span>
+            <span class="kick-ico"><svg class="i"><use href="#i-play" /></svg></span>
           </button>
-          <a class="btn btn-glass btn-lg" href="#download" data-scroll>
-            <span>Download for Windows</span><span class="btn-ico"><svg class="i"><use href="#i-download-simple" /></svg></span>
-          </a>
         </div>
-        <p class="fine rv" style="--d:320ms">No sign-up. <button class="link" type="button" id="open-options">Recording options</button></p>
-        <p class="fine warn" id="no-share" hidden>Recording needs Chrome or Edge on a computer. You can still read on and download the app.</p>
+        <p class="fine kick-note rv" style="--d:320ms"><svg class="i"><use href="#i-speaker-high" /></svg>The ghost explains everything out loud. <a class="link" href="#/choose" id="skip-voice">Skip the voice</a></p>
       </div>
 
       <div class="hero-stage" aria-hidden="true">
@@ -125,218 +124,247 @@
         </div>
       </div>
     </section>
+  </main>
 
-    <!-- How it works -->
-    <section class="section" id="how">
-      <div class="section-head">
-        <span class="eyebrow rv">How it works</span>
-        <h2 class="rv" style="--d:80ms">Three steps. <em>No setup.</em></h2>
+  <!-- ============================================================ CHOOSE: web or desktop -->
+  <main class="view choose" id="view-choose" data-view="choose" hidden>
+    <div class="choose-head">
+      <span class="eyebrow rv">Choose how to start</span>
+      <h2 class="rv" style="--d:80ms">Online, or the <em>full apprentice?</em></h2>
+      <p class="rv" style="--d:160ms">Both turn what you do into a step-by-step guide. The desktop app also sees what you're doing in real time, so it learns the whole job.</p>
+    </div>
+    <div class="choice-grid">
+      <article class="choice rv" id="choice-web" style="--d:200ms">
+        <div class="bezel"><div class="core">
+          <img class="choice-render" src="assets/mode-web.webp" alt="" />
+          <span class="tag">Online · nothing to install</span>
+          <h3>Web app</h3>
+          <p>Records your screen and takes screenshots, right here in your browser.</p>
+          <ul class="features">
+            <li><svg class="i ok"><use href="#i-check" /></svg>Records your screen and your voice</li>
+            <li><svg class="i ok"><use href="#i-check" /></svg>A screenshot every time the screen changes</li>
+            <li><svg class="i ok"><use href="#i-check" /></svg>Writes down what you say, next to each step</li>
+            <li><svg class="i ok"><use href="#i-check" /></svg>A guide you can edit and download</li>
+            <li class="off"><svg class="i"><use href="#i-minus" /></svg>Can't see which field you changed or what you typed</li>
+          </ul>
+          <button class="btn btn-glass btn-lg wide" type="button" data-mode="web"><span>Use it online</span><span class="btn-ico"><svg class="i"><use href="#i-arrow-right" /></svg></span></button>
+        </div></div>
+      </article>
+      <article class="choice recommended rv" id="choice-desktop" style="--d:320ms">
+        <span class="rec-badge-top"><svg class="i"><use href="#i-sparkle" /></svg>Recommended</span>
+        <div class="glow-shell"><div class="core">
+          <img class="choice-render" src="assets/mode-desktop.webp" alt="" />
+          <span class="tag">Download · Windows</span>
+          <h3>Desktop app</h3>
+          <p>Sees what you're doing in real time, so it can learn the whole job and teach it.</p>
+          <ul class="features">
+            <li><svg class="i ok"><use href="#i-check" /></svg><strong>Everything the web app does, plus:</strong></li>
+            <li><svg class="i ok"><use href="#i-check" /></svg>Reads every field, click and value as you work, masked</li>
+            <li><svg class="i ok"><use href="#i-check" /></svg>Asks why at natural pauses, by voice</li>
+            <li><svg class="i ok"><use href="#i-check" /></svg>Builds a Work Map of your rules</li>
+            <li><svg class="i ok"><use href="#i-check" /></svg>Learns every app 24/7 and coaches new hires</li>
+          </ul>
+          <button class="btn btn-primary btn-lg wide" type="button" data-mode="desktop"><span>Get the desktop app</span><span class="btn-ico"><svg class="i"><use href="#i-download-simple" /></svg></span></button>
+        </div></div>
+      </article>
+    </div>
+    <p class="fine center">You can switch at any time.</p>
+  </main>
+
+  <!-- ============================================================ WEB: quick overview -->
+  <main class="view mode-view" id="view-web" data-view="web" hidden>
+    <section class="desk-hero">
+    <div class="mode-head">
+      <a class="back rv" href="#/choose"><svg class="i"><use href="#i-arrow-left" /></svg>Versions</a>
+      <span class="eyebrow rv">Web app</span>
+      <h2 class="rv" style="--d:80ms">Here's how the <em>web app</em> works.</h2>
+      <p class="rv" style="--d:160ms">Three steps, all in your browser. Recordings never leave this computer.</p>
+      <div class="cta-row rv" style="--d:240ms">
+        <a class="btn btn-primary btn-lg" href="#/dashboard" id="open-dashboard"><span>Open the dashboard</span><span class="btn-ico"><svg class="i"><use href="#i-arrow-right" /></svg></span></a>
       </div>
-      <div class="bento bento-how">
-        <article class="bezel span-7 tall rv">
-          <div class="core card-pad">
-            <span class="step-badge">1</span>
-            <h3>Record</h3>
-            <p>Pick the window you work in and press Start. Say what you're about to show: the first ten seconds are yours.</p>
-            <div class="window">
-              <div class="window-bar"><span class="window-title">MiniERP · Invoice inbox</span><span class="window-ctrl"><i></i><i></i><i></i></span></div>
-              <div class="window-body">
-                <img src="assets/erp-invoice.webp" alt="An invoice screen being recorded" loading="lazy" width="1360" height="860" />
-                <span class="rec-badge"><span class="rec-dot"></span>REC 1:24</span>
-                <div class="shot-strip">
-                  <img src="assets/erp-invoice.webp" alt="" loading="lazy" /><img src="assets/erp-newhire.webp" alt="" loading="lazy" /><img src="assets/erp-confirm.webp" alt="" loading="lazy" />
-                </div>
+    </div>
+      <img class="desk-render rv" style="--d:200ms" src="assets/mode-web.webp" alt="" />
+    </section>
+    <div class="bento bento-how">
+      <article class="bezel span-7 tall rv">
+        <div class="core card-pad">
+          <span class="step-badge">1</span>
+          <h3>Record</h3>
+          <p>Press New recording and pick the window you work in. Say what you're about to show: the first ten seconds are yours.</p>
+          <div class="window">
+            <div class="window-bar"><span class="window-title">MiniERP · Invoice inbox</span><span class="window-ctrl"><i></i><i></i><i></i></span></div>
+            <div class="window-body">
+              <img src="assets/erp-invoice.webp" alt="An invoice screen being recorded" loading="lazy" width="1360" height="860" />
+              <span class="rec-badge"><span class="rec-dot"></span>REC 1:24</span>
+              <div class="shot-strip">
+                <img src="assets/erp-invoice.webp" alt="" loading="lazy" /><img src="assets/erp-newhire.webp" alt="" loading="lazy" /><img src="assets/erp-confirm.webp" alt="" loading="lazy" />
               </div>
             </div>
           </div>
-        </article>
-        <article class="bezel span-5 rv" style="--d:100ms">
-          <div class="core card-pad">
-            <span class="step-badge">2</span>
-            <h3>Talk it through</h3>
-            <p>Explain what you do and why. Your words are written down and attached to the screenshot they belong to.</p>
-            <div class="transcript-mock">
-              <p><span class="mono">0:38</span> Equipment over five thousand euros is capital expenditure,</p>
-              <p><span class="mono">0:41</span> so I change the cost center to 0400 before I post it.</p>
-              <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-            </div>
-          </div>
-        </article>
-        <article class="bezel span-5 rv" style="--d:200ms">
-          <div class="core card-pad">
-            <span class="step-badge">3</span>
-            <h3>Share the guide</h3>
-            <p>Edit titles, reorder or delete steps, then download one HTML file, a PDF or the video.</p>
-            <div class="guide-mock">
-              <div class="guide-mock-row"><span class="n">4</span><div><strong>Change the cost center to 0400</strong><small>“Equipment over €5,000 is capital expenditure.”</small></div></div>
-              <div class="guide-mock-row dim"><span class="n">5</span><div><strong>Post the invoice</strong><small>Check the summary, then confirm.</small></div></div>
-            </div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Desktop app -->
-    <section class="section" id="desktop">
-      <div class="section-head split-head">
-        <div>
-          <span class="eyebrow rv">The desktop app</span>
-          <h2 class="rv" style="--d:80ms">It sees what a browser <em>can't.</em></h2>
         </div>
-        <p class="rv" style="--d:160ms">A web page only gets the pixels of the screen you share. The Windows app reads every field through accessibility, so it knows what you changed, why it matters and what must never be saved.</p>
-      </div>
-      <div class="bento bento-desk">
-        <article class="bezel span-8 rv" id="teach">
-          <div class="core card-pad teach-card">
-            <div class="card-text">
-              <span class="tag">Teach</span>
-              <h3>It sits beside your new hire.</h3>
-              <p>The ghost watches their screen, flies to the right field and stops a mistake before it's saved, explained in the expert's own words.</p>
-            </div>
-            <div class="teach-shot">
-              <div class="teach-frame">
-                <img src="assets/erp-newhire.webp" alt="A new hire's invoice screen with the cost center field highlighted" loading="lazy" width="1360" height="860" />
-                <span class="field-ring"></span>
-                <img class="teach-ghost" src="assets/fly.webp" alt="" loading="lazy" width="900" height="900" />
-              </div>
-              <div class="teach-bubble"><span class="chip-k">Before you post</span>Equipment over €5,000 goes to <b>0400</b>, not 6100. That's how the expert does it.</div>
-            </div>
-          </div>
-        </article>
-        <article class="bezel span-4 rv" style="--d:80ms">
-          <div class="core card-pad render-card fill">
-            <img class="render" src="assets/capture.webp" alt="" loading="lazy" />
-            <span class="tag">Capture</span>
-            <h3>Reads every field</h3>
-            <p>Field names, typed values and button names, through Windows accessibility. Every click and key becomes a step.</p>
-          </div>
-        </article>
-        <article class="bezel span-4 rv" id="privacy" style="--d:80ms">
-          <div class="core card-pad render-card">
-            <img class="render" src="assets/shield.webp" alt="" loading="lazy" />
-            <span class="tag">Privacy</span>
-            <h3>Keeps private things private</h3>
-            <p>Password fields are never read. Cards, IBANs and keys are masked on your computer before anything is stored.</p>
-          </div>
-        </article>
-        <article class="bezel span-4 rv" style="--d:160ms">
-          <div class="core card-pad render-card">
-            <img class="render" src="assets/voice.webp" alt="" loading="lazy" />
-            <span class="tag">Voice</span>
-            <h3>Asks why, out loud</h3>
-            <p>An ElevenLabs voice listens while you work and asks one short question at each natural pause.</p>
-          </div>
-        </article>
-        <article class="bezel span-4 rv" style="--d:240ms">
-          <div class="core card-pad render-card">
-            <img class="render" src="assets/map.webp" alt="" loading="lazy" />
-            <span class="tag">Map</span>
-            <h3>Builds a Work Map</h3>
-            <p>The decisions and rules behind the steps, in the expert's own words, confirmed by them.</p>
-          </div>
-        </article>
-        <article class="bezel span-12 rv">
-          <div class="core card-pad wide-card">
-            <div class="card-text">
-              <span class="tag">Always on</span>
-              <h3>It keeps learning after the recording ends.</h3>
-              <p>In the background, the desktop app learns every app your team uses, as masked text only, and writes an App Profile for each. It picks up the exceptions nobody recorded, like a held invoice or a new supplier, so the guide keeps getting better.</p>
-              <ul class="mini-list">
-                <li><svg class="i"><use href="#i-clock" /></svg>Learns while you work, 24/7</li>
-                <li><svg class="i"><use href="#i-eye-slash" /></svg>Skips password managers, banking and private windows</li>
-                <li><svg class="i"><use href="#i-pause" /></svg>Pause it, or go off the record, any time</li>
-              </ul>
-            </div>
-            <img class="render wide-render" src="assets/orbit.webp" alt="" loading="lazy" />
-          </div>
-        </article>
-      </div>
-
-      <div class="bezel compare rv" id="compare">
-        <div class="core">
-          <table>
-            <caption class="sr-only">What the web recorder and the desktop app can do</caption>
-            <thead><tr><th scope="col"></th><th scope="col">Web</th><th scope="col">Desktop</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">A screenshot every time the screen changes</th><td><svg class="i yes"><use href="#i-check" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-              <tr><th scope="row">Video with your voice, your words next to each step</th><td><svg class="i yes"><use href="#i-check" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-              <tr><th scope="row">Field names and the values you typed</th><td><svg class="i no"><use href="#i-minus" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-              <tr><th scope="row">Clicks and keys as named steps</th><td><svg class="i no"><use href="#i-minus" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-              <tr><th scope="row">Passwords never read; cards, IBANs and keys masked</th><td><svg class="i no"><use href="#i-minus" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-              <tr><th scope="row">Asks why at natural pauses, by voice</th><td><svg class="i no"><use href="#i-minus" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-              <tr><th scope="row">Work Map of decisions and rules</th><td><svg class="i no"><use href="#i-minus" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-              <tr><th scope="row">Learns every app 24/7 and coaches new hires</th><td><svg class="i no"><use href="#i-minus" /></svg></td><td><svg class="i yes"><use href="#i-check" /></svg></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- Voice agent -->
-    <section class="section" id="ask">
-      <div class="ask-grid">
-        <div class="ask-copy">
-          <span class="eyebrow rv">Voice agent · ElevenLabs</span>
-          <h2 class="rv" style="--d:80ms">Still deciding? <em>Ask the ghost.</em></h2>
-          <p class="rv" style="--d:160ms">Talk to the apprentice out loud. It explains what the desktop app adds, answers questions about privacy, and points at the part of this page it's talking about.</p>
-          <div class="cta-row rv" style="--d:240ms">
-            <button class="btn btn-primary btn-lg" type="button" data-talk>
-              <span data-talk-label>Talk to the ghost</span><span class="btn-ico"><svg class="i"><use href="#i-microphone" /></svg></span>
-            </button>
-          </div>
-          <p class="fine rv" style="--d:320ms">Uses your microphone. Voice by ElevenLabs.</p>
-        </div>
-        <div class="bezel ask-stage rv" style="--d:120ms">
-          <div class="core">
-            <div class="orb" id="orb">
-              <div class="orb-glow"></div>
-              <img src="assets/hero.webp" alt="" class="orb-ghost" id="orb-ghost" />
-            </div>
-            <p class="orb-state" id="orb-state">Ready when you are</p>
-            <div class="captions" id="captions" aria-live="polite"><p class="muted">Ask “Why should I download the app?” or “What happens to my passwords?”</p></div>
-            <p class="preview-note" id="preview-note" hidden>Browser voice preview. Add your ElevenLabs agent id in <code>config.js</code> for the live agent.</p>
+      </article>
+      <article class="bezel span-5 rv" style="--d:100ms">
+        <div class="core card-pad">
+          <span class="step-badge">2</span>
+          <h3>Talk it through</h3>
+          <p>Explain what you do and why. Your words are written down and attached to the screenshot they belong to.</p>
+          <div class="transcript-mock">
+            <p><span class="mono">0:38</span> Equipment over five thousand euros is capital expenditure,</p>
+            <p><span class="mono">0:41</span> so I change the cost center to 0400 before I post it.</p>
+            <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
           </div>
         </div>
-      </div>
-    </section>
+      </article>
+      <article class="bezel span-5 rv" style="--d:200ms">
+        <div class="core card-pad">
+          <span class="step-badge">3</span>
+          <h3>Share the guide</h3>
+          <p>Edit titles, reorder or delete steps, then download one HTML file, a PDF or the video.</p>
+          <div class="guide-mock">
+            <div class="guide-mock-row"><span class="n">4</span><div><strong>Change the cost center to 0400</strong><small>“Equipment over €5,000 is capital expenditure.”</small></div></div>
+            <div class="guide-mock-row dim"><span class="n">5</span><div><strong>Post the invoice</strong><small>Check the summary, then confirm.</small></div></div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </main>
 
-    <!-- Download -->
-    <section class="section download" id="download">
-      <div class="download-head">
-        <img class="download-ghost rv" src="assets/hero.webp" alt="" loading="lazy" />
-        <span class="eyebrow rv">Download</span>
-        <h2 class="rv" style="--d:80ms">Get the whole <em>apprentice.</em></h2>
-        <p class="rv" style="--d:160ms">The desktop app runs on Windows 10 and 11. The first start installs what it needs; after that it's one double-click.</p>
-        <div class="cta-row center rv" style="--d:240ms">
-          <a class="btn btn-primary btn-lg" data-download href="downloads/Apprentice-Windows.zip" download id="download-btn">
+  <!-- ============================================================ DESKTOP: quick overview and download -->
+  <main class="view mode-view" id="view-desktop" data-view="desktop" hidden>
+    <section class="desk-hero">
+      <div class="mode-head">
+        <a class="back rv" href="#/choose"><svg class="i"><use href="#i-arrow-left" /></svg>Versions</a>
+        <span class="eyebrow rv">Desktop app · Windows</span>
+        <h2 class="rv" style="--d:80ms">The <em>full apprentice,</em> on your PC.</h2>
+        <p class="rv" style="--d:160ms">It reads what you do in real time through Windows accessibility, so every step names the field and the value, masked. It asks why at the pauses, builds a Work Map, keeps learning and coaches new hires.</p>
+        <div class="cta-row rv" style="--d:240ms">
+          <a class="btn btn-primary btn-lg btn-glow" data-download href="downloads/Apprentice-Windows.zip" download id="download-btn">
             <span>Download for Windows</span><span class="btn-ico"><svg class="i"><use href="#i-windows-logo" /></svg></span>
           </a>
           <a class="btn btn-glass btn-lg" data-github href="https://github.com/Ridwaan279/HackNation-7" target="_blank" rel="noopener">
             <span>View the code</span><span class="btn-ico"><svg class="i"><use href="#i-github-logo" /></svg></span>
           </a>
         </div>
+        <p class="fine rv" style="--d:320ms">Free · Windows 10 or 11 · Needs Node.js 20+ and Python 3.11+</p>
       </div>
-      <ol class="install">
-        <li class="bezel rv"><div class="core"><span class="step-badge">1</span><strong>Download and unzip</strong><p>Put the folder anywhere, like your Documents.</p></div></li>
-        <li class="bezel rv" style="--d:100ms"><div class="core"><span class="step-badge">2</span><strong>Double-click start.bat</strong><p>The first start installs the app's parts. Needs Node.js 20+ and Python 3.11+.</p></div></li>
-        <li class="bezel rv" style="--d:200ms"><div class="core"><span class="step-badge">3</span><strong>Meet the ghost</strong><p>Paste your API keys when Notepad opens, save, and the ghost appears.</p></div></li>
-      </ol>
-      <ul class="promises rv">
-        <li><svg class="i"><use href="#i-eye-slash" /></svg>Never watches password managers, banking sites or private windows</li>
-        <li><svg class="i"><use href="#i-lock-simple" /></svg>Masks cards, IBANs and keys before anything is stored</li>
-        <li><svg class="i"><use href="#i-pause" /></svg>Off the record any time with Ctrl+Shift+O</li>
-        <li><svg class="i"><use href="#i-trash" /></svg>Delete everything it kept, in one click</li>
-      </ul>
+      <img class="desk-render rv" style="--d:200ms" src="assets/mode-desktop.webp" alt="" />
     </section>
 
-    <footer class="footer">
-      <a class="island-brand" href="#/"><img src="ghost.svg" alt="" width="22" height="22" /><span>Apprentice</span></a>
-      <p>Built at Hack-Nation × ElevenLabs, 2026.</p>
-      <a data-github href="https://github.com/Ridwaan279/HackNation-7" target="_blank" rel="noopener">GitHub</a>
-    </footer>
+    <ol class="install">
+      <li class="bezel rv"><div class="core"><span class="step-badge">1</span><strong>Download and unzip</strong><p>Put the folder anywhere, like your Documents.</p></div></li>
+      <li class="bezel rv" style="--d:100ms"><div class="core"><span class="step-badge">2</span><strong>Double-click start.bat</strong><p>The first start installs the app's parts. After that it opens straight away.</p></div></li>
+      <li class="bezel rv" style="--d:200ms"><div class="core"><span class="step-badge">3</span><strong>Meet the ghost</strong><p>Paste your API keys when Notepad opens, save, and the ghost appears.</p></div></li>
+    </ol>
+
+    <div class="section-head sub-head">
+      <span class="eyebrow rv">What it does</span>
+      <h2 class="rv" style="--d:80ms">It sees what a browser <em>can't.</em></h2>
+    </div>
+    <div class="bento bento-desk">
+      <article class="bezel span-8 rv" id="teach">
+        <div class="core card-pad teach-card">
+          <div class="card-text">
+            <span class="tag">Teach</span>
+            <h3>It sits beside your new hire.</h3>
+            <p>The ghost watches their screen, flies to the right field and stops a mistake before it's saved, explained in the expert's own words.</p>
+          </div>
+          <div class="teach-shot">
+            <div class="teach-frame">
+              <img src="assets/erp-newhire.webp" alt="A new hire's invoice screen with the cost center field highlighted" loading="lazy" width="1360" height="860" />
+              <span class="field-ring"></span>
+              <img class="teach-ghost" src="assets/fly.webp" alt="" loading="lazy" width="900" height="900" />
+            </div>
+            <div class="teach-bubble"><span class="chip-k">Before you post</span>Equipment over €5,000 goes to <b>0400</b>, not 6100. That's how the expert does it.</div>
+          </div>
+        </div>
+      </article>
+      <article class="bezel span-4 rv" style="--d:80ms">
+        <div class="core card-pad render-card fill">
+          <img class="render" src="assets/capture.webp" alt="" loading="lazy" />
+          <span class="tag">Capture</span>
+          <h3>Reads every field</h3>
+          <p>Field names, typed values and button names, through Windows accessibility. Every click and key becomes a step.</p>
+        </div>
+      </article>
+      <article class="bezel span-4 rv" style="--d:80ms">
+        <div class="core card-pad render-card">
+          <img class="render" src="assets/shield.webp" alt="" loading="lazy" />
+          <span class="tag">Privacy</span>
+          <h3>Keeps private things private</h3>
+          <p>Password fields are never read. Cards, IBANs and keys are masked on your computer before anything is stored.</p>
+        </div>
+      </article>
+      <article class="bezel span-4 rv" style="--d:160ms">
+        <div class="core card-pad render-card">
+          <img class="render" src="assets/voice.webp" alt="" loading="lazy" />
+          <span class="tag">Voice</span>
+          <h3>Asks why, out loud</h3>
+          <p>An ElevenLabs voice listens while you work and asks one short question at each natural pause.</p>
+        </div>
+      </article>
+      <article class="bezel span-4 rv" style="--d:240ms">
+        <div class="core card-pad render-card">
+          <img class="render" src="assets/map.webp" alt="" loading="lazy" />
+          <span class="tag">Map</span>
+          <h3>Builds a Work Map</h3>
+          <p>The decisions and rules behind the steps, in the expert's own words, confirmed by them.</p>
+        </div>
+      </article>
+      <article class="bezel span-12 rv">
+        <div class="core card-pad wide-card">
+          <div class="card-text">
+            <span class="tag">Always on</span>
+            <h3>It keeps learning after the recording ends.</h3>
+            <p>In the background, it learns every app your team uses, as masked text only, and writes an App Profile for each. It picks up the exceptions nobody recorded, like a held invoice or a new supplier.</p>
+            <ul class="mini-list">
+              <li><svg class="i"><use href="#i-clock" /></svg>Learns while you work, 24/7</li>
+              <li><svg class="i"><use href="#i-eye-slash" /></svg>Skips password managers, banking and private windows</li>
+              <li><svg class="i"><use href="#i-pause" /></svg>Pause it, or go off the record with Ctrl+Shift+O</li>
+            </ul>
+          </div>
+          <img class="render wide-render" src="assets/orbit.webp" alt="" loading="lazy" />
+        </div>
+      </article>
+    </div>
+    <div class="cta-row center end-cta rv">
+      <a class="btn btn-primary btn-lg" data-download href="downloads/Apprentice-Windows.zip" download><span>Download for Windows</span><span class="btn-ico"><svg class="i"><use href="#i-windows-logo" /></svg></span></a>
+    </div>
   </main>
 
-  <!-- ============================================================ LIVE -->
+  <!-- ============================================================ DASHBOARD (web app) -->
+  <main class="view dashboard" id="view-dashboard" data-view="dashboard" hidden>
+    <div class="dash-head">
+      <div>
+        <span class="eyebrow">Web app</span>
+        <h1>Your recordings</h1>
+        <p>Record a task and talk it through. Each one becomes a guide you can edit and share.</p>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-glass" type="button" id="open-options"><span>Options</span><span class="btn-ico"><svg class="i"><use href="#i-sliders-horizontal" /></svg></span></button>
+        <button class="btn btn-primary btn-lg" type="button" data-start><span>New recording</span><span class="btn-ico"><svg class="i"><use href="#i-record" /></svg></span></button>
+      </div>
+    </div>
+    <p class="fine warn" id="no-share" hidden>Recording needs Chrome or Edge on a computer.</p>
+    <a class="bezel desk-banner" href="#/desktop">
+      <span class="core">
+        <img src="assets/fly.webp" alt="" />
+        <span class="desk-banner-text"><strong>For extra features, download the app.</strong> It sees what you do in real time: every field and value you type (masked). It asks why at the pauses and keeps learning 24/7.</span>
+        <span class="btn btn-glass btn-sm"><span>Get the desktop app</span><span class="btn-ico"><svg class="i"><use href="#i-arrow-up-right" /></svg></span></span>
+      </span>
+    </a>
+    <div class="recordings" id="recordings"></div>
+    <div class="dash-empty" id="dash-empty" hidden>
+      <img src="assets/hero.webp" alt="" class="empty-ghost" />
+      <h2>No recordings yet.</h2>
+      <ol class="tips">
+        <li><span class="step-badge">1</span><span>Press <strong>New recording</strong> and pick the window you work in.</span></li>
+        <li><span class="step-badge">2</span><span>Say what you're going to show, then work as usual and talk it through.</span></li>
+        <li><span class="step-badge">3</span><span>Press <strong>Stop and review</strong>. Your guide is ready.</span></li>
+      </ol>
+    </div>
+  </main>
+
+  <!-- ============================================================ LIVE recording -->
   <main class="view live" id="view-live" data-view="live" hidden>
     <div class="live-top">
       <span class="rec-pill"><span class="rec-dot" id="rec-dot"></span><span id="rec-label">Recording</span><span class="mono" id="rec-timer">0:00</span></span>
@@ -375,13 +403,13 @@
     </div>
   </main>
 
-  <!-- ============================================================ GUIDE -->
+  <!-- ============================================================ GUIDE editor -->
   <main class="view guide" id="view-guide" data-view="guide" hidden>
+    <a class="back" href="#/dashboard"><svg class="i"><use href="#i-arrow-left" /></svg>All recordings</a>
     <div class="guide-empty" id="guide-empty" hidden>
-      <img src="assets/hero.webp" alt="" class="empty-ghost" />
-      <h1>No guide yet.</h1>
-      <p class="lead">Record a task and it shows up here as a step-by-step guide.</p>
-      <button class="btn btn-primary btn-lg" type="button" data-start><span>Start recording</span><span class="btn-ico"><svg class="i"><use href="#i-record" /></svg></span></button>
+      <h1>This recording isn't here.</h1>
+      <p class="lead">It may have been deleted, or recorded in another browser.</p>
+      <a class="btn btn-primary btn-lg" href="#/dashboard"><span>Back to your recordings</span><span class="btn-ico"><svg class="i"><use href="#i-arrow-right" /></svg></span></a>
     </div>
     <div id="guide-body" hidden>
       <div class="guide-head">
@@ -391,14 +419,7 @@
           <button class="btn btn-primary" type="button" id="export-html"><span>Download guide</span><span class="btn-ico"><svg class="i"><use href="#i-file-html" /></svg></span></button>
           <button class="btn btn-glass" type="button" id="export-pdf"><span>Save as PDF</span><span class="btn-ico"><svg class="i"><use href="#i-file-pdf" /></svg></span></button>
           <button class="btn btn-glass" type="button" id="export-video" hidden><span>Download video</span><span class="btn-ico"><svg class="i"><use href="#i-video-camera" /></svg></span></button>
-          <button class="btn btn-glass" type="button" data-start><span>New recording</span><span class="btn-ico"><svg class="i"><use href="#i-record" /></svg></span></button>
-        </div>
-      </div>
-      <div class="bezel upsell">
-        <div class="core">
-          <img src="assets/teach.webp" alt="" />
-          <p><strong>Want steps that name every field?</strong> The desktop app records the field you changed and the value you typed (masked), asks <em>why</em> at the pauses, and drafts a Work Map when you stop.</p>
-          <a class="btn btn-glass btn-sm" href="#/" data-goto="download"><span>Get the app</span><span class="btn-ico"><svg class="i"><use href="#i-arrow-up-right" /></svg></span></a>
+          <button class="btn btn-glass" type="button" id="delete-recording"><span>Delete</span><span class="btn-ico"><svg class="i"><use href="#i-trash" /></svg></span></button>
         </div>
       </div>
       <div class="bezel intro-edit">
@@ -414,10 +435,10 @@
     </div>
   </main>
 
-  <!-- Voice dock: always within reach on the home page -->
-  <div class="dock-caption" id="dock-caption" hidden></div>
-  <button class="voice-dock" type="button" id="voice-dock" data-talk aria-label="Talk to the ghost">
-    <span class="voice-dock-ghost"><img src="ghost.svg" alt="" width="22" height="22" /></span>
+  <!-- Voice: the ghost's captions, and a button to stop or restart it -->
+  <div class="dock-caption" id="dock-caption" hidden><p id="dock-caption-text"></p><small id="preview-note" hidden>Browser voice preview. Add your ElevenLabs agent id in config.js for the live agent.</small></div>
+  <button class="voice-dock away" type="button" id="voice-dock" aria-label="Talk to the ghost">
+    <span class="voice-dock-ghost" id="voice-dock-ghost"><img src="ghost.svg" alt="" width="22" height="22" /></span>
     <span class="voice-dock-text" id="voice-dock-text">Ask the ghost</span>
     <span class="voice-dock-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
   </button>
