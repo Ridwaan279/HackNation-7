@@ -103,7 +103,7 @@ export const init: ServiceInit = (ctx) => { getLlm(ctx) }
 
 /** B should package app/prompts in resources/prompts for production. */
 export type PromptName = 'question_picker' | 'step_vision' | 'workmap_draft' | 'workmap_correction' | 'guardrail_checker'
-  | 'locate_vision' | 'app_profile' | 'mastery_report' | 'guide_polish'
+  | 'locate_vision' | 'locate_pick' | 'app_profile' | 'mastery_report' | 'guide_polish'
 export async function readPrompt(name: PromptName): Promise<string> {
   const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
   const candidates = [

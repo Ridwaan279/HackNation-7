@@ -111,6 +111,40 @@ test('locate: fields beat labels; otherwise vision on a screenshot, mapped back 
   await assert.rejects(access(shotFile)) // the on-demand screenshot is deleted
 })
 
+test('locate: ambiguous names are settled on a screenshot, and the chosen control keeps its exact box', async () => {
+  const controls = [
+    { name: 'Save draft', control_type: 'Button', automation_id: '', rect: [10, 10, 90, 40] },
+    { name: 'Save', control_type: 'Button', automation_id: 'save-top', rect: [100, 10, 160, 40] },
+    { name: 'Save', control_type: 'Button', automation_id: 'save-bottom', rect: [100, 700, 160, 730] },
+  ] as UiControl[]
+  const h = await harness()
+  h.ctx.bus.handle('observer:tree', () => ({ controls }))
+  await mkdir(path.join(h.ctx.paths.shots, 'tmp'), { recursive: true })
+  await writeFile(path.join(h.ctx.paths.shots, 'tmp', 'pick.jpg'), Buffer.from([255, 216, 255, 224, 0, 0]))
+  h.ctx.bus.handle('observer:shot', () => ({ path: 'shots/tmp/pick.jpg', meta: { origin_px: [0, 0], size_px: [1000, 800], scale: 0.5, monitor: 1 } }))
+  let seen: { candidates: { index: number; box: number[] }[] } | null = null
+  // The "model" picks the lower Save button by where it is on the screenshot.
+  const model = { fast: async (r: { input: string }) => {
+    seen = JSON.parse(r.input)
+    return { index: seen!.candidates.find((c) => c.box[1] === 350)?.index ?? -1 }
+  } } as unknown as ReturnType<typeof getLlm>
+  const locator = createLocator(h.ctx, { model, pickPrompt: 'p' })
+  h.emit('observer:event', { type: 'context', t: 1, app: 'app.exe', key: 'app.exe', title: 'App', blocked: false, hwnd: 1, monitor: 1, window_rect: [0, 0, 10, 10], dpi_awareness: 'per_monitor', window_dpi: 96, monitor_scale: 1, capture: 'uia' })
+  assert.deepEqual(await locator.locate('Save'), { rect: [100, 700, 160, 730], source: 'uia' })
+  assert.ok(seen!.candidates.some((c) => JSON.stringify(c.box) === '[50,350,80,365]')) // boxes in image pixels (scale 0.5)
+  assert.equal(seen!.candidates.length, 3)
+  // No model available: still a real control with an exact box, never a guess.
+  const h2 = await harness()
+  h2.ctx.bus.handle('observer:tree', () => ({ controls }))
+  await mkdir(path.join(h2.ctx.paths.shots, 'tmp'), { recursive: true })
+  await writeFile(path.join(h2.ctx.paths.shots, 'tmp', 'pick.jpg'), Buffer.from([255, 216, 255, 224, 0, 0]))
+  h2.ctx.bus.handle('observer:shot', () => ({ path: 'shots/tmp/pick.jpg', meta: { origin_px: [0, 0], size_px: [1000, 800], scale: 0.5, monitor: 1 } }))
+  const offline = createLocator(h2.ctx, { model: { fast: async () => { throw new Error('no key') } } as unknown as ReturnType<typeof getLlm>, pickPrompt: 'p' })
+  h2.emit('observer:event', { type: 'context', t: 1, app: 'app.exe', key: 'app.exe', title: 'App', blocked: false, hwnd: 1, monitor: 1, window_rect: [0, 0, 10, 10], dpi_awareness: 'per_monitor', window_dpi: 96, monitor_scale: 1, capture: 'uia' })
+  const fallback = await offline.locate('Save')
+  assert.ok(fallback && controls.some((c) => JSON.stringify(c.rect) === JSON.stringify(fallback.rect)))
+})
+
 test('mastery: outcomes per step, hints are not undone, the report is stored and opened', async () => {
   const marks = new Map([['s2', 'alone' as const]])
   const report = buildReport('l-1', map, marks, new Map([['s1', 'Cost center left on 6100']]), 1)
