@@ -15,6 +15,8 @@ import '../protege.css'
 const SIZE = 150
 const GHOST_H = (SIZE * 165) / 220
 const DOCK_MARGIN = 24
+/** Room for the ghost's bounce, glow and caption above its anchor. */
+const TOP_CLEARANCE = 96
 const DEFAULT_TIMEOUT_S = 12
 const CAPTION_MS = 7000
 /** Long answers stay up long enough to read: ~0.35 s per word. */
@@ -33,6 +35,15 @@ const BLOCK_LABEL: Record<string, string> = {
 }
 
 type Pt = { x: number; y: number }
+
+function onScreen(point: Pt): Pt {
+  const maxX = Math.max(DOCK_MARGIN, window.innerWidth - SIZE - DOCK_MARGIN)
+  const maxY = Math.max(TOP_CLEARANCE, window.innerHeight - GHOST_H - DOCK_MARGIN)
+  return {
+    x: Math.max(DOCK_MARGIN, Math.min(maxX, point.x)),
+    y: Math.max(TOP_CLEARANCE, Math.min(maxY, point.y)),
+  }
+}
 
 /** Click-through everywhere except elements marked data-hit. */
 function useClickThrough() {
@@ -83,10 +94,10 @@ function OverlayInner() {
   useChannel<OverlayGeometry>('overlay:geometry', setGeo)
 
   const dock = useCallback((): Pt => {
-    if (home.current) return home.current
-    if (!geo) return { x: window.innerWidth - SIZE - DOCK_MARGIN, y: window.innerHeight - GHOST_H - DOCK_MARGIN }
+    if (home.current) return onScreen(home.current)
+    if (!geo) return onScreen({ x: window.innerWidth - SIZE - DOCK_MARGIN, y: window.innerHeight - GHOST_H - DOCK_MARGIN })
     const { bounds: b, workArea: w } = geo
-    return { x: w.x - b.x + w.width - SIZE - DOCK_MARGIN, y: w.y - b.y + w.height - GHOST_H - DOCK_MARGIN }
+    return onScreen({ x: w.x - b.x + w.width - SIZE - DOCK_MARGIN, y: w.y - b.y + w.height - GHOST_H - DOCK_MARGIN })
   }, [geo])
 
   useEffect(() => {
@@ -98,13 +109,14 @@ function OverlayInner() {
 
   /** Fly along a gentle arc to (tx, ty). */
   const flyTo = useCallback(async (to: Pt) => {
+    to = onScreen(to)
     const from = { x: x.get(), y: y.get() }
     const dist = Math.hypot(to.x - from.x, to.y - from.y)
     if (dist < 4) return
     setFlying(to.x >= from.x ? 'right' : 'left')
     const duration = Math.min(1.6, 0.45 + dist / 1400)
     const lift = Math.min(160, dist * 0.25)
-    const mid = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - lift }
+    const mid = onScreen({ x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - lift })
     await Promise.all([
       animate(x, [from.x, mid.x, to.x], { duration, ease: 'easeInOut' }),
       animate(y, [from.y, mid.y, to.y], { duration, ease: 'easeInOut' }),
@@ -115,15 +127,18 @@ function OverlayInner() {
   // --------------------------------------------------------------- channels
 
   useChannel<BusEvents['ghost:state']>('ghost:state', setMain)
+  useChannel<BusEvents['session:started']>('session:started', (started) => { if (started.kind !== 'tutor') void playSound('record_start') })
+  useChannel<BusEvents['tutor:violation']>('tutor:violation', () => { void playSound('guardrail') })
   useChannel<SidecarEvent>('observer:event', (e) => {
     if (e.type === 'blocked') setBlockReason(e.reason)
     else if (e.type === 'context') setBlockReason(null)
   })
   useChannel<Popup>('popup:show', async (p) => {
+    if (p.kind === 'curiosity') void playSound('curiosity')
     // Fly in from the screen edge (PLAN §5.10) unless the ghost is busy pointing or being dragged.
     if (!target && !flying && !dragging.current && p.kind !== 'warning') {
       x.set(window.innerWidth + 20)
-      y.set(dock().y - 40)
+      y.set(onScreen({ x: dock().x, y: dock().y - 40 }).y)
       setPopup(p)
       await flyTo(dock())
     } else setPopup(p)
@@ -192,8 +207,9 @@ function OverlayInner() {
       const dy = ev.clientY - start.py
       if (!moved && Math.hypot(dx, dy) < 5) return
       moved = dragging.current = true
-      x.set(start.x + dx)
-      y.set(start.y + dy)
+      const next = onScreen({ x: start.x + dx, y: start.y + dy })
+      x.set(next.x)
+      y.set(next.y)
     }
     const up = () => {
       el.removeEventListener('pointermove', move)
@@ -311,4 +327,12 @@ async function speak(text: string) {
   }
   const audio = new Audio(`data:${res.mime};base64,${res.audio}`)
   await audio.play().catch((err) => console.warn('[tts] playback failed', err))
+}
+
+async function playSound(kind: 'record_start' | 'curiosity' | 'guardrail') {
+  const result = await tryInvoke<{ audio?: string; mime?: string }>('tts:sound', { kind })
+  if (!result?.audio) return
+  const clip = new Audio(`data:${result.mime};base64,${result.audio}`)
+  clip.volume = 0.28
+  await clip.play().catch(() => undefined)
 }
